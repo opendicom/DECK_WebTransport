@@ -6,18 +6,18 @@ DECK (Dicom Exam Contextualized Keys) representation of DICOM dataset optimizes 
 
 Client side, a carefully tailored use of UDP Channels from the web page optimizes the number of datagrams required. 
 
-The primary client are the cell phone and tablet.
+The primary clients are the cell phone and tablet.
 
 ## Goals
 
-Complex large imaging study diagnostic performed from high quality cell phone, tablet or any device conected by air (5G/satelite/Wifi).
+- first: Complex large imaging study diagnostic performed from high quality cell phone, tablet or any device conected by air (5G/satelite/Wifi).
 This is a goal, because current http rest DICOMweb technology fails this use case. To pass it, the viewing conditions need to be similar to a local workstation, with almost no latency between a command by the radiologist and the visualization of the corresponding frames. 
 
 The transport of very large files or mime multi-part contents is problematic on complex network with route and provider commutation to client with smaller memory. A new strategy based on reactive web page managing just in time datagram communication is our innovative solution. It comes with its metrics: the number of datagrams necessary to perform a visualization.
 
-Based on this metrics, we aim to be the most savvy, and consequently most reactive, in the world.
+- second: based on this metrics, we aim to be the most savvy, and consequently most reactive, in the world.
 
-As a corollary, our represenation DECK of DICOM datasets and transport of selected attributes will improve the learning performance of Artificial Inteligence models.
+- third: as a corollary, our represenation DECK of DICOM datasets and transport of selected attributes will improve the learning performance of Artificial Inteligence models.
 
 
 
