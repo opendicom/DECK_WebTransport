@@ -1,4 +1,4 @@
-DECK is a format of diccionary key-value.
+DECK is a diccionary key-value format.
 
 The keys are ordered and written as bytes strings. They length vary between 16 bytes and 192 (most extreme case) by 8 bytes steps.
 
