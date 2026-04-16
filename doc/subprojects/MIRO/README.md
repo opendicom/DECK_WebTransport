@@ -1,4 +1,4 @@
-MIRO (Medical Imaging Reactive Online)
+# MIRO (Medical Imaging Reactive Online)
 
 MIRO is the web page part of the PACS.
 
@@ -11,3 +11,6 @@ Thanks to javascript and the many API embedded in the browser, a web page is an 
 - communicates through UDP channels with the server (WebTransport)
 
 The browser gets the web page and then executes it like an application, with the capacity to initiate UDP streams with the server.
+
+## FOVIA
+In our case image rendering is managed by a commercial library, with javascript API , which pilots webgl.
