@@ -1,7 +1,9 @@
 DECK is a diccionary key-value format.
 
-The keys are ordered and written as bytes strings. They length vary between 16 bytes and 192 (most extreme case) by 8 bytes steps.
+The binary keys are ordered. Their length vary between 16 bytes and 192 (most extreme case) by 8 bytes steps.
 
-The browser indexedDB is apropiate for DECK handling.
+The server Turso database and the browser indexedDB are apropiate for DECK key-value dictionaries handling.
+
+Inbetween a simple serialization based on UDP datagrams copies the attributes from the server to the client.
 
 
