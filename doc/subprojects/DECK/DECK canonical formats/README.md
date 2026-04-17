@@ -1,5 +1,6 @@
 # key
 The contextualized binary key is essential for the whole project.
+https://github.com/opendicom/DECK_WebTransport/blob/main/doc/subprojects/DECK/DECK%20canonical%20formats/key%20format.md
 
 # value
 follows strictly DICOM value representation defined in part 5, including eventual padding to an even count of bytes. When DICM files are transformed to DECK dictionary, the values are copied without modification.
