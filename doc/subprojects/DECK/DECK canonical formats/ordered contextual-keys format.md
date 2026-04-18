@@ -17,17 +17,21 @@ The tag is concise and its use is necessary to relate attributes to the DICOM IO
 Problem 2 is solved by substituing the "tag" by the binary "contextualized-key", which contains tags, for sure, but also other ordering bytes, in order to reflect :
 - instance classification within the exam,
 - attributes classification within the instance,
-- correct interpretation of the attribute. 
+- correct interpretation of the attribute.
+
+Since the keys contain multiple information s, we design them to be easily processable, and still relatively concise.
 
 A DECK Key is composed of two or more groups of 8 bytes:
 - (a) The first group is a prefix which identifies the instance and the series.
-- (b) The last group exposes attribute tag and representation.
-- (c) In-between, there are zero or more 8 byte strings representing an embedding sequence and the numbered item in it.
+- (c) The last group exposes attribute tag and representation.
+- (b) In-between, there are zero or more 8 byte strings representing an embedding sequence and the numbered item in it.
 
 #### (a) prefix
 
-Root tags in the dataset of a DICOM instance are not prefixed by any item number. The DICOM SOP instance is the list content of a non existent root item. In the XML representation,  such root item is mandatory. This was the occasion to create the root XML element <NativeDicomModel>, unique root to the XML representation.
-In DECK, the object described is an Exam, that is, a group of SOP instances. In order to identify the SOP instance referred to by a key, we prepend to the key an 8 bytes prefix. It would be conceptually equivalent to a <NativeDicomModel SOPinstance=""> in the XML representation. The prefix both gathers the attributes of a specific instance and differentiates instances.
-We carefully crafted the format of the prefix. In DICOM object model, instances (and series too) are identified by both an ordinal number (the original identification) and an UID (the new universal identifier, which conforms to the syntax of the OID). The UID is defined as universally unique, but is quite large (up to 64 bytes). The number is short, but may not be unique within the study. It is possible to observe on occasions instances with the same number and a different UID. A short prefix based on numbers needs to be able to differentiate these two instances. This is why we added an index byte before the number in the 8 bytes of the format of the prefix PF: "sSSiIIFF".
-We take advantage of the special value 0 of these index to signal an attribute common to all the instances of a series or of a study, so that we can de duplicate these common attributes and register them once only.
+In DECK, the object described is an Exam, that is, a group of SOP instances. To identify the SOP instance referred t, we prepend an 8 bytes prefix. The prefix both gathers the attributes of a specific instance and differentiates instances.
+
+In DICOM object model, instances (and series too) are identified by both an ordinal number (the original identification) and an UID (the new universal identifier, which conforms to the syntax of the OID). The UID is defined as universally unique, but is quite large (up to 64 bytes). The number is short, but may not be unique within the study. It is possible to observe on occasions instances with the same number and a different UID. A short prefix based on numbers needs to be able to differentiate these two instances. This is why we added an index byte before the number. The format of the prefix is sSSiIIFF (series index, series number, instance index, instance number).
+We take advantage of the special value 0 of these indexes to indicate an attribute common to all the instances of a series or of a study, so that we register them once only whithin the exam.
+
+#### (b) embedding sequence and the numbered item
 
