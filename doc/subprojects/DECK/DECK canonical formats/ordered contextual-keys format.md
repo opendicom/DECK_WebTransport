@@ -38,12 +38,13 @@ The format is TTTTIIII. The first four T bytes write the tag of the sequence, an
 The format is TTTTRRCC. The first four T bytes write the tag of the attribute. The two following RR write the value representation (data type) with the same two ascii characters as in DICM. The last two CC bytes replicate the index of the charset defined in the attribute (0008,0005) which applies. This index can be found here https://github.com/jacquesfauquex/DECK/wiki/parser-repertoires. CC refers to the charset in the DICM original. But the corresponding value is registered in UTF-8, the natural charset of html web pages. TTTTRRCC=0x000000002B2B0000 indicates the beginning of an item.  TTTTRRCC=0xFFFFFFFF5F5F0000 indicates the end of an item.
 
 ## Benefits
-The contextualized keys 
+The contextualized keys classifies successivamente by:
+- series
+- instance
+- group
+- sequence
+- item
 
-TODO
-
-
-
-To find an attribute or a group of attributes, a binary regex engine can be used
+To find an attribute or a group of attributes, a binary regex engine can be used.
 
 
