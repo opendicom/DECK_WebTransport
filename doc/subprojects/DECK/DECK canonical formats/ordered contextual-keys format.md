@@ -2,7 +2,7 @@
 
 ## ordered
 
-The order, the classification is a prerequisite to both the DICM representation and to the dictionary key-value. The DICOM "tag" (An ordered pair of 16-bit unsigned integers representing the Group Number followed by Element Number). 
+Order, meaning classification, is a prerequisite both to the DICM representation and to the dictionary key-value. The  ascending order of the DICOM "tag" (An ordered pair of 16-bit unsigned integers representing the Group Number followed by Element Number) is the corresponding rule. 
 
 ### DICM
 
