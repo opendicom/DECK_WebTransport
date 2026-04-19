@@ -40,4 +40,4 @@ The primary clients are the cell phone and tablet over 5G/satelite/wifi.
 - [fovia.ai:](https://fovia.ai)     transforms AI algorithm results into interactive visualization
 ---
 
-Though this project is born in the mercosur, contributions shall be written in english to facilitate communication with Fovia, provider of the visualization sdk for our project.
+Though this project is born in the mercosur, contributions shall be written in english to facilitate the communication with Fovia, provider of the visualization sdk for our project.
