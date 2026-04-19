@@ -45,6 +45,6 @@ The contextualized keys classifies successivamente by:
 - sequence
 - item
 
-To find an attribute or a group of attributes, a binary regex engine can be used.
+To find an attribute or a group of attributes, a binary regex engine can be used with very concise filter.
 
 
