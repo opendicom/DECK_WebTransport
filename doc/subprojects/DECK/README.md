@@ -2,7 +2,7 @@
 
 DECK is a dictionary key-value format. The binary keys are ordered. Their length vary between 16 bytes and 192 (most extreme case) by 8 bytes steps.
 
-The Turso database of the server and the indexedDB of the browser are apropiate for DECK key-value dictionaries handling.
+The Turso database of the server and the indexedDB of the browser are appropiate for DECK key-value dictionaries handling.
 
 Inbetween a simple serialization based on UDP datagrams copies the attributes from the server to the client, which writes them into its database.
 
@@ -14,4 +14,4 @@ Two protocols were chosen:
 
 # DICM - DECK
 
-DECK is a new representation of DICOM metadata. A PACS DECK WebTranport needs to be able to import images in the original DICM representation. This is the purpose of the DICM - DECK serialization.
+DECK is a new representation of DICOM metadata. A PACS DECK WebTranport needs to be able to import images produced in the original DICM representation. This is the purpose of the DICM - DECK serialization.
