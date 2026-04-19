@@ -1,6 +1,6 @@
 # ordered contextual keys format.md
 
-Order, meaning classification, is a prerequisite both to the DICM representation and to the dictionary key-value. The  ascending order of the DICOM "tag" (An ordered pair of 16-bit unsigned integers representing the Group Number followed by Element Number) is the corresponding rule. 
+Order, meaning classification, is a prerequisite both to the DICM original representation and to the DECK key-value dictionary. The rule is: ascending order of the DICOM "tag" (An ordered pair of 16-bit unsigned integers representing the Group Number followed by Element Number). 
 
 ## DICM
 
