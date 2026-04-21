@@ -2,7 +2,7 @@
 
 W3C WebTransport DICOM imaging. 
 
-Server side, DECK (Dicom Exam Contextualized Keys) representation of DICOM dataset optimizes the storage. 
+Server side, DECK (Dicom Exam Contextualized Keys) representation of DICOM datasets optimizes the storage. 
 
 Client side, a carefully tailored use of UDP Channels from the web page optimizes the number of datagrams required. 
 
