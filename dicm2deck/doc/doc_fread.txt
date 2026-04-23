@@ -1,0 +1,50 @@
+https://stackoverflow.com/questions/1598985/c-read-binary-stdin
+freopen(NULL, "rb", stdin);//reopen stdin but in binary mode. freopen() returns a filehandle, but it's the previous value (before we put it in binary mode), so don't use it for anything.
+
+si el cuarto argumento de dicm2dckv es un path, main aplica freopen para transformarlo en stdin
+https://www.w3resource.com/c-programming/stdio/c_library_method_freopen.php
+
+comando completo:
+#include <stdio.h>
+FILE *freopen(const char *restrict pathname, const char *restrict mode,FILE *restrict stream);
+- FILE es la ref al stream stdin o un pointer a NULL. En este caso errno indica el numero de error
+- pathname "path/name"
+- mode "rb" (read binario)
+- stream stdin
+
+ejemplo:
+if (freopen("path/name","rb",stdin)==NULL){
+errno=
+EACCES Search permission is denied on a component of the path prefix, or the file exists and the permissions specified by mode are denied, or the file does not exist and write permission is denied for the parent directory of the file to be created.
+EBADF  The file descriptor underlying the stream is not a valid file descriptor when pathname is a null pointer.
+EINTR  A signal was caught during freopen().
+EISDIR The named file is a directory and mode requires write access.
+ELOOP  A loop exists in symbolic links encountered during resolution of the path argument.
+EMFILE All file descriptors available to the process are currently open.
+ENAMETOOLONG  The length of a component of a pathname is longer than {NAME_MAX}.
+ENFILE The maximum allowable number of files is currently open in the system.
+ENOENT The mode string begins with 'r' and a component of pathname does not name an existing file, or mode begins with 'w' or 'a' and a component of the path prefix of pathname does not name an existing file, or pathname is an empty string.
+ENOENT or ENOTDIR The pathname argument contains at least one non-<slash> character and ends with one or more trailing <slash> characters. If pathname without the trailing <slash> characters would name an existing file, an [ENOENT] error shall not occur.
+ENOSPC The directory or file system that would contain the new file cannot be expanded, the file does not exist, and it was to be created.
+ENOTDIR A component of the path prefix names an existing file that is neither a directory nor a symbolic link to a directory, or the pathname argument contains at least one non-<slash> character and ends with one or more trailing <slash> characters and the last pathname component names an existing file that is neither a directory nor a symbolic link to a directory.
+ENXIO  The named file is a character special or block special file, and the device associated with this special file does not exist.
+EOVERFLOW The named file is a regular file and the size of the file cannot be represented correctly in an object of type off_t.
+EROFS  The named file resides on a read-only file system and mode requires write access.
+
+
+The freopen() function may fail if:
+EBADF  The mode with which the file descriptor underlying the stream was opened does not support the requested mode when pathname is a null pointer.
+EINVAL The value of the mode argument is not valid.
+ELOOP  More than {SYMLOOP_MAX} symbolic links were encountered during resolution of the path argument.
+ENAMETOOLONG The length of a pathname exceeds {PATH_MAX}, or pathname resolution of a symbolic link produced an intermediate result with a length that exceeds {PATH_MAX}.
+ENOMEM Insufficient storage space is available.
+ENXIO  A request was made of a nonexistent device, or the request was outside the capabilities of the device.
+ETXTBSY The file is a pure procedure (shared text) file that is being executed and mode requires write access.
+
+------
+configuración stdin antes de cualquier operación
+https://stackoverflow.com/questions/5876373/using-setvbuf-with-stdin-stream
+https://www.gnu.org/software/libc/manual/html_node/Controlling-Buffering.html
+setvbuf(stdin, NULL, _IOFBF, 0xFFFF);//This allocates a binary buffer space dynamically.
+leemos hasta 0xFFFF bytes a la vez (max vl)
+
