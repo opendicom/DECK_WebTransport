@@ -1,13 +1,13 @@
 # dicmstructdump
 
 - dicm transformed on the flight to deck and dumped pretty printed on utf-8 console
-- dicmstructdump parsea:  
-  - el contenido de los values hasta 0xFFFF bytes
-  - incluyendo la separación de los multivalues en sus componentes
-  - indica offset y largo para valores de tipo vll
-  - no copia el nombre de los atributos desde un diccionario. Contiene exclusivamente diccionarios de sop class, transfer syntax y repertoire
+- dicmstructdump parses:  
+  - values contents up to 0xFFFF bytes
+  - separates multivalues in distinct components
+  - writes offset and length for values of vr with large vl
+  - does not fetch attributes names from dictionary
 
-## output example
+## output sample
 ```
 #0
      144 00020001 OB 0000 {156,2}

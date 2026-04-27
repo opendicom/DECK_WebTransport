@@ -27,6 +27,7 @@
 #include <limits.h>
 #include <stdint.h>
 
+struct stat st={0};//for directory creation
 
 typedef   int8_t s8;//%c
 typedef  uint8_t u8;//%c
