@@ -14,3 +14,12 @@ The browser gets the web page and then executes it like an application, with the
 
 ## FOVIA
 In our case image rendering is managed by a commercial library, with javascript API , which pilots webgl.
+
+---
+notas:
+
+If you are already using the loadStudyMetadata() / loadSeries2D/3D() / loadSeriesImageData() design pattern, your apps should just all work.  Assuming you creating the imageDataManager via:
+
+g_imageDataManager = ImageDataManager.getInstance({ });
+
+Once you start to use “https / 8080” rather than “http / 8088”, it should create you a new FDM that use HTJ2K for loading and transfer to the client.
