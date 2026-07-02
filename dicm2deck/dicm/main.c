@@ -36,7 +36,7 @@ int main(int argc, const char * argv[]) {
    if (abeforebyte!=NULL) beforebyte=(u32)strtoll(abeforebyte, NULL, 16);
    
 #pragma mark DICM2DECKbeforetag
-   // agradado en dcmtk storescp al final de cada instancia, para delimitarla dentro del stream
+   // agradado en dcmtk-storescp storescp al final de cada instancia, para delimitarla dentro del stream
    u32 beforetag=0xFFFCFFFC;
    const char* abeforetag = getenv("DICM2DECKbeforetag");
    if (abeforetag!=NULL) beforetag=(u32)strtoll(abeforetag, NULL, 16);

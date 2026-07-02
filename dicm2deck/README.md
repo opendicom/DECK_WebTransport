@@ -3,7 +3,7 @@
 Dicom Exam Contextualized Keys (DECK) is a flat hashmap parser result language 
 for DICM files. 
 
-dicm2deck is a console command factory written in C. The executable produced all
+dicm2deck is a console command written in C. The executable produced all
 use the parser outputting DECK key values. It implements a pipe architecture with 
 DICM input streamed from stdin and the result streamed out to stdout.
 
