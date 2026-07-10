@@ -1,6 +1,6 @@
 # SIRIUS WebTransport pacs
 
-SIRIUS WebTransport pacs is a new way to consume medical imaging on internet. 
+SIRIUS WebTransportPacs is a new way to consume medical imaging on internet. 
 The interoperability with preexisting DICOM PACS is limited to DICOM Store SCP 
 through a specialized proxy, that we call PCS (Picture Communication System).
 
@@ -11,10 +11,33 @@ through a specialized proxy, that we call PCS (Picture Communication System).
 preserving the network security of the hospital.
 
 ## PACS
-SIRIUS WebTransport pacs is no standard PACS, 
+SIRIUS WebTransportPacs is no standard PACS, 
 neither is interoperable with Standard DICOM viewers. 
-SIRIUS WebTransport is an all-in-one system for storage, distribution and visualization.
-It is designed starting from the specifications of modern web browsers backwards, 
+SIRIUS WebTransportPacs is an all-in-one system for storage, data mining, distribution and visualization.
+It is designed starting from the specifications of modern web browsers backwards.
+
+  
+    
+    
+  
+
+  
+    
+    
+    
+  
+
+  
+    
+      
+      
+    
+    
+      
+      
+    
+  
+
 in order to offer the lowest latency in most challenging network conditions, 
 such as for instance source communting (wifi/3,4,5G or satelite).
 This implies streaming and datagram management over UDP.

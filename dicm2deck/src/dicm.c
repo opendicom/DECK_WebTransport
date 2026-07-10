@@ -176,241 +176,50 @@ bool dicmDataset(
          case SL: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvSL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case SS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvSS,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case UL: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvUL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case US: {
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B00280002: if (!uAppend(kloc,kvspp,   attr->l)) return false; break;//spp
-               case B00280010: if (!uAppend(kloc,kvrows,  attr->l)) return false; break;//rows
-               case B00280011: if (!uAppend(kloc,kvcols,  attr->l)) return false; break;//cols
-               case B00280100: if (!uAppend(kloc,kvalloc, attr->l)) return false; break;//alloc
-               case B00280101: if (!uAppend(kloc,kvstored,attr->l)) return false; break;//stored
-               case B00280102: if (!uAppend(kloc,kvhigh,  attr->l)) return false; break;//high
-               case B00280103: if (!uAppend(kloc,kvpixrep,attr->l)) return false; break;//pixrep
-               case B00280106: if (!uAppend(kloc,kvplanar,attr->l)) return false; break;//planar
-               default:        if (!uAppend(kloc,kvUS,    attr->l)) return false;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
+         case US: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvUS,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case AT: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvAT,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UI: {
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B00080018: if (!uAppend(kloc,kviuid,attr->l)) return false; break;
-               case B0020000D: if (!uAppend(kloc,kveuid,attr->l)) return false; break;
-               case B0020000E: if (!uAppend(kloc,kvsuid,attr->l)) return false; break;
-               case B00080019: if (!uAppend(kloc,kvpuid,attr->l)) return false; break;//pyramid
-               case B00200242: if (!uAppend(kloc,kvcuid,attr->l)) return false; break;//SOP​Instance​UID​Of​Concatenation​Source
-               //case B00081150:
-               default:        if (!uAppend(kloc,kvUI,  attr->l)) return false;break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
+         case UI: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvUI,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case AS:
          case DT: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTP,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case DA: {
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B00080020: if (!uAppend(kloc,kvedate, attr->l)) return false;break;
-               case B00080021: if (!uAppend(kloc,kvsdate, attr->l)) return false;break;
-               case B00100030: if (!uAppend(kloc,kvpbirth,attr->l)) return false;break;
-               default:        if (!uAppend(kloc,kvTP,    attr->l)) return false;break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case TM: {
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B00080031: if (!uAppend(kloc,kvstime,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kvTP,   attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
+         case DA: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTP,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case TM: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTP,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case CS: {
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B00100040: if (!uAppend(kloc,kvpsex,     attr->l)) return false; break;
-               case B00400033: { //kveat CS Accession​Number type
-                  u32 *itemtag=(u32 *)kbuf;
-                  if (*itemtag==B00080051)
-                  {
-                     if (!uAppend(kloc,kveat,attr->l)) return false;
-                  }
-                  else
-                  {
-                     if (!uAppend(kloc,kvTA,attr->l)) return false;
-                  }
-               } break;
-               case B00080060: if (!uAppend(kloc,kvsmod,     attr->l)) return false; break;
-               case B00080008: if (!uAppend(kloc,kvitype,    attr->l)) return false; break;
-               case B00280004: if (!uAppend(kloc,kvphotocode,attr->l)) return false; break;
-                  // https://dicom.innolitics.com/ciods/rt-dose/image-pixel/00280004
-               case B00080005: {
-                  if (!uAppend(kloc,kvTA,attr->l)) return false;
-                  u16 repidxs=repertoireidx(DICMbuf+DICMidx-attr->l,attr->l);
-                  if (repidxs==0x09)
-                  {
-                     E("bad repertoire %.*s",attr->l,DICMbuf+DICMidx-attr->l);
-                     return false;
-                  }
-                  else
-                  {
-                     keycs=(keycs & 0x8000) | repidxs;
-                     attr->c=repidxs;
-                  }
-               } break;
-               default:        if (!uAppend(kloc,kvTA,       attr->l)) return false; break;
+            attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTA,attr->l)) return false;
+            if (attr->t == B00080005){
+               if (!uAppend(kloc,kvTA,attr->l)) return false;
+               u16 repidxs=repertoireidx(DICMbuf+DICMidx-attr->l,attr->l);
+               if (repidxs==0x09)
+               {
+                  E("bad repertoire %.*s",attr->l,DICMbuf+DICMidx-attr->l);
+                  return false;
+               }
+               else
+               {
+                  keycs=(keycs & 0x8000) | repidxs;
+                  attr->c=repidxs;
+               }
             }
             if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
          } break;
          case AE:
          case DS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTA,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case IS: {
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B00200011:if (!uAppend(kloc,kvsnumber, attr->l)) return false; break;
-               case B00200012:if (!uAppend(kloc,kvianumber,attr->l)) return false; break;
-               case B00200013:if (!uAppend(kloc,kvinumber, attr->l)) return false; break;
-               case B00280008:if (!uAppend(kloc,kvframesnumber, attr->l)) return false; break;
-               default:       if (!uAppend(kloc,kvTA,      attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
+         case IS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTA,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case LO:
-         case LT: {
-            attr->c=keycs;
-            switch (attr->t) {
-               case B00101050: if (!uAppend(kloc,kvpay,     attr->l)) return false; break;//insurance plan identification
-               case B00100020: if (!uAppend(kloc,kvpide,    attr->l)) return false; break;//patient id
-               case B00100021: if (!uAppend(kloc,kvpidr,    attr->l)) return false; break;//patient id issuer
-               case B00080080: if (!uAppend(kloc,kvimg,     attr->l)) return false; break;//institution name
-               case B00081030: if (!uAppend(kloc,kvedesc,   attr->l)) return false; break;//study description
-               case B0008103E: if (!uAppend(kloc,kvsdesc,   attr->l)) return false; break;//series description
-               case B00204000: if (!uAppend(kloc,kvicomment,attr->l)) return false; break;//image comment
-               case B00080104: {
-                  //find CODE tag
-                  u32 *containertag=(u32*) (kbuf+kloc-8);
-                  switch (*containertag) {
-                     case B00081032:if (!uAppend(kloc,kvecode,attr->l)) return false;break;//study description
-                     default:       if (!uAppend(kloc,kvTS,   attr->l)) return false;break;
-                  }
-               } break;
-               default:        if (!uAppend(kloc,kvTS,      attr->l)) return false;break;
-            }
-            if (! ifreadattr(kloc)){attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case SH: {
-            attr->c=keycs;
-            switch (attr->t) {
-               case B00200010: if (!uAppend(kloc,kveid,   attr->l)) return false; break;
-               case B00080050: if (!uAppend(kloc,kvean,   attr->l)) return false; break;
-#pragma mark code
-               case B00080100:
-               case B00080102: {
-                  //find CODE tag
-                  u32 *containertag=(u32*) (kbuf+kloc-8);
-                  switch (*containertag) {
-                     //study description
-                     case B00081032: if (!uAppend(kloc,kvecode,attr->l)) return false; break;
-                     default:        if (!uAppend(kloc,kvTS,   attr->l)) return false; break;
-                  }
-               } break;
-               default:        if (!uAppend(kloc,kvTS,    attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case ST: {
-            attr->c=keycs;
-            switch (attr->t) {
-               case B0040E001: if (!uAppend(kloc,kvscdaid,   attr->l)) return false; break;//kvscdaid ST CDA root^extension
-               case B00420010: if (!uAppend(kloc,kvsdoctitle,attr->l)) return false; break;//kvsdoctitle ST DocumentTitle 00420010
-               default:        if (!uAppend(kloc,kvTS,       attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case PN: {
-            attr->c=keycs;
-            switch (attr->t) {
-               case B00100010: if (!uAppend(kloc,kvpname,attr->l)) return false; break;
-               case B00080090: if (!uAppend(kloc,kvref,  attr->l)) return false; break;//referring
-               case B00081060: if (!uAppend(kloc,kvcda,  attr->l)) return false; break;//reading
-               case B00321032: if (!uAppend(kloc,kvreq,  attr->l)) return false; break;//requesting
-               default:        if (!uAppend(kloc,kvPN,   attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-            
-         case OF: { //float
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B7FE00010: if (!uAppend(kloc,kvpixelOF,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kv01,      attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case OD: { //double
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B7FE00010: if (!uAppend(kloc,kvpixelOD,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kv01,      attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case OB: { //byte
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B00420011: if (!uAppend(kloc,kvsdocument,attr->l)) return false; break;
-               case B7FE00010: if (!uAppend(kloc,kvpixelOB,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kv01,       attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case OW: { //short
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B7FE00010: if (!uAppend(kloc,kvpixelOW,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kv01,      attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case OL: { //long
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B7FE00010: if (!uAppend(kloc,kvpixelOL,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kv01,      attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case OV: { //very long (64 bits)
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B7FE00001: if (!uAppend(kloc,kvfo,attr->l)) return false; break;
-               case B7FE00002: if (!uAppend(kloc,kvfl,attr->l)) return false; break;
-               case B7FE00010: if (!uAppend(kloc,kvpixelOV,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kv01,attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-            
-         case SV: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kv01,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UV: {
-            attr->c=REPERTOIRE_GL;
-            switch (attr->t) {
-               case B7FE00003: if (!uAppend(kloc,kvft,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kv01,attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
+         case LT:
+         case SH:
+         case ST: { attr->c=keycs;         if (!uAppend(kloc,kvTS,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case PN: { attr->c=keycs;         if (!uAppend(kloc,kvPN,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case OF:
+         case OD:
+         case OB:
+         case OW:
+         case OL:
+         case OV:
+         case SV:
+         case UV: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kv01,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case UC: { attr->c=keycs;         if (!uAppend(kloc,kvTL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UT: {
-            attr->c=keycs;
-            switch (attr->t) {
-               case B00400031: if (!uAppend(kloc,kveal,attr->l)) return false; break;
-               case B00400032: if (!uAppend(kloc,kveau,attr->l)) return false; break;
-               default:        if (!uAppend(kloc,kvTL, attr->l)) return false; break;
-            }
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
-         case UR: { attr->c=ISO_IR192;     if (!uAppend(kloc,kvTU, attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;//RFC3986
+         case UT: { attr->c=keycs;         if (!uAppend(kloc,kvTL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case UR: { attr->c=ISO_IR192;     if (!uAppend(kloc,kvTU,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;//RFC3986
 #pragma mark SQ
          case SQ://sequence
          {
@@ -510,7 +319,8 @@ bool dicmDataset(
             if (!uAppend(kloc,kvUN, attr->l)) return false;
             if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
          } break;
-            
+
+//TODO check for a control of end other than trailling padding... or modify storescp
          case 0xFFFF:return true;//end of buffer
 
          default:

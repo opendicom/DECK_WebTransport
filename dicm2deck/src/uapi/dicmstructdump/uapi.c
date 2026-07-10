@@ -95,7 +95,6 @@ bool uCreate(
    u16 stidx          // index in const char *csstr[]
 )
 {
-   D("dump create #%d",siidx);
    printf("     144 %s\n","00020001 OB 0000 {156,2}");
    printf("%8llu 00020002 UI 0000 \"%s\" [%hu]\n",soloc,DICMbuf+soloc,soidx);
    printf("%8llu 00020003 UI 0000 \"%s\"\n",siloc,DICMbuf+siloc);
@@ -112,7 +111,6 @@ bool uCommit(bool hastrailing)
 }
 bool uClose(void)
 {
-   I("!#%d", siidx);
    return true;
 }
 

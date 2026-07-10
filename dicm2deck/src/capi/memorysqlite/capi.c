@@ -229,7 +229,8 @@ bool cCreate(
    relativepathlength=intdecsize(getpid());
    relativepath[relativepathlength++]='/';
    relativepath[relativepathlength]=0x00;
-   if ((stat(relativepath, &st)==-1) && (mkdir(relativepath, 0777)==-1)) return false;
+   struct stat relativepathfileinfo2;
+   if ((stat(relativepath, &relativepathfileinfo2)==-1) && (mkdir(relativepath, 0777)==-1)) return false;
 
 #pragma mark resets
    euidb64length=0;

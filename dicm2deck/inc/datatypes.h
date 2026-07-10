@@ -27,8 +27,6 @@
 #include <limits.h>
 #include <stdint.h>
 
-struct stat st={0};//for directory creation
-
 typedef   int8_t s8;//%c
 typedef  uint8_t u8;//%c
 typedef  int16_t s16;//%hd
@@ -48,28 +46,26 @@ struct trcl {
    u32 l;
 };
 
-
-/*potencialmente multivalue: AE AS AT CS DA DS DT FD FL IS LO OW PN SH SV TM UC UI UV*/
 enum DICMvr {
-   AE=0x4541,//application entity
-   AS=0x5341,//age string
-   AT=0x5441,//attribute tag
-   CS=0x5343,//coded string
-   DA=0x4144,//date
-   DS=0x5344,//decimal string
-   DT=0x5444,//date time
-   FD=0x4446,//floating point double
-   FL=0x4C46,//floating point single
-   IS=0x5349,//integer string
-   LO=0x4f4c,//long string
-   LT=0x544c,//long text
-   PN=0x4e50,//person name
-   SH=0x4853,//short string
+   AE=0x4541,//multivalue application entity
+   AS=0x5341,//multivalue age string
+   AT=0x5441,//multivalue attribute tag
+   CS=0x5343,//multivalue coded string
+   DA=0x4144,//multivalue date
+   DS=0x5344,//multivalue decimal string
+   DT=0x5444,//multivalue date time
+   FD=0x4446,//multivalue floating point double
+   FL=0x4C46,//multivalue floating point single
+   IS=0x5349,//multivalue integer string
+   LO=0x4f4c,//multivalue long string ->UTF-8
+   LT=0x544c,//long text ->UTF-
+   PN=0x4e50,//multivalue person name ->UTF-8
+   SH=0x4853,//multivalue short string ->UTF-8
    SL=0x4C53,//signed long
    SS=0x5353,//signed short
-   ST=0x5453,//short text
-   TM=0x4d54,//time
-   UI=0x4955,//unique ID
+   ST=0x5453,//short text ->UTF-8
+   TM=0x4d54,//multivalue time
+   UI=0x4955,//multivalue unique ID ->b64shrink
    UL=0x4C55,//unsigned long
    US=0x5355,//unsigned short
    OB=0x424F,//other byte
@@ -77,32 +73,32 @@ enum DICMvr {
    OF=0x464F,//other float
    OL=0x4C4F,//other long
    OV=0x564F,//other 64-bit very long
-   OW=0x574F,//other word
-   SV=0x5653,//signed 64-bit very long
-   UC=0x4355,//unlimited characters
-   UR=0x5255,//universal resrcurl identifier/locator
-   UT=0x5455,//unlimited text
+   OW=0x574F,//multivalue other word
+   SV=0x5653,//multivalue signed 64-bit very long
+   UC=0x4355,//multivalue unlimited characters ->UTF-8
+   UR=0x5255,//universal resource identifier/locator
+   UT=0x5455,//unlimited text ->UTF-8
    UV=0x5655,//unsigned 64-bit very long
    UN=0x4E55,
-   SQ=0x5153,
-   SA=0x0000,
-   IA=0x2B2B,//++
-   IZ=0x5F5F,//__
-   SZ=0xFFFF
+   SQ=0x5153,//replaced by SA,IA,IZ SZ
+   SA=0x0000,//OPENDICOM
+   IA=0x2B2B,//OPENDICOM ++
+   IZ=0x5F5F,//OPENDICOM __
+   SZ=0xFFFF//OPENDICOM
 };
 
 #pragma mark - endianness
-
 u64 u64swap(u64 x);
 u32 u32swap(u32 x);
 u16 u16swap(u16 x);
 
 
 #pragma mark - uid shrink
-
+extern char const hb[256];
+extern char const b64char[64];
 extern char const  base64EncodingTable[65];
 extern char const  base64DecodingTable[128];
-bool ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length );
+void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length );
 
 #pragma mark - main & log
 

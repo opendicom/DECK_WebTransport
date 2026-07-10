@@ -3,18 +3,28 @@
 The entry point of dicm2deck is a DICM receiver. 
 We use the opensource [dcmtk](https://support.dcmtk.org/docs/storescp.html) C++ implementation of it.
 storescp writes files exactly as received (option --bit-preserving). 
-This option disables DCMTK DICM parsing.
-STORESCP then only receives packets through DIMSE protol, assembles them to
-recretate a DICM file and writes it to storage.
+This option disables DCMTK DICM parsing. STORESCP:
+- receives packets through DIMSE protol, 
+- assembles them to recretate a DICM file, 
+- writes it to storage, 
+- triggers a script, passing to it:
+  - the location of the file
+  - parameters of the association on which the packets were received:
+    - directory
+    - file name
+    - sender aet
+    - sender ip
+    - receover aet
 
-After writing the file, STORESCP triggers a script, passing to it:
-- the location of the file
-- parameters of the association on which the packets were received.
+This script 
+- parses DICM to DECK into an in memory sqlite
+- calls a script which consolidates the study sqlite with the data of the instance
+- moves the instance
+  - from : /received/modalitySopIUID
+  - to   : /called/calling^ip/aaaammdd/studyiuid/seriesiuid/modalitySopIUID
 
-This script parses DICM to DECK and the image in the appropiate format.
-The parser needs to be able to read DICM SQ/item **BOTH** lengths and delimiters.
-The script also moves the file from /received 
-to /called/calling^ip/study^patientID/series/instance
+Asynchronously, when the imagenological part of the study is completed, 
+another script encodes the pixels.
 
 ## storescu invocation
 ```` storescu -R +C -pdu 65534 127.0.0.1 11111 ele.dcm ... ````
@@ -23,17 +33,16 @@ to /called/calling^ip/study^patientID/series/instance
 The path to dicom.dic needs to be registered into environment variables
 ````DCMDICTPATH=../../dcmdata/data/dicom.dic```
 
-
 ```` storescp \
 -lc storescp.log.cfg \
 -dhl \
 -pdu 65534 \
 -pm \
 -od tmpMountPoint \
--fe '.DICM.bin' \
+-fe '.DICM.ele.bin' \
 +B \
 +F \
--xcr 'storescp.xcr.sh #a #r #c #p #f' \
+-xcr 'storescp.xcr.sh #p #f #a #r #c' \
 11111
 ````
 
@@ -43,12 +52,12 @@ The path to dicom.dic needs to be registered into environment variables
 - -pm   (promiscuous, accepts any association)
 
 - -od tmpMountPoint   (where received packets are written before parsing)
-- -fe '.DICM.bin'   (extension to the filename)
+- -fe '.DICM.ele.bin'   (extension to the filename)
 
 - +B    --bit-preserving (as received, no parsing)
 - +F    --write-file (including file format part 10)
 
-- -xcr 'storescp.xcr.sh #a #r #c #p #f' (script to execute for each file with parameters scu, scuip, scp, dir, filename passed in this order)
+- -xcr 'storescp.xcr.sh #p #f #a #r #c' (script to execute for each file with parameters dir, filename, scu, scuip, scp  passed in this order)
 - 11111   reception port
 
 Option usefull for debug only:
@@ -64,9 +73,8 @@ Performs:
 
 ## end of study series compression application
 
-When it is detected that a calling aet does not send more instances of a study
-for a while or started to send instances of a new study, 
-an application uses the parsed data in order to create a compressed imagenological ressource.
+When it is detected that a calling aet stopped sending instances of a study, 
+an application uses the parsed data in order to create a compressed imagenological resource.
 
 The compression is differed to the end of production of the imagenological part of the study
 so that it can be transversal to all the instances of a series. 

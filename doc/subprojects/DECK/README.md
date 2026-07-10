@@ -3,7 +3,7 @@
 DECK is a dictionary key-value format. The binary keys are ordered. 
 Their length vary between 16 bytes and 192 (most extreme case) by 8 bytes steps.
 
-## database
+## databases
 - The C sqlite of the converter dicm2deck, 
 - the rust Turso sqlite-compatible database of the server, 
 - and the javascript indexedDB of the browser 

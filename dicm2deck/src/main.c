@@ -18,9 +18,12 @@ uint8_t *kbuf=NULL;//buffer (size 0xFF) for the creation of _DKV and EDKV contex
  all fread get processed by dckvapi.m
  */
 int main(int argc, const char * argv[]) {
-   /* args:
-   0  command name defined by target
-   1+ (opcional alternative to stdin) infile(s)
+   /*  (exactly ones defined in the xcr option of dcmtk storescp:
+   0 command name defined by target
+   1 #p/#f dir path / dicm file name
+   2 #a scu aet
+   3 #r scu ip
+   4 #c scp aet
    */
    
 //environment variables
@@ -56,26 +59,12 @@ int main(int argc, const char * argv[]) {
    const char* aDICMmegamax = getenv("DICM2DECKmegamax");
    if (aDICMmegamax!=NULL) DICMmegamax=(u32)atoi(aDICMmegamax);
 
-#pragma mark - args (file or stdin)
-   FILE *inFile = NULL;
-   if (argc==2) //file specified in args
-   {
-      inFile=freopen(argv[1],"rb",stdin);
-      if (inFile==NULL) return dckvErrorIn;
-      siidx=-1;
-   }
-   else freopen(NULL, "rb", stdin); //from stdin
-   setvbuf(stdin, NULL, _IOFBF, 0xFFFE);// | O_NONBLOCK  buffer binario largo 0xFFFE
-
-   
+#pragma mark - read file and process
+   FILE *inFile = freopen(argv[1],"rb",stdin);
+   if (inFile==NULL) return dckvErrorIn;
    DICMbuf=malloc(DICMmegamax*1024*1024);
    kbuf = malloc(0xFF);
-   while (siidx++)//if file, siidx==0 after first pass
-   {
-      DICMidx=0;
-      if (!dicmuptosopts()) return dckvSOPinstanceRejected;
-      if (!dicmInstance(beforebyte,beforetag)) return dckvErrorParsing;
-   }
-   if (inFile!=NULL) fclose(inFile);
-   return (int)siidx;
+   if (!dicmuptosopts()) return dckvSOPinstanceRejected;
+   if (!dicmInstance(beforebyte,beforetag)) return dckvErrorParsing;
+   fclose(inFile);
 }

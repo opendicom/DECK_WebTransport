@@ -3,9 +3,7 @@
 Dicom Exam Contextualized Keys (DECK) is a flat hashmap parser result language 
 for DICM files. 
 
-dicm2deck is a console command written in C. The executable produced all
-use the parser outputting DECK key values. It implements a pipe architecture with 
-DICM input streamed from stdin and the result streamed out to stdout.
+dicm2deck, command written in C parses DICM outputting DECK key values.
 
 dicm2deck comes with 2 apis:
 * uapi (u meaning uncategorized) exposes DICOM attributes
@@ -47,13 +45,15 @@ cmake-build-debug/Testing/Temporary
 
 Please modify CMake target configuration for your own use case.
 
-### Examples of dicm2deck targets:
+### dicm2deck targets:
 
 - uapi: **dicm2cda** extracts the enclosed CDA from a DICM. 
    - Example infile: dscd.dicm
 - uapi: **dicmstructdump** dumps a textual representation of the DICM file. 
    - Example infile: dscd.dicm
-- capi: **dicm2decksqlite** (not ready yet)
+- capi: **sqlite** keeps the parsing into an in-memory sqlite.
+- capi: **examsqlite**, builds on sqlite and on commit exports the registers to an exam sqlite server, 
+after prepending a series/instance prefix to the keys.
 
 ___
 

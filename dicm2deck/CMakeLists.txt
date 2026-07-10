@@ -10,14 +10,14 @@ include_directories(
 )
 
 add_library(dicmlib STATIC EXCLUDE_FROM_ALL
-        dicm/dicm.c
-        dicm/datatypes.c
-        dicm/main.c
+        src/dicm.c
+        src/datatypes.c
+        src/main.c
 )
 add_library(sqlite3lib STATIC EXCLUDE_FROM_ALL
         thirdparty/sqlite3/sqlite3.h
         thirdparty/sqlite3/sqlite3.c
-        dicm/deck_sqlite3.c
+        src/deck_sqlite3.c
 )
 add_library(blake3lib STATIC EXCLUDE_FROM_ALL
         thirdparty/blake3/blake3.h
@@ -36,7 +36,7 @@ add_library(blake3lib STATIC EXCLUDE_FROM_ALL
 ########
 
 add_executable(dicm2cda
-        dicm/uapi/dicm2cda/uapi.c
+        src/uapi/dicm2cda/uapi.c
 )
 target_link_libraries(dicm2cda
         dicmlib
@@ -44,7 +44,7 @@ target_link_libraries(dicm2cda
 
 
 add_executable(dicmstructdump
-        dicm/uapi/dicmstructdump/uapi.c
+        src/uapi/dicmstructdump/uapi.c
 )
 target_link_libraries(dicmstructdump
         dicmlib
@@ -55,7 +55,7 @@ target_link_libraries(dicmstructdump
 ########
 
 add_executable(dicm2decksqlite
-        dicm/capi/dicm2decksqlite3/capi.c
+        src/capi/memorysqlite/capi.c
 )
 target_link_libraries(dicm2decksqlite
         dicmlib

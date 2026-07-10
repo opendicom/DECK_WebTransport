@@ -13,8 +13,8 @@ bool dicmuptosopts(void);
 
 //parse from transfer syntax
 bool dicmInstance(
-   u64 beforebyte, // limite superior de lectura
-   u32 beforetag   // limite superior attr. first traspassing attr is read en kbuf
+   u64 beforebyte, // read up to byte
+   u32 beforetag   // read up to attr. first next attr is read en kbuf
 );
 
 

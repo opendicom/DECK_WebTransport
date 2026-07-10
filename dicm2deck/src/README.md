@@ -9,13 +9,17 @@
 
 ## command
 
-dicm2deck uses linux streaming (stdin, stdout, stderr).
+dicm2deck output is a sqlite which refers for binary attrs to the explicit little endian
 
 ```
-executable [infile]...
+   /*  (exactly ones defined in the xcr option of dcmtk storescp:
+   0 command name defined by target
+   1 #p/#f dir path / dicm file name
+   2 #a scu aet
+   3 #r scu ip
+   4 #c scp aet
+   */
 ```
-Executable name defined by target
-args infiles (alternative to stdin)
 
 ## environment variables
 - DICM2DECKloglevel : [ D | I | W | E | F ] ( Debug, Info, Warning, Error, Fault )
@@ -40,16 +44,25 @@ Here are the layers, from top to bottom:
 (4) capi
 
 ### (1) main
-Initiates stdin, or loops and initiates all the files listed as arguments.
-For each of them, calls dicm functions:
+open the file and calls dicm functions:
 - dicmuptosopts (which reads sopclass, sopuid and sopts (transfer syntax))
 - dicmInstance (which reads the remaining attributes in the file)
-These functions are separated because the first one fetches metadata required by the second. If sopclass, sopuid or transfer syntax can´t be read, the parsing is aborted.
+These functions are separated because the first one fetches metadata required by the second. 
+If sopclass, sopuid or transfer syntax can´t be read, the parsing is aborted.
 
 ### (2) dicm
 - implements dicmuptosopts and when sopclass, sopuid and sopts are available, calls uapi:uCreate
-- implements dicmInstance, which calls dicmDataset (a recursive function) with its initial parameters. When dicmDataset is successfull, uapi:uCommit is called, and consequently uapi:uClose. In case of failure, uapi:uClose only is called.
-- implements dicmDataset, which parses the structure of the dataset, diferenciating the attributes by datatype (which is an extended list in comparison to the DICOM vr one, where pacs classification attributes are registered with their own specialized category). For each of the attributes uapi:uAppend is invoked with three parameters relative to the value of the attribute: offset, datatype and length. At that point the value has not been read. This operation is reserved for the implementation of uAppend.
+- implements dicmInstance, which calls dicmDataset (a recursive function) with its initial parameters. 
+  - When dicmDataset is successfull, uapi:uCommit is called, and consequently uapi:uClose. 
+  - In case of failure, uapi:uClose only is called.
+- implements dicmDataset, which parses the structure of the dataset, 
+  - diferenciating the attributes by datatype (which is an extended list in comparison to the DICOM vr one, where pacs classification attributes are registered with their own specialized category). 
+  - For each of the attributes uapi:uAppend is invoked with three parameters relative to the value of the attribute: 
+    - offset, 
+    - datatype and 
+    - length.
+At that point the value has not been read. 
+This operation is reserved for the implementation of uAppend.
 
 - besides, dicmuptosopts and dicmDataset invoke uapi:ifread and uapi:ifreadattr for its reading of the stream. This allows override of the exposed functions, if necessary.
 

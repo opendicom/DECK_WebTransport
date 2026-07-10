@@ -122,133 +122,70 @@ u32 tagswap(u32 x)
 
 #pragma mark - uid shrink
 
+// half bytes
+/*
+ * 0 00 NULL(padding) and ERROR
+ * 1 5C \(multivalue)
+ * 2 5E ^(component)
+ * 3 2D -(negative)
+ * 4 2B +(positive)
+ * 5 2E .(dot)
+ * 6 30 0
+ * 7 31 1
+ * 8 32 2
+ * 9 33 3
+ * a 34 4
+ * b 35 5
+ * c 36 6
+ * d 37 7
+ * e 38 8
+ * f 39 9
+ * */
 
-const char  b64char[64]="-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
-
-char u8u4( const char *byte_array, u8 *idx) {
-    // returns half_byte corresponding to one char
-    // updates idx
-    
-    // u4=half byte (0-15)
-   
-    // 0x0   1.2.840.10008.
-    // 0x1   .
-    // 0x2   0.
-    // 0x3   0
-    // 0x4   1.
-    // 0x5   1
-    // 0x6   2.
-    // 0x7   2
-    // 0x8   3.
-    // 0x9   3
-    // 0xA   4
-    // 0xB   5
-    // 0xC   6
-    // 0xD   7
-    // 0xE   8
-    // 0xF   9
-    
-    char cur_byte = byte_array[*idx];
-    switch (cur_byte) {
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            *idx += 1;
-            return cur_byte - 0x2A;
-        case '.':
-            *idx += 1;
-            return 0x01;
-        case '0':
-        case '2':
-        case '3': {
-            if (byte_array[*idx+1] == '.')  {
-                *idx += 2;
-                return cur_byte + cur_byte - 0x5E;
-            } else {
-                *idx += 1;
-                return cur_byte + cur_byte - 0x5D;
-            }
-        }
-        case '1': {
-            if (byte_array[*idx+1] == '.') {
-                if (   sizeof(byte_array) - *idx > 14
-                    && byte_array[*idx+2]  == '2'
-                    && byte_array[*idx+3]  == '.'
-                    && byte_array[*idx+4]  == '8'
-                    && byte_array[*idx+5]  == '4'
-                    && byte_array[*idx+6]  == '0'
-                    && byte_array[*idx+7]  == '.'
-                    && byte_array[*idx+8]  == '1'
-                    && byte_array[*idx+9]  == '0'
-                    && byte_array[*idx+10] == '0'
-                    && byte_array[*idx+11] == '0'
-                    && byte_array[*idx+12] == '8'
-                    && byte_array[*idx+13] == '.'
-                    )
-                {
-                    *idx += 14;
-                    return 0x0;
-                }
-                else
-                {
-                    *idx += 2;
-                    return 0x4;
-                }
-            }
-            else
-            {
-                *idx += 1;
-                return cur_byte + cur_byte - 0x5D;
-            }
-        }
-       case ' ':
-          *idx += 1;
-          return 0x01;
-
-        default:
-            return 0xFF;//bad input char
-    }
-}
-
-//buffer uid 66 bytes length
-//buffer b64 44 bytes
-bool ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length )
+const char hb[256] =
 {
-   //input size limitations
-   if ((uilength == 0) || (uilength > 64))
-   {
-      b64length = 0;
-      return false;
-   }
-   
-   //normalize overflow chars of last triad
-   ui[uilength]=' ';
-   ui[uilength+1]=' ';
-   
-   //loop
+   '\x00','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\x04','\xFF','\x03','\x05','\x0F',
+   '\x06','\x07','\x08','\x09','\x0A','\x0B','\x0C','\x0D','\x0E','\x0F','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\x01','\xFF','\x02','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF',
+   '\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF','\xFF'
+ };
+
+const char b64char[64]="-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+
+//reduces size to 2/3 respecting order and with url safe characteres
+void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length )
+{
    *b64length=0;
-   unsigned char u4a,u4b,u4c;
-   u8 uiidx=0;
-   while (uiidx < uilength)
-   {
-      //read 3 half chars
-      u4a=u8u4(ui,&uiidx);
-      if (u4a > 0x10) return false;
-      u4b=u8u4(ui,&uiidx);
-      if (u4b > 0x10) return false;
-      u4c=u8u4(ui,&uiidx);
-      if (u4c > 0x10) return false;
-      
-      //write 3 b64 chars
-      b64[*b64length]=b64char[(u4a<<2) + (u4b>>2)];
-      *b64length+=1;
-      b64[*b64length]=b64char[((u4b & 0x03) << 4) + u4c];
-      *b64length+=1;
+   u8 ui3length= (uilength / 3) * 3;
+   u8 uiidx;
+   for (uiidx=0; uiidx<ui3length; uiidx+=3) {
+      *b64++ = b64char[(hb[ui[uiidx]] << 2) + ((hb[ui[uiidx+1]] >> 2))];
+      *b64++ = b64char[(((hb[ui[uiidx+1]]) & 0x03) << 4) + hb[ui[uiidx+2]]];
    }
-   return true;
+   switch (uilength % 3) {
+      case 1:
+         *b64++ = b64char[(hb[ui[uiidx]] << 2)];
+         *b64++ = b64char[0];
+         break;
+      case 2:
+         *b64++ = b64char[(hb[ui[uiidx]] << 2) + ((hb[ui[uiidx+1]] >> 2))];
+         *b64++ = b64char[(((hb[ui[uiidx+1]]) & 0x03) << 4)];
+         break;
+      default://0
+         break;
+   }
 }
 
 
