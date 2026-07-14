@@ -7,21 +7,20 @@ This option disables DCMTK DICM parsing. STORESCP:
 - receives packets through DIMSE protol, 
 - assembles them to recretate a DICM file, 
 - writes it to storage, 
-- triggers a script, passing to it:
-  - the location of the file
-  - parameters of the association on which the packets were received:
-    - directory
-    - file name
-    - sender aet
-    - sender ip
-    - receover aet
+- triggers a script, passing to it parameters of the association on which the packets were received:
+    - p directory path
+    - o object class key
+    - f file name
+    - a sender aet
+    - r sender ip
+    - c called aet
 
 This script 
 - parses DICM to DECK into an in memory sqlite
 - calls a script which consolidates the study sqlite with the data of the instance
 - moves the instance
-  - from : /received/modalitySopIUID
-  - to   : /called/calling^ip/aaaammdd/studyiuid/seriesiuid/modalitySopIUID
+  - from : /received/SopIUID
+  - to   : /aaaammdd/studyiuid/seriesiuid/Sopiuid
 
 Asynchronously, when the imagenological part of the study is completed, 
 another script encodes the pixels.
@@ -39,10 +38,9 @@ The path to dicom.dic needs to be registered into environment variables
 -pdu 65534 \
 -pm \
 -od tmpMountPoint \
--fe '.DICM.ele.bin' \
 +B \
 +F \
--xcr 'storescp.xcr.sh #p #f #a #r #c' \
+-xcr 'storescp.xcr.sh #p #o #f #a #r #c' \
 11111
 ````
 
@@ -52,16 +50,12 @@ The path to dicom.dic needs to be registered into environment variables
 - -pm   (promiscuous, accepts any association)
 
 - -od tmpMountPoint   (where received packets are written before parsing)
-- -fe '.DICM.ele.bin'   (extension to the filename)
 
 - +B    --bit-preserving (as received, no parsing)
 - +F    --write-file (including file format part 10)
 
-- -xcr 'storescp.xcr.sh #p #f #a #r #c' (script to execute for each file with parameters dir, filename, scu, scuip, scp  passed in this order)
+- -xcr 'storescp.xcr.sh #p #o #f #a #r #c' (script to execute for each file with parameters dir, filename, scu, scuip, scp  passed in this order)
 - 11111   reception port
-
-Option usefull for debug only:
-- -xs   --exec-sync (script execution without starting a new proces)
 
 ## Instance triggered script 
 
@@ -74,8 +68,8 @@ Performs:
 ## end of study series compression application
 
 When it is detected that a calling aet stopped sending instances of a study, 
-an application uses the parsed data in order to create a compressed imagenological resource.
+an application uses the parsed data in order to create a compressed imagening resource.
 
-The compression is differed to the end of production of the imagenological part of the study
+The compression is differed to the end of production of the imaging part of the study
 so that it can be transversal to all the instances of a series. 
 It is performed in the PCS before the transmission of compressed resources and sqlite to SIRIUS webtransport pacs

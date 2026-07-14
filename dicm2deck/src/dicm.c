@@ -311,24 +311,18 @@ bool dicmDataset(
             }
          } break;
 
-         case UN://unknown
-         {
+
+            //unknown
             // https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_6.2.2
-             //5. The Value Length Field of VR UN may contain Undefined Length (FFFFFFFFH), in which case the contents can be assumed to be encoded with Implicit VR. See Section 7.5.1 to determine how to parse Data Elements with an Undefined Length.
-            attr->l=REPERTOIRE_GL;
-            if (!uAppend(kloc,kvUN, attr->l)) return false;
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
-         } break;
+            //5. The Value Length Field of VR UN may contain Undefined Length (FFFFFFFFH), in which case the contents can be assumed to be encoded with Implicit VR. See Section 7.5.1 to determine how to parse Data Elements with an Undefined Length.
+         case UN: { attr->l=REPERTOIRE_GL; if (!uAppend(kloc,kvUN, attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
 
 //TODO check for a control of end other than trailling padding... or modify storescp
          case 0xFFFF:return true;//end of buffer
 
          default:
          {
-            if (attr->t==0 && attr->r==0 && attr->l==0)
-            {
-               return true;
-            }
+            if (attr->t==0 && attr->r==0 && attr->l==0) return true;
             E("error unknown vr at index %llu %08x %c%c %d",DICMidx, attr->t,attr->r % 0x100,attr->r / 0x100,attr->l);
             return false;
          }
@@ -344,7 +338,6 @@ bool dicmDataset(
       {
          //trailing padding
          attr->c=REPERTOIRE_GL;
-   #pragma mark TODO sqlite T
          if (!ifread(attr->l)) {
             E("%s","trailling padding");
             return false;
@@ -355,10 +348,7 @@ bool dicmDataset(
 }
 
 struct trcl * baseattr;
-bool dicmInstance(
-   u64 beforebyte,     // limite superior de lectura
-   u32 beforetag       // limite superior attr. Al salir, el attr se encuentra leido y guardado en kbuf
-)
+bool dicmInstance( u64 beforebyte, u32 beforetag )
 {
    baseattr=(struct trcl*) kbuf;
    
