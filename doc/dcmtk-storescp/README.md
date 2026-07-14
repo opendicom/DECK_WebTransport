@@ -25,6 +25,10 @@ This script
 Asynchronously, when the imagenological part of the study is completed, 
 another script encodes the pixels.
 
+## Modifications to store
+- We added SOP Class Key (#o) as a parameter to the script executed for each instance.
+The complete table of keys and correspondences is found [here](../dcmtk_modality-sopclass.csv).
+- We added an empty trailing padding attribute to simplify parsing
 ## storescu invocation
 ```` storescu -R +C -pdu 65534 127.0.0.1 11111 ele.dcm ... ````
 

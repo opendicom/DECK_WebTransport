@@ -36,12 +36,12 @@ In the folder tests are found DICM test files.
 
 When dicm2deck outputs a file, we configured CMake targets 
 
-![dicm2cda conf](doc/testCLionConf.png)
+![dicm2cda conf](../doc/testCLionConf.png)
 
 to write them into a folder automatically create by CLion IDE:
 cmake-build-debug/Testing/Temporary 
 
-![see](doc/CLionProject.png)
+![see](../doc/CLionProject.png)
 
 Please modify CMake target configuration for your own use case.
 
