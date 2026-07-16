@@ -1,23 +1,18 @@
-# dicm
+# DICM
 
-- **dicm** refers to the binary file format of DICOM
+- **DICM** refers to the binary file format of DICOM
 
-- **deck** refers to  DICOM exam contextual-key value format of DICOM and relates one-to-one key bytechains to value bytechains within an ordered set.
+- **DECK** refers to  DICOM exam contextual-key value format of DICOM and relates one-to-one key bytechains to value bytechains within an ordered set.
 
-- dicm2deck is a framework  written in  c which parses dicm and outputs various products, depending on the target
+- dicm2deck is a framework  written in c which parses DICM and outputs various products, depending on the target
 
 
 ## command
 
-dicm2deck output is a sqlite which refers for binary attrs to the explicit little endian
-
+"dicm2deck" is a placeholder for the name of the exe corresponding to a target.
+Many parameters are available when "dicm2deck" is triggered from dcmtk storescp xcr option.
 ```
-   /*  (exactly ones defined in the xcr option of dcmtk storescp:
-   0 command name defined by target
-   1 #p/#f dir path / dicm file name
-   2 #a scu aet
-   3 #r scu ip
-   4 #c scp aet
+   /*  
    */
 ```
 
