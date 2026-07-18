@@ -6,10 +6,10 @@
 #include "uapi.h"
 
 #include <stdint.h>
+#include <string.h>
 
 extern char *DICMbuf;
 extern u64 DICMidx;
-extern s16 siidx;
 extern uint8_t *kbuf;
 
 #pragma mark - read
@@ -84,27 +84,12 @@ bool ifreadattr(u8 kloc)
 static char *dbpath;
 static FILE *outFile;
 
-bool uCreate(
-   u64 soloc,         // offset in valbyes for sop class
-   u16 solen,         // length in valbyes for sop class
-   u16 soidx,         // index in const char *scstr[]
-   u64 siloc,         // offset in valbyes for sop instance uid
-   u16 silen,         // length in valbyes for sop instance uid
-   u64 stloc,         // offset in valbyes for transfer syntax
-   u16 stlen,         // length in valbyes for transfer syntax
-   u16 stidx          // index in const char *csstr[]
-){
-   dbpath=malloc(0xFF);
-   char *ibuf = malloc(silen);
-   memcpy(ibuf, DICMbuf+siloc, silen);
-   strcat(dbpath,ibuf);
-   strcat(dbpath, ".dscd.xml");
-   outFile=fopen(dbpath, "w");
-   return outFile==NULL?false:true;
+bool uCreate(int argc, char *argv[])
+{
+   return true;
 }
 
-bool uClose(void){
-   fclose(outFile);
+bool uClose(int argc, char *argv[]){
    return true;
 }
 
@@ -113,20 +98,49 @@ static u32 titleoffset=0;
 static u32 titlelength=0;
 static u32 documentoffset=0;
 static u32 documentlength=0;
-bool uCommit(bool hastrailing){
+static u32 MIMEoffset=0;
+static u32 MIMElength=0;
+
+
+bool uCommit(bool hastrailing,int argc, char *argv[]){
+   /*argv
+   [1] source file
+   [2] destination folder (ending with /)
+   [3] error folder (ending with /)
+   */
+   dbpath=argv[2];
+   /*
+   char *ibuf = malloc(silen);
+   memcpy(ibuf, DICMbuf+siloc, silen);
+   strcat(dbpath,ibuf);
+   strcat(dbpath, ".dscd.xml");char *ibuf = malloc(silen);
+   memcpy(ibuf, DICMbuf+siloc, silen);
+  */
+   outFile=fopen("/home/jacquesfauquex/Desktop/test.dscd.xml", "w");
+   if (outFile==NULL) return false;
+   if (!fwrite(DICMbuf+documentoffset ,1, documentlength , outFile)) return false;
+   fclose(outFile);
    //title charset -> utf-8
+   /*
    u32 utf8length=0;
    utf8(titlerepidx,DICMbuf,titleoffset,titlelength,DICMbuf,(u32)DICMidx,&utf8length);
    printf( "%.*s\n", utf8length,DICMbuf+DICMidx );
    
    //write document
    if (!fwrite(DICMbuf+documentoffset ,1, documentlength , outFile)) return false;
+   */
 
-   return uClose();
+
+   return true;
 }
 
 #pragma mark - write
-
+//const unsigned long B0040E001=0x0E002000;//ST CDA root^extension
+//const unsigned long B00080060=0x60000800;//CS Modality
+//const unsigned long B0008103E=0x3E100800;//LO Series name
+const unsigned long B00420010=0x10004200;//ST DocumentTitle
+const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
+//const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
 bool uAppend(int kloc, enum kvVRcategory  vrcat, u32 vlen)
 {
    switch (vrcat) {
@@ -134,16 +148,26 @@ bool uAppend(int kloc, enum kvVRcategory  vrcat, u32 vlen)
       case kvSZ:
       case kvIA:
       case kvIZ: break;
-      case kvsdoctitle: { //ST  DocumentTitle 00420010
-         titlerepidx=kbuf[kloc+6] + (kbuf[kloc+7] << 8);
-         titleoffset=(u32)DICMidx;
-         titlelength=vlen;
+
+      case kvTS: {
+         //ST DocumentTitle 00420010
+         if (!memcmp(kbuf, &B00420010, 4)) {
+            titlerepidx=kbuf[kloc+6] + (kbuf[kloc+7] << 8);
+            titleoffset=(u32)DICMidx;
+            titlelength=vlen;
+         }
          if ((vlen > 0) && (!ifread(vlen))) return false;
+         //LO MIME Type of Encapsulated Document 00420012 xml cda o pdf
+//TODO
       } break;
-      case kvsdocument: { //OB encapsulaed document
+      case kv01: {
+         //OB encapsulaed document 00420011 xml cda o pdf
          if (!ifread(vlen)) return false;
-         documentoffset=(u32)(DICMidx-vlen);
-         documentlength=vlen - (DICMbuf[DICMidx-1]==0);//last char 0x00 ?
+         if (!memcmp(kbuf, &B00420011, 4))
+         {
+            documentoffset=(u32)(DICMidx-vlen);
+            documentlength=vlen - (DICMbuf[DICMidx-1]==0);//last char 0x00 ?
+         }
       } break;
       default:if (!ifread(vlen)) return false;break;
    }

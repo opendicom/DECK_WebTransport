@@ -1075,16 +1075,7 @@ bool ifreadattr(u8 kloc)
 #pragma mark - instance transactions
 
 static u16 PCSidx;
-bool uCreate(
-   u64 soloc,         // offset in valbyes for sop class
-   u16 solen,         // length in valbyes for sop class
-   u16 soidx,         // index in const char *scstr[]
-   u64 siloc,         // offset in valbyes for sop instance uid
-   u16 silen,         // length in valbyes for sop instance uid
-   u64 stloc,         // offset in valbyes for transfer syntax
-   u16 stlen,         // length in valbyes for transfer syntax
-   u16 stidx         // index in const char *csstr[]
-)
+bool uCreate(int count, char *vector[])
 {
    PCSidx=0;//to determine if the attribute is patient, exam or series level
    return cCreate(
@@ -1106,7 +1097,7 @@ bool uCommit(bool hastrailing)
 }
 
 
-bool uClose(void)
+bool uClose(int count, char *vector[])
 {
    return cClose();
 }

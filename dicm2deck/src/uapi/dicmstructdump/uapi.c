@@ -8,7 +8,6 @@
 
 extern char *DICMbuf;
 extern u64 DICMidx;
-extern s16 siidx;
 extern uint8_t *kbuf;
 
 #pragma mark - read
@@ -17,7 +16,6 @@ static u64 bytesreceived;
 bool ifread(u32 bytesaskedfor)
 {
    bytesreceived=fread(DICMbuf+DICMidx,1,bytesaskedfor,stdin);
-   //if (bytesreceived>0xFFFFFFFF)return 0;
    DICMidx+=bytesreceived;
    return (bytesaskedfor==bytesreceived);
 }
@@ -84,32 +82,19 @@ const char *space=" ";
 
 #pragma mark - instance transactions
 
-bool uCreate(
-   u64 soloc,         // offset in valbyes for sop class
-   u16 solen,         // length in valbyes for sop class
-   u16 soidx,         // index in const char *scstr[]
-   u64 siloc,         // offset in valbyes for sop instance uid
-   u16 silen,         // length in valbyes for sop instance uid
-   u64 stloc,         // offset in valbyes for transfer syntax
-   u16 stlen,         // length in valbyes for transfer syntax
-   u16 stidx          // index in const char *csstr[]
-)
+bool uCreate(int argc, char *argv[])
 {
-   printf("     144 %s\n","00020001 OB 0000 {156,2}");
-   printf("%8llu 00020002 UI 0000 \"%s\" [%hu]\n",soloc,DICMbuf+soloc,soidx);
-   printf("%8llu 00020003 UI 0000 \"%s\"\n",siloc,DICMbuf+siloc);
-   printf("%8llu 00020010 UI 0000 \"%s\" [%hu]\n",stloc,DICMbuf+stloc,stidx);
    return true;
 }
-bool uCommit(bool hastrailing)
+bool uCommit(bool hastrailing,int argc, char *argv[])
 {
    FILE *fileptr=fopen("dicmstructdump.dcm", "w");
    if (fileptr == NULL) return false;
    if (fwrite(DICMbuf ,1, DICMidx , fileptr)!=DICMidx) return false;
    fclose(fileptr);
-   return uClose();
+   return uClose(argc, argv);
 }
-bool uClose(void)
+bool uClose(int count, char *vector[])
 {
    return true;
 }
@@ -124,24 +109,24 @@ bool uAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
       case kvIA: printf("%8llu %*s%02X%02X%02X%02X+\n",DICMidx-8,kloc+kloc-8,space,kbuf[kloc-4],kbuf[kloc-3],kbuf[kloc-2],kbuf[kloc-1]);break;
       case kvIZ: printf("%8llu %*s%02X%02X%02X%02X~\n",DICMidx-8,kloc+kloc-8,space,kbuf[kloc-4],kbuf[kloc-3],kbuf[kloc-2],kbuf[kloc-1]);break;
       case kv01://OB OD OF OL OV OW SV UV
-      case kvsdocument://OB Encapsulated​Document 00420011 xml cda o pdf
-      case kvpixelOF: //OF 0x7FE00008
-      case kvpixelOD: //OD 0x7FE00009
-      case kvpixelOB: //OB 0x7FE00010
-      case kvpixelOW: //OW 0x7FE00010
-      case kvpixelOL: //OB 0x7E000010
-      case kvpixelOV: //OB 0x7E000010
-      case kvfo://OV Extended​Offset​Table fragments offset 7FE00001
-      case kvfl://OV Extended​Offset​TableLengths fragments offset 7FE00002
-      case kvft://UV Encapsulated​Pixel​Data​Value​Total​Length 7FE00003
+      //OB Encapsulated​Document 00420011 xml cda o pdf
+      //OF 0x7FE00008
+      //OD 0x7FE00009
+      //OB 0x7FE00010
+      //OW 0x7FE00010
+      //OB 0x7E000010
+      //OB 0x7E000010
+      //OV Extended​Offset​Table fragments offset 7FE00001
+      //OV Extended​Offset​TableLengths fragments offset 7FE00002
+      //UV Encapsulated​Pixel​Data​Value​Total​Length 7FE00003
       case kvUN: {
          printf("%8llu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-12,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
          if (!ifread(vlen)) return false;
          printf("{%llu,%u}\n",DICMidx-vlen,vlen);
       }break;
       case kvTL://UC
-      case kveal://UT AccessionNumberIssuer local 00080051.00400031
-      case kveau://UT AccessionNumberIssuer universal 00080051.00400032
+      //UT AccessionNumberIssuer local 00080051.00400031
+      //UT AccessionNumberIssuer universal 00080051.00400032
       case kvTU: { //UR
          printf("%8llu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-12,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
          if (vlen>0)
@@ -235,15 +220,7 @@ bool uAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          }
          printf("\n");
       }break;
-      case kvUS://unsigned short
-      case kvspp://7 US
-      case kvrows://8 US
-      case kvcols://9 US
-      case kvalloc://10 US
-      case kvstored://11 US
-      case kvhigh://12 US
-      case kvpixrep://13 US
-      case kvplanar: { //14 US
+      case kvUS:{ //unsigned short
          printf("%8llu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-8,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
          if (vlen > 0)
          {
@@ -274,28 +251,11 @@ bool uAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          printf("\n");
       }break;
       case kvUI://unique ID
-      case kveuid://StudyInstanceUID
-      case kvsuid://SeriesInstanceUID
-      case kviuid://SOPInstanceUID
-      case kvpuid://00080019 PyramidUID
-      case kvcuid://SOP​Instance​UID​Of​Concatenation​Source
+      //00080019 PyramidUID
       case kvTP:
-      case kvpbirth://Patient birthdate
-      case kvedate://StudyDate
-      case kvsdate://SeriesDate
-      case kvstime://SeriesTime
       case kvTA://AE DS IS CS
-      case kvpsex://CS patient sex
-      case kveat://AccessionNumberType
-      case kvsmod://Modality
-      case kvitype://CS 00080008 ImageType
-      case kvphotocode://CS
-      case kvsnumber://SeriesNumber
-      case kvianumber://AcquisitionNumber
-      case kvinumber://InstanceNumber
-      case kvframesnumber://Number of frames
-      case kvscdaid:{ //ST HL7InstanceIdentifier 0040E001  root^extension
-        printf("%8llu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-8,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
+      //ST HL7InstanceIdentifier 0040E001  root^extension
+      {  printf("%8llu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-8,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
         if (vlen > 0)
         {
            if (!ifread(vlen)) return false;
@@ -305,22 +265,9 @@ bool uAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
      } break;
       //charset
       case kvTS://LO LT SH ST
-      case kvpay://LO insurance
-      case kvpide://SH patient id extension
-      case kvpidr://LO patient id root issuer
-      case kvimg://InstitutionName
-      case kvedesc://LO Study name
-      case kveid://StudyID
-      case kvean://AccessionNumber
-      case kvecode://SQ/SH Study code 00080100,00080102
-      case kvsdesc://LO Series name
-      case kvsdoctitle://ST  DocumentTitle 00420010
-      case kvicomment://LO
+      //ST  DocumentTitle 00420010
       case kvPN:
-      case kvpname://PN patient name
-      case kvcda://PN CDA
-      case kvref://PN referring
-      case kvreq: { //PN requesting
+      {
          printf("%8llu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-8,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
          if (vlen > 0)
          {

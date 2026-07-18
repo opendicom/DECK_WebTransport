@@ -40,10 +40,10 @@ u8 intdecsize(int i);
 
 //DICOM atribute header 8 bytes tag vr vl
 struct trcl {
-   u32 t;
-   u16 r;
-   u16 c;
-   u32 l;
+   u32 t;//tag
+   u16 r;//representation
+   u16 c;//charset
+   u32 l;//length
 };
 
 enum DICMvr {
@@ -102,13 +102,20 @@ void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length );
 
 #pragma mark - main & log
 
-enum exitValue{
-   dckvErrorIn=-2,
-   dckvErrorOutPath=-3,
-   dckvErrorWrite=-4,
-   dckvErrorCreateKV=-5,
-   dckvSOPinstanceRejected=-6,
-   dckvErrorParsing=-7
+enum deckExit{
+   deckZeroError=0,
+   deckErrorIn=-2,
+   deckErrorOutPath=-3,
+   deckErrorWrite=-4,
+   deckErrorCreateKV=-5,
+   deckSOPinstanceRejected=-6,
+   deckErrorParsing=-7,
+   deckNotDICM=-8,
+   deckErrorCommit=-9,
+   deckErrorClose=-10,
+   deckBadRepertoire=-11,
+   deckErrorDataset=-12,
+  deckErrorRead=13
 };
 
 //https://stackoverflow.com/questions/53522586/variadic-macro-calling-fprintf-how-to-add-arguments-to-va-args

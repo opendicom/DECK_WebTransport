@@ -10,7 +10,6 @@ include_directories(
 )
 
 add_library(dicmlib STATIC EXCLUDE_FROM_ALL
-        src/dicm.c
         src/datatypes.c
         src/main.c
 )
