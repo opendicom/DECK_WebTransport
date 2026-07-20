@@ -1,9 +1,42 @@
 # dicm2deck
 
 Dicom Exam Contextualized Keys (DECK) is a flat hashmap parser result language 
-for DICM files. 
+for DICM files. The objective of this presentation of the DICOM metadata is
+consumer lowest latency. It implies discrete acceses to any attribute. 
 
-dicm2deck, command written in C parses DICM outputting DECK key values.
+dicm2deck, executable command written in C, 
+parses DICM (DICOM standard part 10 file format),
+outputting DECK key values. It requires explicit little endian representation
+of the dataset terminated by an empty trailling padding attribute as input.
+We call this presentation context "canonicalized".
+
+
+## dcmtk storescp -> dicm2deck
+
+We modified dcmtk storescp to receive DICOM DIMSE communication 
+and forward such canonicalized format (with trailing padding attribute) to dicm2deck.
+We also added parameters to the invocation of dicm2deck by storescp 
+so that the critical information of the DIMSE association shall be passed to dicm2deck.
+
+The modified dcmtk storescp and dicm2deck work as a binome.
+
+
+## dicm2deck design
+
+dicm2deck has a generic layered structure which is extended by the implementation of of one or another class
+in order to create diferent products.
+
+Common to all products is the main file which:
+- reads the canonicalized file
+- parses the dataset structure
+- calls second layer "uapi" (u meaning uncategorized) functions:
+   - uPrerequisite with association params. This delegates the possibility to abort the parsing without reading the file.
+   - uCreate with association params invoked after opening the canonicalized file to enable the implementation of uapi to start a transaction to be commited or canceled later
+   - uAppend called for each attribute passes its properties and delegates the reading of the value
+   - uCommit is called when the trailling padding attribue is reached
+   - uClose gives an oportunity to cancel the transaction, in cases where the parsing of the canonicalized file was not successfull.
+ 
+A simple product may implement uAppend only. For instance, uapi/dicmstructdump uses the properties of the attribute and reads it to output in stdout a dump of the canonicalized dicom file.
 
 dicm2deck comes with 2 apis:
 * uapi (u meaning uncategorized) exposes DICOM attributes
@@ -19,31 +52,27 @@ dicm2deck comes with 2 apis:
    - l long pixel 7FE00010 (not implemented)
    - v very long pixel 7FE00010 (not implemented 64 bits)
 
-Note 1: 
+Note: 
 the DICOM explicit little endian syntax represents pixels in native format, 
-that is as a succession of lines without any markup between them. 
-This applies also to multiframe images where the first line of the next frames 
+that is, as a succession of lines without any markup between them. 
+This applies also to multiframe images where the first line of the next frame 
 follows immediately the last line of the previous one.
 
-Note 2: 
-f,d,l,v are not implemented because we haven't ever seen any sample of them, 
-and also because the compression htj2k which we apply to the output pixel 
-supports byte and short pixels only.
 
 ### Testing environment
 
-In the folder tests are found DICM test files.
+The folder Testing contains canonicalized test files. 
+The modified storescp outputs DICOM datasets received as files into this directory.
 
-When dicm2deck outputs a file, we configured CMake targets 
+dicm2deck may produce files as output. We configured CMake targets 
 
 ![dicm2cda conf](../doc/testCLionConf.png)
 
-to write them into a folder automatically create by CLion IDE:
+to write them into a folder automatically created by CLion (the IDE we use):
 cmake-build-debug/Testing/Temporary 
 
 ![see](../doc/CLionProject.png)
 
-Please modify CMake target configuration for your own use case.
 
 ### dicm2deck targets:
 
