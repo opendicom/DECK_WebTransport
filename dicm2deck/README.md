@@ -8,7 +8,8 @@ dicm2deck, executable command written in C,
 parses DICM (DICOM standard part 10 file format),
 outputting DECK key values. As input, it requires an explicit little endian representation
 of the dataset terminated by an empty trailling padding attribute.
-We call this presentation "canonicalized".
+We call this presentation "canonicalized". 
+Files containing such presentation have a name with ".cdicm" extension.
 
 
 ## dcmtk storescp -> dicm2deck
@@ -60,7 +61,9 @@ that is, as a succession of lines without any markup between them.
 This applies also to multiframe images where the first line of the next frame 
 follows immediately the last line of the previous one.
 
-### forth level uapi sqlite implementation
+### forth level capi sqlite implementation
+The sqlite default implementation of capi (categorized api) builds up an instance sqlite with the attributes subdivided into categories.
+When everything worked well and cCommit is called, this sqlite is exported to an exam sqlite.
 
 ### Testing environment
 
