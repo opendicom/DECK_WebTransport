@@ -1,10 +1,10 @@
-// project: dicm2deck
-// file: decktypes.h
+// project: dicm2exit
+// file: exittypes.h
 // created by jacquesfauquex on 2024-04-04.
 
 
-#ifndef decktypes_h
-#define decktypes_h
+#ifndef exittypes_h
+#define exittypes_h
 
 #pragma mark - C
 
@@ -102,20 +102,21 @@ void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length );
 
 #pragma mark - main & log
 
-enum deckExit{
-   deckZeroError=0,
-   deckErrorIn=-2,
-   deckErrorOutPath=-3,
-   deckErrorWrite=-4,
-   deckErrorCreateKV=-5,
-   deckSOPinstanceRejected=-6,
-   deckErrorParsing=-7,
-   deckNotDICM=-8,
-   deckErrorCommit=-9,
-   deckErrorClose=-10,
-   deckBadRepertoire=-11,
-   deckErrorDataset=-12,
-  deckErrorRead=13
+enum exitCdicm2deck{
+   exitZeroError=0,
+   exitErrorIn,//1
+   exitErrorOutPath,//2
+   exitErrorWrite,//3
+   exitErrorCreateKV,//4
+   exitSOPinstanceRejected,//5
+   exitErrorParsing,//6
+   exitNotDICM,//7
+   exitErrorCommit,//8
+   exitErrorClose,//9
+   exitBadRepertoire,//10
+   exitErrorDataset,//11
+   exitErrorRead,//12
+   exitNoDataset//13
 };
 
 //https://stackoverflow.com/questions/53522586/variadic-macro-calling-fprintf-how-to-add-arguments-to-va-args
@@ -1002,4 +1003,4 @@ u8 tsidx( char *vbuf, u16 vallength );
 
 
 
-#endif /* decktypes_h */
+#endif /* exittypes_h */

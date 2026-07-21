@@ -2,18 +2,17 @@
 // target: ...
 // file: main.c
 // created by jacquesfauquex on 20260715.
+#include "uapi.h"
+
 
 #include <stdint.h>
-
-#import "uapi.h"
+#include <sys/stat.h>
 
 //defined global
-//TODO Maybe not needed !!!!
 char *DICMbuf=NULL;// ....accumulator of stream registering original binary DICM. Referred by external declarations everywhere
-
 u64 DICMidx=0;//associated current pointer
 uint8_t *kbuf=NULL;//buffer (size 0xFF) for the creation of _DKV and EDKV contextual keys. max use 16 bytes x 10 encapsulation levels
-int exitValue=deckZeroError;
+int exitValue=exitZeroError;
 
 //recursive
 int dicmDataset(
@@ -50,7 +49,7 @@ int dicmDataset(
                if (repidxs==0x09)
                {
                   E("bad repertoire %.*s",attr->l,DICMbuf+DICMidx-attr->l);
-                  return deckBadRepertoire;
+                  return exitBadRepertoire;
                }
                else
                {
@@ -175,7 +174,7 @@ int dicmDataset(
          default:
          {
             if (attr->t==0 && attr->r==0 && attr->l==0) return true;
-            E("error unknown vr at index %llu %08x %c%c %d",DICMidx, attr->t,attr->r % 0x100,attr->r / 0x100,attr->l);
+            E("error unknown vr at index %lu %08x %c%c %d",DICMidx, attr->t,attr->r % 0x100,attr->r / 0x100,attr->l);
             return false;
          }
       //---------
@@ -194,18 +193,16 @@ int dicmDataset(
          }
       }
    }
-   return deckZeroError;
+   return exitZeroError;
 }
 
-int main(int argc, const char * argv[]) {
+int main(int argc,  char *argv[]) {
    /*  (args defined in the calling script or directly in the xcr option of dcmtk storescp
     *  The first four are required in the same order
     *  all the args are passed to uCreate
    0 command name defined by target
    1 #p/#f dir path / dicm file name
-   2 out dir
-   3 err dir
-   4 ...
+   2 ...
    */
    
 //environment variables
@@ -226,31 +223,40 @@ int main(int argc, const char * argv[]) {
    //const char* abeforetag = getenv("DICM2DECKbeforetag");
    //if (abeforetag!=NULL) beforetag=(u32)strtoll(abeforetag, NULL, 16);
 
-   /*
-#pragma mark DICM2DECKoutdir
+
+#pragma mark filesystem
    const char* outdir = getenv("DICM2DECKoutdir");
-   if (outdir!=NULL) chdir(outdir);
-   else chdir("/tmp");
-   */
+   D("DICM2DECKoutdir:  %s", outdir);
+   chdir(outdir);
+
+   const char* errdir = getenv("DICM2DECKerrdir");
+   D("DICM2DECKerrdir:  %s", errdir);
+
    char cwd[1024];
    getcwd(cwd, sizeof(cwd));
-   D("outdir:  %s", cwd);
+   D("working dir:  %s", cwd);
+
+   struct stat st;
+   stat(argv[1], &st);
+   u64 size = st.st_size;
+   D("cdicm file: %s (%lu bytes)", argv[1], size);
+
+   if (size < 140) exit(exitNoDataset);
+
+   if ((exitValue=uPrerequisite(size, argc, argv))!=exitZeroError) exit(exitValue);
 
 
 #pragma mark - read file and process
+   DICMbuf=malloc(size);
    FILE *inFile = freopen(argv[1],"rb",stdin);
-   if (inFile==NULL) exitValue=deckErrorIn;
-   else
-   { //file opened
-      uCreate(argc, argv);
-      //TODO eliminate DICMbuf ?
-      DICMbuf=malloc(300*1024*1024);
-      kbuf = malloc(0xFF);
-      struct trcl * baseattr=(struct trcl*) kbuf;
+   if (inFile==NULL) exit (exitErrorIn);
 
-      //read up to dicom version 0002001 (8+150 bytes)
-      //D("%s","waiting 158 bytes on stdin");
-      if (  ifread(132)
+   //file opened
+   if ((exitValue=uCreate(argc, argv))!=exitZeroError) exit(exitValue);
+   kbuf = malloc(0xFF);
+   struct trcl * baseattr=(struct trcl*) kbuf;
+
+   if (  ifread(132)
          && (DICMbuf[128]==0x44)
          && (DICMbuf[129]==0x49)
          && (DICMbuf[130]==0x43)
@@ -258,11 +264,11 @@ int main(int argc, const char * argv[]) {
          && ifreadattr(0)
       )
       {
-         if (!(exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))) exitValue=uCommit(baseattr,argc,argv); //successfull parsing (exitValue==0, everything OK)
+         if ((exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))==exitZeroError) exitValue=uCommit(baseattr,argc,argv); //successfull parsing (exitValue==0, everything OK)
          uClose(argc, argv);
       }
-      else exitValue=deckNotDICM;
+      else exitValue=exitNotDICM;
       fclose(inFile);
-   }
-   return exitValue;
+   
+   exit(exitValue);
 }

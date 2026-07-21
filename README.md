@@ -6,7 +6,7 @@ through a specialized proxy, that we call PCS (Picture Communication System).
 
 ## PCS
 - converts DICM to DECK sqlite
-- compresses imagenological series
+- compresses imaging series pixels
 - forwards DECK sqlite and corresponding resources to SIRIUS webtransport pacs,
 preserving the network security of the hospital.
 
@@ -14,36 +14,14 @@ preserving the network security of the hospital.
 SIRIUS WebTransportPacs is no standard PACS, 
 neither is interoperable with Standard DICOM viewers. 
 SIRIUS WebTransportPacs is an all-in-one system for storage, data mining, distribution and visualization.
-It is designed starting from the specifications of modern web browsers backwards.
-
-  
-    
-    
-  
-
-  
-    
-    
-    
-  
-
-  
-    
-      
-      
-    
-    
-      
-      
-    
-  
+It is designed starting from the specifications of modern web browsers.
 
 in order to offer the lowest latency in most challenging network conditions, 
 such as for instance source communting (wifi/3,4,5G or satelite).
 This implies streaming and datagram management over UDP.
 W3C WebTransport QUIC UDP enables UDP channels creation vía javascript client side.
 This also implies to distantiate the product from DICOM part 10 and DICOMweb, 
-which were designed for files and adopted complex metadata structures.
+which were designed for files only and adopted complex metadata structures.
 
 ## Goals
 - first: complex large imaging study diagnostic from high quality cell phone, tablet 
@@ -63,6 +41,12 @@ will demonstrate SIRIUS WebTransport to be the most savvy and reactive DICOM vie
 - third: as a corollary, our DECK representation of DICOM datasets and transport of selected attributes 
 will also improve greatly the speed of learning of Artificial Intelligence models.
 
+- fourth: as a second corollary, the deployment of SIRIUS WebTransport pacs in the cloud will be cheaper, since:
+   - compression is performed locally in the PCS
+   - discrete access to attributes avoids unnecessary readings
+   - almost real time streaming aborts unnecessary downloads
+   - HTTP3 WebTransport supports source shifting without restarting operations.
+
 ## Keywords
 
 - DICOM:        Digital Imaging Communication in Medicine. Universal standard.
@@ -74,6 +58,7 @@ will also improve greatly the speed of learning of Artificial Intelligence model
 - http/3:       web protocol which switches to UDP communication after the shakehand and encription 
 - [WebTransport:](https://www.w3.org/TR/webtransport/) web page javascript opens UDP channels
 - [UDP:](https://datatracker.ietf.org/doc/html/rfc768)          User Datagram Protocol
+- [kyber](kyber.tech)  excellent implementation of WebTransport
 
 - [rust:](https://rust-lang.org/)         language of our server
 - [tokio:](https://tokio.rs/)        asynchronous runtime for the Rust programming language, used as the backbone of both http3 and udp communication  
@@ -87,4 +72,6 @@ will also improve greatly the speed of learning of Artificial Intelligence model
 - [fovia.ai:](https://fovia.ai)     transforms AI algorithm results into interactive visualization
 ---
 
-Though this project is born in the Mercosur, contributions shall be written in english to facilitate the communication with Fovia, provider of the visualization sdk for our project.
+Though this project is born in the Mercosur, contributions shall be written in english,
+to facilitate the communication with Fovia, provider of the visualization sdk for our project
+and with Kyber, provider del framework WebTransport.

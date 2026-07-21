@@ -84,13 +84,17 @@ bool ifreadattr(u8 kloc)
 static char *dbpath;
 static FILE *outFile;
 
-bool uCreate(int argc, char *argv[])
-{
-   return true;
+int uPrerequisite(u64 filesize, int argc, char *argv[]) {
+   return exitZeroError;
 }
 
-bool uClose(int argc, char *argv[]){
-   return true;
+int uCreate(int argc, char *argv[])
+{
+   return exitZeroError;
+}
+
+int uClose(int argc, char *argv[]){
+   return exitZeroError;
 }
 
 static u32 titlerepidx=0;
@@ -102,7 +106,7 @@ static u32 MIMEoffset=0;
 static u32 MIMElength=0;
 
 
-bool uCommit(bool hastrailing,int argc, char *argv[]){
+int uCommit(bool hastrailing,int argc, char *argv[]){
    /*argv
    [1] source file
    [2] destination folder (ending with /)
@@ -131,7 +135,7 @@ bool uCommit(bool hastrailing,int argc, char *argv[]){
    */
 
 
-   return true;
+   return deckZeroError;
 }
 
 #pragma mark - write
@@ -141,7 +145,7 @@ bool uCommit(bool hastrailing,int argc, char *argv[]){
 const unsigned long B00420010=0x10004200;//ST DocumentTitle
 const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
 //const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
-bool uAppend(int kloc, enum kvVRcategory  vrcat, u32 vlen)
+bool uAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
 {
    switch (vrcat) {
       case kvSA:

@@ -65,7 +65,7 @@ follows immediately the last line of the previous one.
 The sqlite default implementation of capi (categorized api) builds up an instance sqlite with the attributes subdivided into categories.
 When everything worked well and cCommit is called, this sqlite is exported to an exam sqlite.
 
-### Testing environment
+## Testing environment
 
 The folder Testing contains canonicalized test files. 
 The modified storescp outputs DICOM datasets received as files into this directory.

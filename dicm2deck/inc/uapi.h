@@ -44,18 +44,24 @@ bool ifreadattr(u8 kloc);
 
 #pragma mark - TO BE IMPLEMENTED FOR EACH TARGET
 
+bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
+
+
+#pragma mark - transaction hooks
+
+int uPrerequisite(u64 filesize, int argc, char *argv[]);
+
 //called after preliminar parsing of class, sop instance and transfer syntax
-bool uCreate(int argc, char *argv[]);
+int uCreate(int argc, char *argv[]);
 
 //called after parsing successfully all the attributes
-bool uCommit(bool hastrailing,int argc, char *argv[]);//aplica a todos los kv
+int uCommit(bool hastrailing,int argc, char *argv[]);//aplica a todos los kv
 
 //finalizes the opened tx
-bool uClose(int argc, char *argv[]);//aplica a todos los kv
+void uClose(int argc, char *argv[]);//aplica a todos los kv
 
 //_DKVappend called for each parsed attribute, with value already read in vbuf or not.
 //vbuf is 0xFFFE bytes long (máx short DICOM vl).
 
-bool uAppend(int kloc,enum kvVRcategory vrcat,u32 vlen);
 
 #endif /* uapi_h */
