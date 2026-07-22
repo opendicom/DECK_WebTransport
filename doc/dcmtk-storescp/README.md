@@ -16,13 +16,13 @@ This option disables DCMTK DICM parsing. STORESCP:
 - triggers an executable, passing it parameters of the association on which the packets were received
 
 ## available parameters
+- t transfer syntax uid
+- o sop class uid
 - u theirImplementationClassUID
 - v theirImplementationVersion
 - s max pdu size
 - k sop class dcmtk key (padded with _ up to 4 chars)
 - i ID presentation context negotiated 
-- o sop class uid
-- t transfer syntax uid
 - l list of presentation context id.class-transfer_ (no spaces between elements)
 - p directory path/file name
 - a sender aet
@@ -34,39 +34,43 @@ This option disables DCMTK DICM parsing. STORESCP:
 #!/bin/sh
 #debug storescu association
 #add storescp parameter
-#-xcr 'xcr.sh #p/#f /dest/ #u #v #s #k #i #o #t #l #a #r #c'
-#p source dir
-#f file name
+#-xcr 'xcr.sh #p/#f #t #o #u #v #s #k #i #l #a #r #c'
+#p/#f source dir / filename
+#t transfer syntax (should be 1.2.840.10008.1.2.1)
+#o sop class uid 
 #u sending app uid
 #v sending app version
 #s pdu size
 #k sop class dcmtk key
 #i presentation context id
-#o sop class uid
-#t transfer syntax
 #l list of presentation contexts
 #a aet calling
 #r remote ip
 #c called aet
 
-echo "${1} ${2} ${9}"
+echo "${1} ${4} ${9}"
 echo `date +%Y%m%d_%H%M%S.%3N`" ${11}@${12}>${13}"
-echo "app=${3} name=${4} pdu=${5}"
-echo "key=${6} id=${7} uid=${8} ts=${9}"
+echo "app=${5} name=${6} pdu=${7}"
+echo "key=${8} id=${9} uid=${3} ts=${2}"
 echo "contexts=${10}"
 ````
 
 The debug script can call another executable
 
 ## sop parser to memory sqlite executable 
-requires 3 xcr parameters: 
+requires 1 xcr parameters: 
 - source file
-- destination folder (ending with /)
-- error folder (ending with /)
+- if transfert syntax is known, it can follow source file. Explicit little endian is the only accepted syntax.
+- Then the sop class can follow
+- and the param list continues with other params of the association.
+- 
+example:
+
 ````
--xcr 'memorysqlite #p/#f /dst/ /err/
+-xcr 'dicm2cda ../../../Testing/dscd.cdicm   1.2.840.10008.1.2.1  1.2.840.10008.5.1.4.1.1.104.2'
 ````
-explicit little endian is the only accepted syntax.
+
+## sop parser to memory sqlite executable
 
 the executable
 - parses DICM to DECK into a in memory sop sqlite
@@ -100,7 +104,7 @@ The path to dicom.dic needs to be registered into environment variables
 -od tmpMountPoint \
 +B \
 +F \
--xcr 'xcr.sh #p/#f /dest/ #u #v #s #k #i #o #t #l #a #r #c' \
+-xcr 'xcr.sh #p/#f #t #o #u #v #s #k #i #l #a #r #c' \
 11111
 ````
 
@@ -136,7 +140,7 @@ Performs:
 - integrate the new attributes into sqlite
 - move the original to /called/calling^ip/study^patientID/series/instance
 
-## end of study series compression application
+## ¿ end of study series compression application ?
 
 Also triggered by dcmtk.
 

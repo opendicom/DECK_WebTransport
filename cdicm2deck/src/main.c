@@ -1,4 +1,4 @@
-// project: dicm2deck
+// project: cdicm2deck
 // target: ...
 // file: main.c
 // created by jacquesfauquex on 20260715.
@@ -204,20 +204,21 @@ int main(int argc,  char *argv[]) {
    1 #p/#f dir path / dicm file name
    2 ...
    */
-   
+   if ((argc >2) && (strcmp(argv[2],"1.2.840.10008.1.2.1")!=0)) exit(exitNotExplicitLittleEndian);
+    //1.2.840.10008.5.1.4.1.1.104.2
 //environment variables
    
-#pragma mark DICM2DECKloglevel
+#pragma mark CDICM2DECKloglevel
    const char* loglevel = getenv("DICM2DECKloglevel");
    if (loglevel==NULL) loglevel="D";
    //[ D | I | W | E | F ] ( Debug, Info, Warning, Error, Fault )
-   
-#pragma mark DICM2DECKbeforebyte
+
+#pragma mark CDICM2DECKbeforebyte
    u32 beforebyte=0xFFFFFFFF;
    //const char* abeforebyte = getenv("DICM2DECKbeforebyte");
    //if (abeforebyte!=NULL) beforebyte=(u32)strtoll(abeforebyte, NULL, 16);
    
-#pragma mark DICM2DECKbeforetag
+#pragma mark CDICM2DECKbeforetag
    // agradado en dcmtk-storescp storescp al final de cada instancia, para delimitarla dentro del stream
    u32 beforetag=0xFFFCFFFC;
    //const char* abeforetag = getenv("DICM2DECKbeforetag");
@@ -225,12 +226,12 @@ int main(int argc,  char *argv[]) {
 
 
 #pragma mark filesystem
-   const char* outdir = getenv("DICM2DECKoutdir");
-   D("DICM2DECKoutdir:  %s", outdir);
+   const char* outdir = getenv("CDICM2DECKoutdir");
+   D("CDICM2DECKoutdir:  %s", outdir);
    chdir(outdir);
 
-   const char* errdir = getenv("DICM2DECKerrdir");
-   D("DICM2DECKerrdir:  %s", errdir);
+   const char* errdir = getenv("CDICM2DECKerrdir");
+   D("CDICM2DECKerrdir:  %s", errdir);
 
    char cwd[1024];
    getcwd(cwd, sizeof(cwd));
@@ -252,7 +253,7 @@ int main(int argc,  char *argv[]) {
    if (inFile==NULL) exit (exitErrorIn);
 
    //file opened
-   if ((exitValue=uCreate(argc, argv))!=exitZeroError) exit(exitValue);
+   if ((exitValue=uCreate(inFile, argc, argv))!=exitZeroError) exit(exitValue);
    kbuf = malloc(0xFF);
    struct trcl * baseattr=(struct trcl*) kbuf;
 

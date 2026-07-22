@@ -3,7 +3,6 @@
 // file: uapi.m
 // created by jacquesfauquex on 2024-04-04.
 
-#include "uapi.h"
 #include "capi.h"
 
 extern char *DICMbuf;
@@ -1075,33 +1074,26 @@ bool ifreadattr(u8 kloc)
 #pragma mark - instance transactions
 
 static u16 PCSidx;
-bool uCreate(int count, char *vector[])
-{
-   PCSidx=0;//to determine if the attribute is patient, exam or series level
-   return cCreate(
-   soloc,
-   solen,
-   soidx,
-   siloc,
-   silen,
-   stloc,
-   stlen,
-   stidx
-   );
+
+//called with parameters before opening file
+int uPrerequisite(u64 filesize, int argc, char *argv[]) {
+   return cPrerequisite(filesize,argc,argv);
 }
 
-
-bool uCommit(bool hastrailing)
-{
-   return cCommit(hastrailing);
+//called after opening file
+int uCreate(FILE *inFILE, int argc, char *argv[]){
+   return cCreate(inFILE,argc,argv);
 }
 
-
-bool uClose(int count, char *vector[])
-{
-   return cClose();
+//called after parsing successfully all the attributes
+int uCommit(bool hastrailing,int argc, char *argv[]) {
+   return cCommit(hastrailing,argc,argv);
 }
 
+//finalizes the opened tx
+void uClose(int argc, char *argv[]) {
+   return cClose(argc,argv);
+}
 
 
 #pragma mark - write

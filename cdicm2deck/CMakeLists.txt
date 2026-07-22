@@ -55,6 +55,7 @@ target_link_libraries(dicmstructdump
 
 add_executable(dicm2decksqlite
         src/capi/memorysqlite/capi.c
+        src/capi/uapi.c
 )
 target_link_libraries(dicm2decksqlite
         dicmlib

@@ -55,7 +55,7 @@ bool ifreadattr(u8 kloc)
       case UV://unsigned 64-bit very long
       case UC://unlimited characters
       case UT://unlimited text
-      case UR://universal resrcurl identifier/locator
+      case UR://universal ressource rcurl identifier/locator
       case SQ://sequence
       {
          DICMidx+=8;
@@ -76,66 +76,37 @@ bool ifreadattr(u8 kloc)
          kbuf[kloc+11]=0;
       }break;
    }
-   
    return true;
 }
 
-#pragma mark - instance transactions
-static char *dbpath;
-static FILE *outFile;
 
 int uPrerequisite(u64 filesize, int argc, char *argv[]) {
+   if ((argc >4) && (strcmp(argv[4],"1.2.840.10008.5.1.4.1.1.104.2")!=0)) return exitNotEncapsulatedCDA;
    return exitZeroError;
 }
 
-int uCreate(int argc, char *argv[])
+int uCreate(FILE *inFILE, int argc, char *argv[])
 {
    return exitZeroError;
 }
 
-int uClose(int argc, char *argv[]){
-   return exitZeroError;
+void uClose(int argc, char *argv[]){
+   return;
 }
 
 static u32 titlerepidx=0;
-static u32 titleoffset=0;
-static u32 titlelength=0;
 static u32 documentoffset=0;
 static u32 documentlength=0;
-static u32 MIMEoffset=0;
-static u32 MIMElength=0;
+
 
 
 int uCommit(bool hastrailing,int argc, char *argv[]){
-   /*argv
-   [1] source file
-   [2] destination folder (ending with /)
-   [3] error folder (ending with /)
-   */
-   dbpath=argv[2];
-   /*
-   char *ibuf = malloc(silen);
-   memcpy(ibuf, DICMbuf+siloc, silen);
-   strcat(dbpath,ibuf);
-   strcat(dbpath, ".dscd.xml");char *ibuf = malloc(silen);
-   memcpy(ibuf, DICMbuf+siloc, silen);
-  */
-   outFile=fopen("/home/jacquesfauquex/Desktop/test.dscd.xml", "w");
-   if (outFile==NULL) return false;
-   if (!fwrite(DICMbuf+documentoffset ,1, documentlength , outFile)) return false;
+    FILE *outFile=fopen("dscd.xml", "w");
+   if (outFile==NULL) return exitErrorOutPath;
+   if (!fwrite(DICMbuf+documentoffset ,1, documentlength , outFile)) return exitErrorFwrite;
    fclose(outFile);
-   //title charset -> utf-8
-   /*
-   u32 utf8length=0;
-   utf8(titlerepidx,DICMbuf,titleoffset,titlelength,DICMbuf,(u32)DICMidx,&utf8length);
-   printf( "%.*s\n", utf8length,DICMbuf+DICMidx );
-   
-   //write document
-   if (!fwrite(DICMbuf+documentoffset ,1, documentlength , outFile)) return false;
-   */
-
-
-   return deckZeroError;
+   I("%s","dscd.xml written");
+   return exitZeroError;
 }
 
 #pragma mark - write
@@ -154,13 +125,16 @@ bool uAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
       case kvIZ: break;
 
       case kvTS: {
+         if ((vlen > 0) && (!ifread(vlen))) return false;
+
          //ST DocumentTitle 00420010
          if (!memcmp(kbuf, &B00420010, 4)) {
             titlerepidx=kbuf[kloc+6] + (kbuf[kloc+7] << 8);
-            titleoffset=(u32)DICMidx;
-            titlelength=vlen;
+            u32 utf8length=0;
+            utf8(titlerepidx,DICMbuf,DICMidx-vlen,vlen,DICMbuf,(u32)DICMidx,&utf8length);
+            printf( "%.*s\n", utf8length,DICMbuf+DICMidx );
          }
-         if ((vlen > 0) && (!ifread(vlen))) return false;
+
          //LO MIME Type of Encapsulated Document 00420012 xml cda o pdf
 //TODO
       } break;

@@ -86,7 +86,7 @@ int uPrerequisite(u64 filesize, int argc, char *argv[]) {
    return exitZeroError;
 }
 
-int uCreate(int argc, char *argv[])
+int uCreate(FILE *inFILE, int argc, char *argv[])
 {
    return exitZeroError;
 }

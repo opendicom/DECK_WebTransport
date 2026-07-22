@@ -52,16 +52,13 @@ bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
 int uPrerequisite(u64 filesize, int argc, char *argv[]);
 
 //called after preliminar parsing of class, sop instance and transfer syntax
-int uCreate(int argc, char *argv[]);
+int uCreate(FILE *inFILE, int argc, char *argv[]);
 
 //called after parsing successfully all the attributes
-int uCommit(bool hastrailing,int argc, char *argv[]);//aplica a todos los kv
+int uCommit(bool hastrailing,int argc, char *argv[]);
 
 //finalizes the opened tx
-void uClose(int argc, char *argv[]);//aplica a todos los kv
-
-//_DKVappend called for each parsed attribute, with value already read in vbuf or not.
-//vbuf is 0xFFFE bytes long (máx short DICOM vl).
+void uClose(int argc, char *argv[]);
 
 
 #endif /* uapi_h */
