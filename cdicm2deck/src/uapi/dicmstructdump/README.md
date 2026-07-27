@@ -88,3 +88,16 @@
    35780 00420012 LO 0001 "text/xml"
 ```
 
+## performance
+
+- dcmtk dcmdump
+````
+start=`date +%s.%N`; /home/jacquesfauquex/dcmtk/cmake-build-debug/bin/dcmdump /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/Testing/dscd.cdicm; stop=`date +%s.%N`; echo "$stop - $start" | bc
+````
+0.0030 a 0.0055
+
+- cdicm2deck dicmstructdump
+````
+start=`date +%s.%N`; /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/cmake-build-debug/dicmstructdump /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/Testing/dscd.cdicm; stop=`date +%s.%N`; echo "$stop - $start" | bc
+````
+0.0020 a 0.0030

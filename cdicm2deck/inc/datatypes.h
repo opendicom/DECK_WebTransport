@@ -119,7 +119,9 @@ enum exitCdicm2deck{
    exitNoDataset,//13
    exitNotExplicitLittleEndian,//14
    exitNotEncapsulatedCDA,//15
-   exitErrorFwrite//16
+   exitErrorFwrite,//16
+  exitErrorSqliteOpen,//17
+  exitErrorGroupLength//18
 };
 
 //https://stackoverflow.com/questions/53522586/variadic-macro-calling-fprintf-how-to-add-arguments-to-va-args
@@ -209,7 +211,7 @@ enum repertoireenum{
 };
 
 
-u32 repertoireidx( char *vbuf, u16 vallength );
+u32 repertoireidx( unsigned char *vbuf, u16 vallength );
 
 bool utf8
 (

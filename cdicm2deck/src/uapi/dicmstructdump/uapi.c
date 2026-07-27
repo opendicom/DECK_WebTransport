@@ -19,6 +19,14 @@ bool ifread(u32 bytesaskedfor)
    DICMidx+=bytesreceived;
    return (bytesaskedfor==bytesreceived);
 }
+bool kfread(u32 bytesaskedfor, u32 kloc)
+{
+   bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
+   DICMidx+=bytesreceived;
+   return (bytesaskedfor==bytesreceived);
+}
+
+
 
 
 //returns true when 8(+4) bytes were read
@@ -78,14 +86,12 @@ bool ifreadattr(u8 kloc)
    return true;
 }
 
-const char *space=" ";
 
 #pragma mark - instance transactions
 
 int uPrerequisite(u64 filesize, int argc, char *argv[]) {
    return exitZeroError;
 }
-
 int uCreate(FILE *inFILE, int argc, char *argv[])
 {
    return exitZeroError;
@@ -97,7 +103,6 @@ int uCommit(bool hastrailing,int argc, char *argv[])
    if (fwrite(DICMbuf ,1, DICMidx , fileptr)!=DICMidx) return false;
    fclose(fileptr);
 }
-
 void uClose(int count, char *vector[])
 {
    return;
@@ -105,6 +110,7 @@ void uClose(int count, char *vector[])
 
 #pragma mark - write
 
+const char *space=" ";
 bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    switch (vrcat) {
@@ -257,7 +263,7 @@ bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       case kvUI://unique ID
       //00080019 PyramidUID
       case kvTP:
-      case kvTA://AE DS IS CS
+      case kvTA://AE DS IS
       //ST HL7InstanceIdentifier 0040E001  root^extension
       {  printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-8,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
         if (vlen > 0)
@@ -289,5 +295,14 @@ bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       default: return false;
    
    }
+   return true;
+}
+
+
+bool csAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
+{
+   //no ifread
+   //the value is found in kbuf+kloc+12
+   printf("%8lu%*s%02X%02X%02X%02X %c%c %04X \"%.*s\"\n",DICMidx-8,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8), vlen,kbuf+kloc+12);
    return true;
 }

@@ -6,6 +6,6 @@
 #ifndef deck_sqlite_h
 #define deck_sqlite_h
 
-void sqlite3open();
+int sqlite3open();
 
 #endif /* deck_sqlite_h */

@@ -257,7 +257,7 @@ const char *repertoirestr[]={
    "ISO 2022 IR 58"   //chinese simplified (multi byte)
 };
 
-u32 repertoireidx( char *vbuf, u16 vallength )
+u32 repertoireidx( unsigned char *vbuf, u16 vallength )
 {
    u32 idx=0x9;//error
    switch (vallength){

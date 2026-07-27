@@ -39,12 +39,18 @@ kvUN,//19 UN
 #pragma mark - read blocking code
 
 bool ifread(u32 bytesaskedfor);
+bool kfread(u32 bytesaskedfor, u32 kloc);
 bool ifreadattr(u8 kloc);
 
 
 #pragma mark - TO BE IMPLEMENTED FOR EACH TARGET
 
 bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
+//ifread
+bool csAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
+//no ifread
+//the value is found in kbuf+kloc+12
+
 
 
 #pragma mark - transaction hooks

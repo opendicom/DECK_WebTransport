@@ -9,8 +9,9 @@
 #include <sys/stat.h>
 
 //defined global
+FILE *inFile;
 char *DICMbuf=NULL;// ....accumulator of stream registering original binary DICM. Referred by external declarations everywhere
-u64 DICMidx=0;//associated current pointer
+u64 DICMidx=0x9E;//associated current pointer
 uint8_t *kbuf=NULL;//buffer (size 0xFF) for the creation of _DKV and EDKV contextual keys. max use 16 bytes x 10 encapsulation levels
 int exitValue=exitZeroError;
 
@@ -43,9 +44,9 @@ int dicmDataset(
          case TM: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTP,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case CS: {
             attr->c=REPERTOIRE_GL;
-            if (!uAppend(kloc,kvTA,attr->l)) return false;
+            if (!kfread(attr->l,kloc+12)) return false;
             if (attr->t == 0x05000800){
-               u16 repidxs=repertoireidx(DICMbuf+DICMidx-attr->l,attr->l);
+               u16 repidxs=repertoireidx(kbuf+kloc+12,attr->l);
                if (repidxs==0x09)
                {
                   E("bad repertoire %.*s",attr->l,DICMbuf+DICMidx-attr->l);
@@ -57,6 +58,7 @@ int dicmDataset(
                   attr->c=repidxs;
                }
             }
+            if (!csAppend(kloc,kvTA,attr->l)) return false;
             if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
          } break;
          case AE:
@@ -249,21 +251,16 @@ int main(int argc,  char *argv[]) {
 
 #pragma mark - read file and process
    DICMbuf=malloc(size);
-   FILE *inFile = freopen(argv[1],"rb",stdin);
+   inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL) exit (exitErrorIn);
-
+//9E
    //file opened
    if ((exitValue=uCreate(inFile, argc, argv))!=exitZeroError) exit(exitValue);
    kbuf = malloc(0xFF);
    struct trcl * baseattr=(struct trcl*) kbuf;
 
-   if (  ifread(132)
-         && (DICMbuf[128]==0x44)
-         && (DICMbuf[129]==0x49)
-         && (DICMbuf[130]==0x43)
-         && (DICMbuf[131]==0x4D)
-         && ifreadattr(0)
-      )
+      if (fseek(inFile, DICMidx, SEEK_SET)!=0) exit(exitNotDICM);//0x9E 0002,0002
+      if (ifreadattr(0) && (baseattr->t==0x02000200))
       {
          if ((exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))==exitZeroError) exitValue=uCommit(baseattr,argc,argv); //successfull parsing (exitValue==0, everything OK)
          uClose(argc, argv);

@@ -58,8 +58,15 @@ add_executable(dicm2decksqlite
         src/capi/uapi.c
 )
 target_link_libraries(dicm2decksqlite
-        dicmlib
+        dicmlib,
         blake3lib
         sqlite3lib
 )
 
+add_executable(pcsxmi src/capi/PCSXMI/capi.c
+        src/capi/PCSXMI/capi.c
+        src/capi/uapi.c
+)
+target_link_libraries(pcsxmi
+        dicmlib
+)

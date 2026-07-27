@@ -11,24 +11,13 @@ static char         *dberr = 0;
 static int           dbrc  = 0;//return code
 
 //statements
-static sqlite3_stmt *eblake3stmt;
 static sqlite3_stmt *einsertstmt;
-static int currentEpk;
-
-static sqlite3_stmt *sblake3stmt;
 static sqlite3_stmt *sinsertstmt;
-static int currentSpk;
-
-static sqlite3_stmt *iblake3stmt;
 static sqlite3_stmt *iinsertstmt;
-static int currentIpk;
+static sqlite3_stmt *pinsertstmt;
+static sqlite3_stmt *minsertstmt;
 
-static sqlite3_stmt *iframepksstmt;
-static sqlite3_stmt *finsertstmt;
-
-static sqlite3_stmt *tinsertstmt;
-
-void sqlite3open() {
+int sqlite3open() {
    //file deck.db within current dir
    //also prepare statements
    struct stat deckdbfileinfo;
@@ -46,7 +35,7 @@ void sqlite3open() {
    {
       E( "Cannot open database: %s\n", sqlite3_errmsg(db));
       sqlite3_close_v2(db);
-      exit(1);
+      return exitErrorSqliteOpen;
    }
 
 #pragma mark E sqlite stmt(s)

@@ -5,193 +5,67 @@
 
 #include "capi.h"
 #include "deck_sqlite3.h"
+#include "sqlite3.h"
 #include "../../thirdparty/blake3/blake3.h"
 #include "../../thirdparty/openjpeg/opj_compress.h"
 
 extern char *DICMbuf;
-extern u64 DICMidx;   classidx=soidx;//class
-   syntaxidx=stidx;//transfer syntax
-
+extern u64 DICMidx;
 extern uint8_t *kbuf;
+
 static u32 DICMlen;
-static u16  syntaxidx;
-static u16  classidx;
 
 static char relativepath[256];
 static u8 relativepathlength=0;
 static FILE *fileptr;
 
-static int stepreturnstatus;
-static bool notRegistered;
-
 static u32 vlenNoPadding;
-
-
-//buffers ...
-//start with 0xFFFF size
-//and is reallocated with same increment in size each time the current space is filled up
-static char *Ebuf;
-static char *Sbuf;
-static char *Ibuf;
-static char *Pbuf;
-static char *Fbuf;
-
-static u32 Eidx=0;
-static u32 Sidx=0;
-static u32 Iidx=0;
-static u32 Pidx=0;
-
-static u32 Emax=0;
-static u32 Smax=0;
-static u32 Imax=0;
-static u32 Pmax=0;
-static u32 Fmax=0;
-
-static u64 Fcidx=0;
-static u64 Ffidx=0;
-static u64 Fhidx=0;
-static u64 Foidx=0;
-static u64 Feidx=0;
-
 static u32 utf8length;
 static char utf8bytes[256];
 
-static u64 prefix=0x00;
-static int iterator;
-
+/*
 //blake3 provides merkle-tree, incremental and fast hash (usefull to compare buffer)
 static blake3_hasher hasher;
 static uint8_t hashbytes[BLAKE3_OUT_LEN];//32 bytes
 static u8 *registeredhashbytes;//32 bytes
-/*
 *blake3_hasher_reset(&hasher);
 *blake3_hasher_update(&hasher, inbuffer, inOffset);
 *blake3_hasher_finalize(&hasher, hashbytes, BLAKE3_OUT_LEN);
 */
 
-//prefix components
-static u8  sversion=0;
-
-#pragma mark TODO
-static u8  rversion=0;
-static u16 rnumber=0;
-static u8  iversion=0;
-static u8  concat=0;
-
-
 
 #pragma mark -
 
 
-
-bool morebuf(enum eFamily f, u32 vlen)
-{
-   char *newbuf;
-   switch (f) {
-      case EDKV:{
-         if (vlen > 0xFF00) {
-            newbuf=realloc(Ebuf,Emax+vlen+0x0FFF);
-            if (newbuf == NULL) return false;
-            Emax+=vlen+0x0FFF;
-         } else {
-            newbuf=realloc(Ebuf,Emax+0xFFFF);
-            if (newbuf == NULL) return false;
-            Emax+=0xFFFF;
-         }
-         Ebuf=newbuf;
-      } break;
-      case SDKV:{
-         if (vlen > 0xFF00) {
-            newbuf=realloc(Sbuf,Smax+vlen+0x0FFF);
-            if (newbuf == NULL) return false;
-            Smax+=vlen+0x0FFF;
-         } else {
-            newbuf=realloc(Sbuf,Smax+0xFFFF);
-            if (newbuf == NULL) return false;
-            Smax+=0xFFFF;
-         }
-         Sbuf=newbuf;
-      } break;
-      case PDKV:{
-         if (vlen > 0xFF00) {
-            newbuf=realloc(Pbuf,Pmax+vlen+0x0FFF);
-            if (newbuf == NULL) return false;
-            Pmax+=vlen+0x0FFF;
-         } else {
-            newbuf=realloc(Pbuf,Pmax+0xFFFF);
-            if (newbuf == NULL) return false;
-            Pmax+=0xFFFF;
-         }
-         Pbuf=newbuf;
-      } break;
-      case IDKV:{
-         if (vlen > 0xFF00) {
-            newbuf=realloc(Ibuf,Imax+vlen+0x0FFF);
-            if (newbuf == NULL) return false;
-            Imax+=vlen+0x0FFF;
-         } else {
-            newbuf=realloc(Ibuf,Imax+0xFFFF);
-            if (newbuf == NULL) return false;
-            Imax+=0xFFFF;
-         }
-         Ibuf=newbuf;
-      } break;
-      default:
-         return false;
-         break;
-   }
-   return true;
+int cPrerequisite(u64 filesize, int argc, char *argv[]){
+   return exitZeroError;
 }
 
+int cCreate(FILE *inFILE, int argc, char *argv[])
+{
+   sqlite3open();//opens the db and instantiates the statements
+   return exitZeroError;
+}
 
+int cCommit(bool hastrailing,int argc, char *argv[])
+{
+   return  exitZeroError;
+}
+
+extern sqlite3      *db;
+extern char         *dberr = 0;
+extern int           dbrc  = 0;//return code
+
+void cClose(int argc, char *argv[])
+{
+   sqlite3_finalize(eblake3stmt);
+   sqlite3_finalize(einsertstmt);
+   sqlite3_free(dberr);
+   sqlite3_close(db);
+   return;
+}
 
 #pragma mark -
-static u32  edate;
-static char euidb64[44];
-static u8   euidb64length;
-static u32  pname[3];// patient name [0] offset [1] length [2] charset
-static u32  pide[3];// patient id LO
-static u32  pidr[3];// patient id issuer LO
-static u32  pbirth;//
-static u8   psex=0;// CS
-static u32  eid[3];// study id
-static u32  ean[3];// accession number
-static u32  eal[3];// issuer local
-static u32  eau[3];// issuer universal
-static u32  eat[3];// issuer type
-static u32  img[3];// realisationstatic
-static u32  cda[3];// cda (reading)
-static u32  req[3];// requesting
-static u32  ref[3];// requesting
-static u32  pay[3];// patient id LO
-static u32  edesc[3];// patient id LO
-static char ecode[256];// code^lexique^title
-static u8   ecodelength;
-static u8   ecodecharset;
-
-static u32  sdate;
-static u32  stime;
-static char suidb64[44];
-static u8   suidb64length;
-static u32  sxml[2];
-//static u32  spdf[3];
-static u16  snumber;//unsigned because we sum up 0x8000
-//static u32  doctitle[3];
-static u32  smod[2];
-static u32  sdesc[3];
-//sframes
-
-static char iuidb64[44];
-static u8   iuidb64length;
-static u16  inumber;//unsigned because we sum up 0x8000
-static u16  ianumber;//unsigned because we sum up 0x8000
-//classidx
-static char itype[64];
-static u8   itypelength;
-static char icomment[64];
-static u8   icommentlength;
-static u16  iframes;
-//pdckv
 static u16  spp;//sample per plane = components
 static u16  photocode;
 static u16  rows;
@@ -201,105 +75,7 @@ static u16  stored;
 static u16  high;
 static u16  pixrep;
 static u16  planar;//0 = RGB del pixel; 1 = componentes RGB
-
 static u16 fnumber;
-static u64 cidx=0;
-static u64 fidx=0;
-static u64 hidx=0;
-static u64 oidx=0;
-static u64 zidx=0;
-
-bool cCreate(
-   u64 soloc,         // offset in valbyes for sop class
-   u16 solen,         // length in valbyes for sop class
-   u16 soidx,         // index in const char *scstr[]
-   u64 siloc,         // offset in valbyes for sop instance uid
-   u16 silen,         // length in valbyes for sop instance uid
-   u64 stloc,         // offset in valbyes for transfer syntax
-   u16 stlen,         // length in valbyes for transfer syntax
-   u16 stidx          // index in const char *csstr[]
-)
-{
-   classidx=soidx;//class
-   syntaxidx=stidx;//transfer syntax
-   sqlite3open();//opens the db and instantiates the statements
-
-//create pid dir if it does not exist
-   sprintf(relativepath, "%d", getpid());
-   relativepathlength=intdecsize(getpid());
-   relativepath[relativepathlength++]='/';
-   relativepath[relativepathlength]=0x00;
-   struct stat relativepathfileinfo2;
-   if ((stat(relativepath, &relativepathfileinfo2)==-1) && (mkdir(relativepath, 0777)==-1)) return false;
-
-#pragma mark resets
-   euidb64length=0;
-
-   //buffers init
-   if (Emax==0) {
-      Emax=0xFFFF;
-      Ebuf=malloc(Emax);
-   }
-   Eidx=0;
-
-   if (Smax==0) {
-      Smax=0xFFFF;
-      Sbuf=malloc(Smax);
-   }
-   Sidx=0;
-
-   if (Pmax==0) {
-      Pmax=0xFFFF;
-      Pbuf=malloc(Pmax);
-   }
-   Pidx=0;
-
-   if (Imax==0) {
-      Imax=0xFFFF;
-      Ibuf=malloc(Imax);
-   }
-   Iidx=0;
-
-   if (Fmax==0) {
-         Fmax=0x3000000;
-         Fbuf=malloc(Fmax);
-   }
-   iframes=0;
-
-   return true;
-}
-
-bool cCommit(bool hastrailing)
-{
-   if (relativepathlength<10) sqliteESIP();//no pixel handler called the method
-   if (hastrailing)
-   {
-      I("%s","hastrailing");
-      tinsert();
-   }
-#pragma mark write DICM
-   relativepath[relativepathlength+iuidb64length]=0x00;
-   fileptr=fopen(relativepath, "w");
-   if (fileptr == NULL) return false;
-   if (fwrite(DICMbuf ,1, DICMidx, fileptr)!=DICMidx) return false;
-   fclose(fileptr);
-   snumber=0;
-   inumber=0;
-   return uClose();
-}
-
-
-bool cClose(void)
-{
-   sqlite3_finalize(eblake3stmt);
-   sqlite3_finalize(einsertstmt);
-   sqlite3_free(dberr);
-   sqlite3_close(db);
-   DICMidx=0;
-   return true;
-}
-
-#pragma mark -
 
 bool eAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
 {
@@ -324,6 +100,32 @@ bool eAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
    memcpy(Ebuf+Eidx, DICMbuf+DICMidx-vlen, vlen);
+
+
+   case UI: {
+      attr->c=REPERTOIRE_GL;
+      switch (attr->t) {
+         case B00080018: if (!uAppend(kloc,kviuid,attr->l)) return false; break;
+         case B0020000D: if (!uAppend(kloc,kveuid,attr->l)) return false; break;
+         case B0020000E: if (!uAppend(kloc,kvsuid,attr->l)) return false; break;
+         case B00080019: if (!uAppend(kloc,kvpuid,attr->l)) return false; break;//pyramid
+         case B00200242: if (!uAppend(kloc,kvcuid,attr->l)) return false; break;//SOP​Instance​UID​Of​Concatenation​Source
+            //case B00081150:
+         default:        if (!uAppend(kloc,kvUI,  attr->l)) return false;break;
+      }
+      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+   } break;
+   case DA: {
+      attr->c=REPERTOIRE_GL;
+      switch (attr->t) {
+         case B00080020: if (!uAppend(kloc,kvedate, attr->l)) return false;break;
+         case B00080021: if (!uAppend(kloc,kvsdate, attr->l)) return false;break;
+         case B00100030: if (!uAppend(kloc,kvpbirth,attr->l)) return false;break;
+         default:        if (!uAppend(kloc,kvTP,    attr->l)) return false;break;
+      }
+      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+   } break;
+
    switch (vrcat)
    {
       case kveuid: {//StudyInstanceUID
@@ -465,6 +267,21 @@ bool sAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
    memcpy(Sbuf+Sidx, DICMbuf+DICMidx-vlen, vlen);
+
+   case DS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTA,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+   case IS: {
+      attr->c=REPERTOIRE_GL;
+      switch (attr->t) {
+         case B00200011:if (!uAppend(kloc,kvsnumber, attr->l)) return false; break;
+         case B00200012:if (!uAppend(kloc,kvianumber,attr->l)) return false; break;
+         case B00200013:if (!uAppend(kloc,kvinumber, attr->l)) return false; break;
+         case B00280008:if (!uAppend(kloc,kvframesnumber, attr->l)) return false; break;
+         default:       if (!uAppend(kloc,kvTA,      attr->l)) return false; break;
+      }
+      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+   } break;
+
+
    switch (vrcat)
    {
       case kvUI://unique ID
@@ -544,6 +361,87 @@ bool pAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    return true;
 }
 
+enum {
+   L00020002=0x00020002,
+   L00020003=0x00030002,
+   L00020010=0x00100002,
+
+   B00080005=0x05000800,//charset
+
+   B00080100=0x00010800,//code
+   B00080102=0x02010800,//domain
+   B00080104=0x04010800,//title
+
+   B00080018=0x18000800,//kviuid UI SOPInstanceUID
+   B00080019=0x19000800,//pyramid
+
+   B0020000D=0x0D002000,//kveuid UI StudyInstanceUID
+   B0020000E=0x0E002000,//kvsuid UI SeriesInstanceUID
+
+   B0040E001=0x0E002000,//kvscdaid ST CDA root^extension
+
+   B00100010=0x10001000,//kvpname PN Patient nanme
+   B00100020=0x20001000,//kvpide LO Patient id
+   B00100021=0x21001000,//kvpidr LO Patient id issuer
+   B00100030=0x30001000,//kvpbirth DA Patient bBirthdate
+   B00100040=0x40001000,//kvpsex CS Patient sex
+
+   B00080020=0x20000800,//kvedate DA StudyDate
+   B00080021=0x21000800,//kvsdate DA SeriesDate
+   B00080031=0x31000800,//kvstime DA SeriesTime
+   B00200010=0x10002000,//kveid SH StudyID
+   B00081030=0x30100800,//kvedesc LO Study name
+   B00081032=0x32100800,//kvecode SQ Study code
+   B00080090=0x90000800,//kvref PN referring
+   B00321032=0x32103200,//kvreq PN requesting
+
+   B00081060=0x60100800,//kvcda PN CDA writer (reading)
+   B00101050=0x50101000,//kvpay LO pay insurance plan identification
+   B00080060=0x60000800,//kvsmod CS Modality
+
+   B00200011=0x11002000,//kvsnumber IS SeriesNumber
+   B00200012=0x12002000,//kvianumber IS AcquisitionNumber
+   B00200013=0x13002000,//kvinumber IS InstanceNumber
+   B00200242=0x42022000,//SOP​Instance​UID​Of​Concatenation​Source
+
+   B0008103E=0x3E100800,//kvedesc LO Series name
+
+   B00080050=0x50000800,//kvean SH Accession​Number
+   B00080051=0x51000800,//kvean SQ Accession​NumberIssuer
+   B00080080=0x80000800,//kvimg LO InstitutionName
+
+   B00400031=0x31004000,//kveal UT Accession​Number local
+   B00400032=0x32004000,//kveau UT Accession​Number universal
+   B00400033=0x33004000,//kveat CS Accession​Number type
+
+   B00081150=0x50110800,
+
+   B00420010=0x10004200,//kvsdoctitle ST DocumentTitle
+   B00420011=0x11004200,//kvsxml OB EncapsulatedDocument
+
+   B7FE00001=0x0100E07F,//kvfo Extended​Offset​Table
+   B7FE00002=0x0200E07F,//kvfl Extended​Offset​TableLengths
+   B7FE00003=0x0300E07F,//kvft Encapsulated​Pixel​Data​Value​Total​Length
+
+   B00020010=0x10000200,//kvC or kvC UI transfert syntax
+   B00082111=0x11210800,//kvC        ST derivation description
+   };
+
+enum {
+B00080008=0x08000800,//CS image type itype
+B00280004=0x04002800,//CS photocode (photometric interpretation)
+
+   B00280008=0x08002800,//IS numberOfFrames
+
+   B00280002=0x02002800,//US spp
+B00280010=0x10002800,//US rows
+B00280011=0x11002800,//US cols
+B00280100=0x00012800,//US alloc
+B00280101=0x01012800,//US stored
+B00280102=0x02012800,//US high
+B00280103=0x03012800,//US pixrep
+B00280106=0x06012800,//US planar
+};
 bool iAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    //freeing buffer necesary?
@@ -567,6 +465,56 @@ bool iAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
    memcpy(Ibuf+Iidx, DICMbuf+DICMidx-vlen, vlen);
+
+   case US: {
+      attr->c=REPERTOIRE_GL;
+      switch (attr->t) {
+         case B00280002: if (!uAppend(kloc,kvspp,   attr->l)) return false; break;//spp
+         case B00280010: if (!uAppend(kloc,kvrows,  attr->l)) return false; break;//rows
+         case B00280011: if (!uAppend(kloc,kvcols,  attr->l)) return false; break;//cols
+         case B00280100: if (!uAppend(kloc,kvalloc, attr->l)) return false; break;//alloc
+         case B00280101: if (!uAppend(kloc,kvstored,attr->l)) return false; break;//stored
+         case B00280102: if (!uAppend(kloc,kvhigh,  attr->l)) return false; break;//high
+         case B00280103: if (!uAppend(kloc,kvpixrep,attr->l)) return false; break;//pixrep
+         case B00280106: if (!uAppend(kloc,kvplanar,attr->l)) return false; break;//planar
+         default:        if (!uAppend(kloc,kvUS,    attr->l)) return false;
+      }
+      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+   } break;
+
+   case CS: {
+      attr->c=REPERTOIRE_GL;
+      switch (attr->t) {
+         case B00100040: if (!uAppend(kloc,kvpsex,     attr->l)) return false; break;
+         case B00400033: { //kveat CS Accession​Number type
+            u32 *itemtag=(u32 *)kbuf;
+            if (*itemtag==B00080051)
+            {
+               if (!uAppend(kloc,kveat,attr->l)) return false;
+            }
+            else
+            {
+               if (!uAppend(kloc,kvTA,attr->l)) return false;
+            }
+         } break;
+         case B00080060: if (!uAppend(kloc,kvsmod,     attr->l)) return false; break;
+         case B00080008: if (!uAppend(kloc,kvitype,    attr->l)) return false; break;
+         case B00280004: if (!uAppend(kloc,kvphotocode,attr->l)) return false; break;
+            // https://dicom.innolitics.com/ciods/rt-dose/image-pixel/00280004
+         case B00080005: {
+            if (!uAppend(kloc,kvTA,attr->l)) return false;
+            u16 repidxs=repertoireidx(DICMbuf+DICMidx-attr->l,attr->l);
+            if (repidxs==0x09)
+            {
+               E("bad repertoire %.*s",attr->l,DICMbuf+DICMidx-attr->l);
+               return false;
+            }
+            else
+            {
+               keycs=(keycs & 0x8000) | repidxs;
+               attr->c=repidxs;
+            }
+         } break;
    switch (vrcat)
    {
       case kvFD://floating point double

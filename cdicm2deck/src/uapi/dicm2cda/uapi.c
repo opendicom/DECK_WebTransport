@@ -23,6 +23,14 @@ bool ifread(u32 bytesaskedfor)
    return (bytesaskedfor==bytesreceived);
 }
 
+bool kfread(u32 bytesaskedfor, u32 kloc)
+{
+   bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
+   DICMidx+=bytesreceived;
+   return (bytesaskedfor==bytesreceived);
+}
+
+
 //returns true when 8(+4) bytes were read
 bool ifreadattr(u8 kloc)
 {
@@ -31,7 +39,7 @@ bool ifreadattr(u8 kloc)
       if (ferror(stdin)) D("%s","stdin error");
       return false;
    }
-   
+
    //group LE>BE
    kbuf[kloc]=DICMbuf[DICMidx+1];
    kbuf[kloc+1]=DICMbuf[DICMidx];
@@ -149,5 +157,10 @@ bool uAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
       } break;
       default:if (!ifread(vlen)) return false;break;
    }
+   return true;
+}
+
+bool csAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
+{
    return true;
 }

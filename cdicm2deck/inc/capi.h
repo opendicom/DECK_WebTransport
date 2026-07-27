@@ -11,12 +11,13 @@
 #include "blake3.h"
 //#include <errno.h>
 
-enum eFamily{
-   eDECK, //exam
-   sDECK, //series
-   pDECK, //private
-   iDECK, //instance
-   fDECK //frame pixel
+enum categories{
+   patient, //patient
+   exam, //exam
+   series, //series generic
+   modality, //modality specific
+   unknown, //manufacturer private
+   instance //instance
 };
 
 #pragma mark - transaction hooks
@@ -33,10 +34,9 @@ int cCommit(bool hastrailing,int argc, char *argv[]);
 //finalizes the opened tx
 void cClose(int argc, char *argv[]);
 
-bool eAppend(int kloc,enum kvVRcategory vrcat,u32 vlen);
-bool sAppend(int kloc,enum kvVRcategory vrcat,u32 vlen);
-bool pAppend(int kloc,enum kvVRcategory vrcat,u32 vlen);
-bool iAppend(int kloc,enum kvVRcategory vrcat,u32 vlen);
-bool fAppend(int kloc,enum kvVRcategory vrcat,u32 vlen);
+bool eAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
+bool sAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
+bool pAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
+bool iAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
 
 #endif /* capi_h */

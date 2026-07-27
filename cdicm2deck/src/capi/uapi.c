@@ -8,7 +8,7 @@
 extern char *DICMbuf;
 extern u64 DICMidx;
 extern uint8_t *kbuf;
-extern struct trcl * baseattr;
+extern FILE *inFile;
 
 #pragma mark base dataset level patient
 /*
@@ -506,7 +506,13 @@ const u32 L00420011X=0x00420011;//OB Encapsulated​Document
 const u32 L00420012X=0x00420012;//LO mime type
 
 
-//Patient Clinical(Study) and Series tags
+
+//attribute type study 00 series 01 (~=level)
+const u8 P=0x00;//patient level
+const u8 C=0x00;//clinical study level
+const u8 S=0x01;//series level
+const u8 X=0x01;//special series level
+//Patient Clinical(Study) and Series tags and parallel array with category (PCSX)
 const u32 PCStag[]={
    L00080020E,//DA Study​Date
    L00080021S,//DA Series​Date
@@ -750,12 +756,6 @@ const u32 PCStag[]={
    L00800013X,//SQ Referenced​Surface​Data​Sequence
    L300A0700X //UI Treatment​Session​UID
 };
-
-//attribute type study 00 series 01 (~=level)
-const u8 P=0x00;//patient level
-const u8 C=0x00;//clinical study level
-const u8 S=0x01;//series level
-const u8 X=0x01;//special series level
 const u8 PCStype[]={
    C,//DA Study​Date
    S,//DA Series​Date
@@ -1012,6 +1012,14 @@ bool ifread(u32 bytesaskedfor)
    return (bytesaskedfor==bytesreceived);
 }
 
+bool kfread(u32 bytesaskedfor, u32 kloc)
+{
+   bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
+   DICMidx+=bytesreceived;
+   return (bytesaskedfor==bytesreceived);
+}
+
+
 //reads to DICMbuf and copies to kbuf
 //returns true when 8(+4) bytes were read
 bool ifreadattr(u8 kloc)
@@ -1098,7 +1106,7 @@ void uClose(int argc, char *argv[]) {
 
 #pragma mark - write
 
-bool uAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
+bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    //skip sequence and item delimiters
    if (vrcat==kvSA){D("%s","SA");return true;}
@@ -1107,79 +1115,57 @@ bool uAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    if (vrcat==kvSZ){D("%s","SZ");return true;}
    
    //skip group length
-   u32 Lbaseattr=u32swap(baseattr->t);
-   if (!(Lbaseattr | 0xFFFF)) return true;
+   //memcmp(kbuf, const void *ptr2, 4);
+   if ((kbuf[kloc+2]==0) && (kbuf[kloc+3]==0)){
+      if (! fseek(inFile, 4, SEEK_CUR)) return false;
+      return true;
+   }
    
 #pragma mark private
    if (kbuf[1] & 1)
    {
-      D("P %08X",Lbaseattr);
+      D("P %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
       return pAppend(kloc,vrcat,vlen);
    }
 
    switch (vrcat) {
       case kvUN:{
-         D("P %08X(UN) ",Lbaseattr);//private unknown
+         D("P %02X%02X%02X%02X UN",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);//unknown -> private
          return pAppend(kloc,vrcat,vlen);
       }
-      case kvpixelOF:{
-         D("F %08X",Lbaseattr);//
-         return fAppend(kloc,vrcat,vlen);
-      }
-      case kvpixelOD:{
-         D("D %08X",Lbaseattr);
-         return dAppend(kloc,vrcat,vlen);
-      }
-      case kvpixelOB:{
-         D("B %08X",Lbaseattr);
-         return bAppend(kloc,vrcat,vlen);
-      }
-      case kvpixelOW:{
-         D("W %08X",Lbaseattr);//native word
-         return wAppend(kloc,vrcat,vlen);
-      }
-      case kvpixelOL:{
-         D("B %08X",Lbaseattr);
-         return lAppend(kloc,vrcat,vlen);
-      }
-      case kvpixelOV:{
-         D("B %08X",Lbaseattr);
-         return vAppend(kloc,vrcat,vlen);
-      }
-
       default:
       {
          //PCSidx: index of next little endian tag in PCStag table (patient, clinical study, series)
          //if current tag is lower than PCStag[PCSidx], current tag is instance or frame tag
          
-         if (Lbaseattr < PCStag[PCSidx])
+         if (memcmp(kbuf, &PCStag[PCSidx], kloc+8) < 0)
          {
-            D("I %08X",Lbaseattr);
+            D("I %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
             return iAppend(kloc,vrcat,vlen);
          }
          else
          {
-            while ((Lbaseattr > PCStag[PCSidx]) && (PCSidx < 234)) (PCSidx)++;
-            if (Lbaseattr == PCStag[PCSidx])
+            while ((memcmp(kbuf, &PCStag[PCSidx], kloc+8) > 1) && (PCSidx < 234)) (PCSidx)++;
+            if (memcmp(kbuf, &PCStag[PCSidx], kloc+8)==0)
             {
                if (PCStype[PCSidx]==0)
                {
-                  D("E %08X",Lbaseattr);
+                  D("E %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
                   return eAppend(kloc,vrcat,vlen);
                }
                else
                {
-                  D("S %08X",Lbaseattr);
+                  D("S %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
                   return sAppend(kloc,vrcat,vlen);
                }
             }
             else
             {
-               D("I %08X",Lbaseattr);
+               D("I %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
                return iAppend(kloc,vrcat,vlen);
             }
          }
-         E("capi unknown or misplaced %08X\n",Lbaseattr);
+         E("capi unknown or misplaced %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
          return false;//should not be here
       }
    }
