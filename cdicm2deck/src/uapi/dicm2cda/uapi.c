@@ -15,7 +15,7 @@ extern uint8_t *kbuf;
 #pragma mark - read
 
 static u64 bytesreceived;
-bool ifread(u32 bytesaskedfor)
+bool vvread(u32 bytesaskedfor)
 {
    bytesreceived=fread(DICMbuf+DICMidx,1,bytesaskedfor,stdin);
    if (bytesreceived>0xFFFFFFFF)return 0;
@@ -23,7 +23,7 @@ bool ifread(u32 bytesaskedfor)
    return (bytesaskedfor==bytesreceived);
 }
 
-bool kfread(u32 bytesaskedfor, u32 kloc)
+bool kvRead(u32 bytesaskedfor, u32 kloc)
 {
    bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
    DICMidx+=bytesreceived;
@@ -32,7 +32,7 @@ bool kfread(u32 bytesaskedfor, u32 kloc)
 
 
 //returns true when 8(+4) bytes were read
-bool ifreadattr(u8 kloc)
+bool kkRead(u8 kloc)
 {
    if (fread(DICMbuf+DICMidx,1,8,stdin)!=8)
    {
@@ -124,7 +124,7 @@ int uCommit(bool hastrailing,int argc, char *argv[]){
 const unsigned long B00420010=0x10004200;//ST DocumentTitle
 const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
 //const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
-bool uAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
+bool vrAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
 {
    switch (vrcat) {
       case kvSA:
@@ -133,7 +133,7 @@ bool uAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
       case kvIZ: break;
 
       case kvTS: {
-         if ((vlen > 0) && (!ifread(vlen))) return false;
+         if ((vlen > 0) && (!vvread(vlen))) return false;
 
          //ST DocumentTitle 00420010
          if (!memcmp(kbuf, &B00420010, 4)) {
@@ -148,14 +148,14 @@ bool uAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
       } break;
       case kv01: {
          //OB encapsulaed document 00420011 xml cda o pdf
-         if (!ifread(vlen)) return false;
+         if (!vvread(vlen)) return false;
          if (!memcmp(kbuf, &B00420011, 4))
          {
             documentoffset=(u32)(DICMidx-vlen);
             documentlength=vlen - (DICMbuf[DICMidx-1]==0);//last char 0x00 ?
          }
       } break;
-      default:if (!ifread(vlen)) return false;break;
+      default:if (!vvread(vlen)) return false;break;
    }
    return true;
 }

@@ -37,6 +37,14 @@ Open the file and reads dicm structure
 
 ### (3) uapi (uncategorized)
 Reads the attribute values in dicm order
+Read and append are performed by distinct functions:
+- vvread (valueBuffer value read)
+- kvread (keyBuffer value read)
+- kkRead (keyBuffer key read)
+
+- vrAppend
+- csAppend
+
 
 ## (3) capi (categorized)
 Overrides uapi and dispatch the attributes into patient/study, series, instance, pixel and private categories

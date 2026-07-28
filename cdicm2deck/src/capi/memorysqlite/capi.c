@@ -105,25 +105,25 @@ bool eAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    case UI: {
       attr->c=REPERTOIRE_GL;
       switch (attr->t) {
-         case B00080018: if (!uAppend(kloc,kviuid,attr->l)) return false; break;
-         case B0020000D: if (!uAppend(kloc,kveuid,attr->l)) return false; break;
-         case B0020000E: if (!uAppend(kloc,kvsuid,attr->l)) return false; break;
-         case B00080019: if (!uAppend(kloc,kvpuid,attr->l)) return false; break;//pyramid
-         case B00200242: if (!uAppend(kloc,kvcuid,attr->l)) return false; break;//SOP​Instance​UID​Of​Concatenation​Source
+         case B00080018: if (!vrAppend(kloc,kviuid,attr->l)) return false; break;
+         case B0020000D: if (!vrAppend(kloc,kveuid,attr->l)) return false; break;
+         case B0020000E: if (!vrAppend(kloc,kvsuid,attr->l)) return false; break;
+         case B00080019: if (!vrAppend(kloc,kvpuid,attr->l)) return false; break;//pyramid
+         case B00200242: if (!vrAppend(kloc,kvcuid,attr->l)) return false; break;//SOP​Instance​UID​Of​Concatenation​Source
             //case B00081150:
-         default:        if (!uAppend(kloc,kvUI,  attr->l)) return false;break;
+         default:        if (!vrAppend(kloc,kvUI,  attr->l)) return false;break;
       }
-      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
    case DA: {
       attr->c=REPERTOIRE_GL;
       switch (attr->t) {
-         case B00080020: if (!uAppend(kloc,kvedate, attr->l)) return false;break;
-         case B00080021: if (!uAppend(kloc,kvsdate, attr->l)) return false;break;
-         case B00100030: if (!uAppend(kloc,kvpbirth,attr->l)) return false;break;
-         default:        if (!uAppend(kloc,kvTP,    attr->l)) return false;break;
+         case B00080020: if (!vrAppend(kloc,kvedate, attr->l)) return false;break;
+         case B00080021: if (!vrAppend(kloc,kvsdate, attr->l)) return false;break;
+         case B00100030: if (!vrAppend(kloc,kvpbirth,attr->l)) return false;break;
+         default:        if (!vrAppend(kloc,kvTP,    attr->l)) return false;break;
       }
-      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
 
    switch (vrcat)
@@ -268,17 +268,17 @@ bool sAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    if (!ufread(vlen)) return false;
    memcpy(Sbuf+Sidx, DICMbuf+DICMidx-vlen, vlen);
 
-   case DS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTA,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+   case DS: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTA,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
    case IS: {
       attr->c=REPERTOIRE_GL;
       switch (attr->t) {
-         case B00200011:if (!uAppend(kloc,kvsnumber, attr->l)) return false; break;
-         case B00200012:if (!uAppend(kloc,kvianumber,attr->l)) return false; break;
-         case B00200013:if (!uAppend(kloc,kvinumber, attr->l)) return false; break;
-         case B00280008:if (!uAppend(kloc,kvframesnumber, attr->l)) return false; break;
-         default:       if (!uAppend(kloc,kvTA,      attr->l)) return false; break;
+         case B00200011:if (!vrAppend(kloc,kvsnumber, attr->l)) return false; break;
+         case B00200012:if (!vrAppend(kloc,kvianumber,attr->l)) return false; break;
+         case B00200013:if (!vrAppend(kloc,kvinumber, attr->l)) return false; break;
+         case B00280008:if (!vrAppend(kloc,kvframesnumber, attr->l)) return false; break;
+         default:       if (!vrAppend(kloc,kvTA,      attr->l)) return false; break;
       }
-      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
 
 
@@ -469,40 +469,40 @@ bool iAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    case US: {
       attr->c=REPERTOIRE_GL;
       switch (attr->t) {
-         case B00280002: if (!uAppend(kloc,kvspp,   attr->l)) return false; break;//spp
-         case B00280010: if (!uAppend(kloc,kvrows,  attr->l)) return false; break;//rows
-         case B00280011: if (!uAppend(kloc,kvcols,  attr->l)) return false; break;//cols
-         case B00280100: if (!uAppend(kloc,kvalloc, attr->l)) return false; break;//alloc
-         case B00280101: if (!uAppend(kloc,kvstored,attr->l)) return false; break;//stored
-         case B00280102: if (!uAppend(kloc,kvhigh,  attr->l)) return false; break;//high
-         case B00280103: if (!uAppend(kloc,kvpixrep,attr->l)) return false; break;//pixrep
-         case B00280106: if (!uAppend(kloc,kvplanar,attr->l)) return false; break;//planar
-         default:        if (!uAppend(kloc,kvUS,    attr->l)) return false;
+         case B00280002: if (!vrAppend(kloc,kvspp,   attr->l)) return false; break;//spp
+         case B00280010: if (!vrAppend(kloc,kvrows,  attr->l)) return false; break;//rows
+         case B00280011: if (!vrAppend(kloc,kvcols,  attr->l)) return false; break;//cols
+         case B00280100: if (!vrAppend(kloc,kvalloc, attr->l)) return false; break;//alloc
+         case B00280101: if (!vrAppend(kloc,kvstored,attr->l)) return false; break;//stored
+         case B00280102: if (!vrAppend(kloc,kvhigh,  attr->l)) return false; break;//high
+         case B00280103: if (!vrAppend(kloc,kvpixrep,attr->l)) return false; break;//pixrep
+         case B00280106: if (!vrAppend(kloc,kvplanar,attr->l)) return false; break;//planar
+         default:        if (!vrAppend(kloc,kvUS,    attr->l)) return false;
       }
-      if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
 
    case CS: {
       attr->c=REPERTOIRE_GL;
       switch (attr->t) {
-         case B00100040: if (!uAppend(kloc,kvpsex,     attr->l)) return false; break;
+         case B00100040: if (!vrAppend(kloc,kvpsex,     attr->l)) return false; break;
          case B00400033: { //kveat CS Accession​Number type
             u32 *itemtag=(u32 *)kbuf;
             if (*itemtag==B00080051)
             {
-               if (!uAppend(kloc,kveat,attr->l)) return false;
+               if (!vrAppend(kloc,kveat,attr->l)) return false;
             }
             else
             {
-               if (!uAppend(kloc,kvTA,attr->l)) return false;
+               if (!vrAppend(kloc,kvTA,attr->l)) return false;
             }
          } break;
-         case B00080060: if (!uAppend(kloc,kvsmod,     attr->l)) return false; break;
-         case B00080008: if (!uAppend(kloc,kvitype,    attr->l)) return false; break;
-         case B00280004: if (!uAppend(kloc,kvphotocode,attr->l)) return false; break;
+         case B00080060: if (!vrAppend(kloc,kvsmod,     attr->l)) return false; break;
+         case B00080008: if (!vrAppend(kloc,kvitype,    attr->l)) return false; break;
+         case B00280004: if (!vrAppend(kloc,kvphotocode,attr->l)) return false; break;
             // https://dicom.innolitics.com/ciods/rt-dose/image-pixel/00280004
          case B00080005: {
-            if (!uAppend(kloc,kvTA,attr->l)) return false;
+            if (!vrAppend(kloc,kvTA,attr->l)) return false;
             u16 repidxs=repertoireidx(DICMbuf+DICMidx-attr->l,attr->l);
             if (repidxs==0x09)
             {

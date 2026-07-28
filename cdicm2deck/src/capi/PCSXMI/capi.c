@@ -31,7 +31,7 @@ void cClose(int argc, char *argv[])
 
 bool csAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
-   //no ifread
+   //no vvread
    //the value is found in kbuf+kloc+12
 
    return true;

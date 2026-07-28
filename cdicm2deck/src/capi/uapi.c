@@ -1004,7 +1004,7 @@ const u8 PCStype[]={
 #pragma mark - read
 
 static u64 bytesreceived;
-bool ifread(u32 bytesaskedfor)
+bool vvread(u32 bytesaskedfor)
 {
    bytesreceived=fread(DICMbuf+DICMidx,1,bytesaskedfor,stdin);
    if (bytesreceived>0xFFFFFFFF)return 0;
@@ -1012,7 +1012,7 @@ bool ifread(u32 bytesaskedfor)
    return (bytesaskedfor==bytesreceived);
 }
 
-bool kfread(u32 bytesaskedfor, u32 kloc)
+bool kvRead(u32 bytesaskedfor, u32 kloc)
 {
    bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
    DICMidx+=bytesreceived;
@@ -1022,7 +1022,7 @@ bool kfread(u32 bytesaskedfor, u32 kloc)
 
 //reads to DICMbuf and copies to kbuf
 //returns true when 8(+4) bytes were read
-bool ifreadattr(u8 kloc)
+bool kkRead(u8 kloc)
 {
    if (fread(DICMbuf+DICMidx,1,8,stdin)!=8)
    {
@@ -1106,7 +1106,7 @@ void uClose(int argc, char *argv[]) {
 
 #pragma mark - write
 
-bool uAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
+bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    //skip sequence and item delimiters
    if (vrcat==kvSA){D("%s","SA");return true;}

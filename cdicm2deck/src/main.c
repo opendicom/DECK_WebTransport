@@ -30,26 +30,26 @@ int dicmDataset(
    )
    {
       switch (attr->r) {
-         case FD: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvFD,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case FL: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvFL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case SL: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvSL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case SS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvSS,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UL: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvUL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case US: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvUS,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case AT: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvAT,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UI: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvUI,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case FD: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvFD,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case FL: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvFL,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case SL: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvSL,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case SS: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvSS,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case UL: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvUL,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case US: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvUS,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case AT: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvAT,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case UI: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvUI,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case AS:
-         case DT: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTP,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case DA: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTP,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case TM: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTP,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case DT: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTP,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case DA: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTP,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case TM: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTP,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case CS: {
             attr->c=REPERTOIRE_GL;
-            if (!kfread(attr->l,kloc+12)) return false;
+            if (!kvRead(attr->l,kloc+12)) return false;
             if (attr->t == 0x05000800){
                u16 repidxs=repertoireidx(kbuf+kloc+12,attr->l);
                if (repidxs==0x09)
                {
-                  E("bad repertoire %.*s",attr->l,DICMbuf+DICMidx-attr->l);
+                  E("bad repertoire %.*s",attr->l,kbuf+kloc+12);
                   return exitBadRepertoire;
                }
                else
@@ -59,16 +59,16 @@ int dicmDataset(
                }
             }
             if (!csAppend(kloc,kvTA,attr->l)) return false;
-            if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+            if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
          } break;
          case AE:
-         case DS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTA,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case IS: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kvTA,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case DS: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTA,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case IS: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTA,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case LO:
          case LT:
          case SH:
-         case ST: { attr->c=keycs;         if (!uAppend(kloc,kvTS,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case PN: { attr->c=keycs;         if (!uAppend(kloc,kvPN,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case ST: { attr->c=keycs;         if (!vrAppend(kloc,kvTS,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case PN: { attr->c=keycs;         if (!vrAppend(kloc,kvPN,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
          case OF:
          case OD:
          case OB:
@@ -76,10 +76,10 @@ int dicmDataset(
          case OL:
          case OV:
          case SV:
-         case UV: { attr->c=REPERTOIRE_GL; if (!uAppend(kloc,kv01,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UC: { attr->c=keycs;         if (!uAppend(kloc,kvTL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UT: { attr->c=keycs;         if (!uAppend(kloc,kvTL,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
-         case UR: { attr->c=ISO_IR192;     if (!uAppend(kloc,kvTU,attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;//RFC3986
+         case UV: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kv01,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case UC: { attr->c=keycs;         if (!vrAppend(kloc,kvTL,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case UT: { attr->c=keycs;         if (!vrAppend(kloc,kvTL,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case UR: { attr->c=ISO_IR192;     if (!vrAppend(kloc,kvTU,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;//RFC3986
 #pragma mark SQ
          case SQ://sequence
          {
@@ -93,13 +93,13 @@ int dicmDataset(
             else beforebyteSQ=DICMidx + attr->l;
 
 
-            if (!uAppend(kloc,kvSA, attr->l)) return false;
+            if (!vrAppend(kloc,kvSA, attr->l)) return false;
 
 
 #pragma mark SQ empty
             if (attr->l==0)
             {
-               if (!uAppend(kloc,kvSZ, attr->l)) return false;
+               if (!vrAppend(kloc,kvSZ, attr->l)) return false;
             }
             else
             {
@@ -110,7 +110,7 @@ int dicmDataset(
 #pragma mark item level
                kloc+=8;
                //for each first attr fffee000 of any new item
-               if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+               if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
                struct trcl * itemattr=(struct trcl*) (kbuf+kloc);
                u32 *delimiter=(u32*) (kbuf+kloc);//tag
                while ((DICMidx < beforebyteSQ) && (*delimiter==0x00E0FEFF)) //itemstart compulsory
@@ -126,8 +126,8 @@ int dicmDataset(
                   }
                   else beforebyteIT=DICMidx + *delimiter;
 
-                  if (!uAppend(kloc,kvIA, 0)) return false;
-                  if (!ifreadattr(kloc))return false;
+                  if (!vrAppend(kloc,kvIA, 0)) return false;
+                  if (!kkRead(kloc))return false;
                   if (exitValue=dicmDataset(kloc,itemattr,keycs,(u32)beforebyteIT,0xfffee00d)) return exitValue;
                   //write IZ
                   if (u32swap(   itemattr->t)==0xfffee00d)
@@ -135,24 +135,24 @@ int dicmDataset(
                         itemattr->t=0xFFFFFFFF;
                         itemattr->r=IZ;
                         itemattr->l=0;
-                     if (!uAppend(kloc,kvIZ, itemattr->l)) return false;
-                     if (!ifreadattr(kloc))  {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;};
+                     if (!vrAppend(kloc,kvIZ, itemattr->l)) return false;
+                     if (!kkRead(kloc))  {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;};
                   }
                   else
                   {
                      if (itemattr->r==0xFFFF) return false;//could not read next itemattr with item dataset
-                     if (!uAppend(kloc,kvIZ, itemattr->l)) return false;
+                     if (!vrAppend(kloc,kvIZ, itemattr->l)) return false;
                   }
                   *itemnumber=u32swap(u32swap(*itemnumber)+1);
                }//end while item
                kloc-=8;
 #pragma mark item level end
-               if (!uAppend(kloc,kvSZ, 0)) return false;
+               if (!vrAppend(kloc,kvSZ, 0)) return false;
 
                //   itemattr may be SZ or post SQ
                if (u32swap(itemattr->t)==0xfffee0dd)
                {
-                  if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+                  if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
                }
                else
                {
@@ -169,7 +169,7 @@ int dicmDataset(
             //unknown
             // https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_6.2.2
             //5. The Value Length Field of VR UN may contain Undefined Length (FFFFFFFFH), in which case the contents can be assumed to be encoded with Implicit VR. See Section 7.5.1 to determine how to parse Data Elements with an Undefined Length.
-         case UN: { attr->l=REPERTOIRE_GL; if (!uAppend(kloc,kvUN, attr->l)) return false; if (! ifreadattr(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+         case UN: { attr->l=REPERTOIRE_GL; if (!vrAppend(kloc,kvUN, attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
 
          case 0xFFFF:return true;//end of buffer
 
@@ -189,7 +189,7 @@ int dicmDataset(
       {
          //trailing padding
          attr->c=REPERTOIRE_GL;
-         if (!ifread(attr->l)) {
+         if (!vvread(attr->l)) {
             E("%s","trailling padding");
             return false;
          }
@@ -256,15 +256,14 @@ int main(int argc,  char *argv[]) {
 //9E
    //file opened
    if ((exitValue=uCreate(inFile, argc, argv))!=exitZeroError) exit(exitValue);
+   if (fseek(inFile, DICMidx, SEEK_SET)!=0) exit(exitNotDICM);//0x9E 0002,0002
    kbuf = malloc(0xFF);
    struct trcl * baseattr=(struct trcl*) kbuf;
-
-      if (fseek(inFile, DICMidx, SEEK_SET)!=0) exit(exitNotDICM);//0x9E 0002,0002
-      if (ifreadattr(0) && (baseattr->t==0x02000200))
-      {
-         if ((exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))==exitZeroError) exitValue=uCommit(baseattr,argc,argv); //successfull parsing (exitValue==0, everything OK)
-         uClose(argc, argv);
-      }
+   if (kkRead(0) && (baseattr->t==0x02000200))
+   {
+      if ((exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))==exitZeroError) exitValue=uCommit(baseattr,argc,argv); //successfull parsing (exitValue==0, everything OK)
+      uClose(argc, argv);
+   }
       else exitValue=exitNotDICM;
       fclose(inFile);
    
