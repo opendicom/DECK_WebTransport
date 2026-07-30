@@ -8,51 +8,60 @@
 #include <stdint.h>
 #include <string.h>
 
-extern char *DICMbuf;
+//extern char *DICMbuf;
+//extern FILE *inFile;
 extern u64 DICMidx;
 extern uint8_t *kbuf;
-
+u64 xmlOffset=0;
+u32 xmlLength=0;
 #pragma mark - read
 
 static u64 bytesreceived;
-bool vvread(u32 bytesaskedfor)
+bool vvRead(u32 bytesaskedfor)
 {
-   bytesreceived=fread(DICMbuf+DICMidx,1,bytesaskedfor,stdin);
-   if (bytesreceived>0xFFFFFFFF)return 0;
-   DICMidx+=bytesreceived;
-   return (bytesaskedfor==bytesreceived);
+   DICMidx+=bytesaskedfor;
+   return (fseek(stdin, bytesaskedfor, SEEK_CUR)==0);
 }
 
-bool kvRead(u32 bytesaskedfor, u32 kloc)
+bool kvRead(u32 bytesaskedfor, u32 kloc12)
 {
-   bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
-   DICMidx+=bytesreceived;
+   bytesreceived=fread(kbuf+kloc12,1,bytesaskedfor,stdin);
+   DICMidx+=bytesaskedfor;
    return (bytesaskedfor==bytesreceived);
 }
 
 
 //returns true when 8(+4) bytes were read
+const char *space=" ";
 bool kkRead(u8 kloc)
 {
-   if (fread(DICMbuf+DICMidx,1,8,stdin)!=8)
+   // read 8 bytes, and, eventually, four additional bytes of long length at kloc+8
+
+   //starts above used space (+12), to copy then byte by byte in current space
+   if (fread(kbuf+kloc+12,1,8,stdin)!=8)
    {
-      if (ferror(stdin)) D("%s","stdin error");
+      if (ferror(stdin)) E("%s","stdin error");
       return false;
    }
+   DICMidx+=8;
 
    //group LE>BE
-   kbuf[kloc]=DICMbuf[DICMidx+1];
-   kbuf[kloc+1]=DICMbuf[DICMidx];
+   kbuf[kloc]=kbuf[kloc+13];
+   kbuf[kloc+1]=kbuf[kloc+12];
    //element LE>BE
-   kbuf[kloc+2]=DICMbuf[DICMidx+3];
-   kbuf[kloc+3]=DICMbuf[DICMidx+2];
+   kbuf[kloc+2]=kbuf[kloc+15];
+   kbuf[kloc+3]=kbuf[kloc+14];
    //vr vl copied (LE)
-   kbuf[kloc+4]=DICMbuf[DICMidx+4];
-   kbuf[kloc+5]=DICMbuf[DICMidx+5];
-   kbuf[kloc+6]=DICMbuf[DICMidx+6];
-   kbuf[kloc+7]=DICMbuf[DICMidx+7];
+   kbuf[kloc+4]=kbuf[kloc+16];
+   kbuf[kloc+5]=kbuf[kloc+17];
+   //kbuf[kloc+6] for repertoire
+   //kbuf[kloc+7] for repertoire
+   kbuf[kloc+8]=kbuf[kloc+18];
+   kbuf[kloc+9]=kbuf[kloc+19];
+   kbuf[kloc+10]=0;
+   kbuf[kloc+11]=0;
 
-   switch ((DICMbuf[DICMidx+5]<<8)|(DICMbuf[DICMidx+4])) {
+   switch ((kbuf[kloc+5]<<8)|(kbuf[kloc+4])) {
       case OB://other byte
       case OW://other word
       case OD://other double
@@ -63,27 +72,25 @@ bool kkRead(u8 kloc)
       case UV://unsigned 64-bit very long
       case UC://unlimited characters
       case UT://unlimited text
-      case UR://universal ressource rcurl identifier/locator
+      case UR://universal ressource url identifier/locator
       case SQ://sequence
       {
-         DICMidx+=8;
-         if (fread(DICMbuf+DICMidx,1,4,stdin)!=4)
+         if (fread(kbuf+kloc+8,1,4,stdin)!=4)
          {
             if (ferror(stdin)) E("%s","stdin error");
             return false;
          }
-         memcpy(kbuf+kloc+8, DICMbuf+DICMidx, 4);
          DICMidx+=4;
       }break;
-      default:
-      {
+      case IA:
+      case IZ:
+      case SZ: {
          //IA,IZ,SZ require postprocessing in dicm2dckv
-         DICMidx+=8;
-         memcpy(kbuf+kloc+8, DICMbuf+DICMidx-2, 2);
          kbuf[kloc+10]=0;
          kbuf[kloc+11]=0;
       }break;
    }
+   //D("%8lu%*s%02X%02X%02X%02X %c%c\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5]);
    return true;
 }
 
@@ -95,6 +102,9 @@ int uPrerequisite(u64 filesize, int argc, char *argv[]) {
 
 int uCreate(FILE *inFILE, int argc, char *argv[])
 {
+   DICMidx=0x9E;//0x9E 0002,0002
+   if (fseek(stdin, DICMidx, SEEK_SET)!=0) return exitNotDICM;//0x9E 0002,0002
+   kbuf = malloc(0x3000);
    return exitZeroError;
 }
 
@@ -103,17 +113,28 @@ void uClose(int argc, char *argv[]){
 }
 
 static u32 titlerepidx=0;
+static unsigned char documentpadding=0;//0 or 1
 static u32 documentoffset=0;
 static u32 documentlength=0;
 
 
 
 int uCommit(bool hastrailing,int argc, char *argv[]){
-    FILE *outFile=fopen("dscd.xml", "w");
-   if (outFile==NULL) return exitErrorOutPath;
-   if (!fwrite(DICMbuf+documentoffset ,1, documentlength , outFile)) return exitErrorFwrite;
-   fclose(outFile);
+
+   char cwd[1024];
+   getcwd(cwd, sizeof(cwd));
+   D("working dir:  %s", cwd);
+   FILE *fptr;
+   // 2. Open (or create) the file in write mode
+   fptr = fopen("filename.txt", "w");
+
+   FILE *fileptr=fopen("/home/jacquesfauquex/DECK_WebTransport/cdicm2deck/cmake-build-debug/Testing/Temporary/dscd.xml", "w");
+   if (fileptr==NULL) return exitErrorOutPath;
+   if (!fwrite(kbuf+12 ,1, 1 , fileptr)) return exitErrorFwrite;
+   fclose(fileptr);
    I("%s","dscd.xml written");
+   system("xdg-open dscd.xml");
+
    return exitZeroError;
 }
 
@@ -121,7 +142,7 @@ int uCommit(bool hastrailing,int argc, char *argv[]){
 //const unsigned long B0040E001=0x0E002000;//ST CDA root^extension
 //const unsigned long B00080060=0x60000800;//CS Modality
 //const unsigned long B0008103E=0x3E100800;//LO Series name
-const unsigned long B00420010=0x10004200;//ST DocumentTitle
+//const unsigned long B00420010=0x10004200;//ST DocumentTitle
 const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
 //const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
 bool vrAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
@@ -131,11 +152,11 @@ bool vrAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
       case kvSZ:
       case kvIA:
       case kvIZ: break;
-
+/*
       case kvTS: {
          if ((vlen > 0) && (!vvread(vlen))) return false;
-
          //ST DocumentTitle 00420010
+
          if (!memcmp(kbuf, &B00420010, 4)) {
             titlerepidx=kbuf[kloc+6] + (kbuf[kloc+7] << 8);
             u32 utf8length=0;
@@ -143,24 +164,28 @@ bool vrAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
             printf( "%.*s\n", utf8length,DICMbuf+DICMidx );
          }
 
-         //LO MIME Type of Encapsulated Document 00420012 xml cda o pdf
-//TODO
-      } break;
+      } break;*/
       case kv01: {
          //OB encapsulaed document 00420011 xml cda o pdf
-         if (!vvread(vlen)) return false;
          if (!memcmp(kbuf, &B00420011, 4))
          {
-            documentoffset=(u32)(DICMidx-vlen);
-            documentlength=vlen - (DICMbuf[DICMidx-1]==0);//last char 0x00 ?
+            if (!kvRead(vlen,kloc+12)) return false;
+            xmlOffset=DICMidx-vlen;//was adjusted in kvReed, we need to roll it back
+            xmlLength=vlen - (kbuf[kloc+vlen+11]==0);
+            D("xmlOffset:%lu xmlLength:%d\n",xmlOffset,xmlLength);
+         }
+         else {
+            if (!vvRead(vlen)) return false;
          }
       } break;
-      default:if (!vvread(vlen)) return false;break;
+      case kvCS:
+      {
+         //no vvRead
+         //kvRead already performed and DICMidx adjusted
+      } break;
+      default: {
+         if (!vvRead(vlen)) return false;
+      } break;
    }
-   return true;
-}
-
-bool csAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
-{
    return true;
 }

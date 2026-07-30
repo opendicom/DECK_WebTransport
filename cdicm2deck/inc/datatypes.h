@@ -26,6 +26,27 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>
+enum exitCdicm2deck{
+  exitZeroError=0,
+  exitErrorIn,//1
+  exitErrorOutPath,//2
+  exitErrorWrite,//3
+  exitErrorCreateKV,//4
+  exitSOPinstanceRejected,//5
+  exitErrorParsing,//6
+  exitNotDICM,//7
+  exitErrorCommit,//8
+  exitErrorClose,//9
+  exitBadRepertoire,//10
+  exitErrorDataset,//11
+  exitErrorRead,//12
+  exitNoDataset,//13
+  exitNotExplicitLittleEndian,//14
+  exitNotEncapsulatedCDA,//15
+  exitErrorFwrite,//16
+ exitErrorSqliteOpen,//17
+ exitErrorGroupLength//18
+};
 
 typedef   int8_t s8;//%c
 typedef  uint8_t u8;//%c
@@ -35,6 +56,8 @@ typedef  int32_t s32;//%d
 typedef uint32_t u32;//%u
 typedef  int64_t s64;//%lld
 typedef uint64_t u64;//%llu
+
+
 
 u8 intdecsize(int i);
 
@@ -102,27 +125,7 @@ void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length );
 
 #pragma mark - main & log
 
-enum exitCdicm2deck{
-   exitZeroError=0,
-   exitErrorIn,//1
-   exitErrorOutPath,//2
-   exitErrorWrite,//3
-   exitErrorCreateKV,//4
-   exitSOPinstanceRejected,//5
-   exitErrorParsing,//6
-   exitNotDICM,//7
-   exitErrorCommit,//8
-   exitErrorClose,//9
-   exitBadRepertoire,//10
-   exitErrorDataset,//11
-   exitErrorRead,//12
-   exitNoDataset,//13
-   exitNotExplicitLittleEndian,//14
-   exitNotEncapsulatedCDA,//15
-   exitErrorFwrite,//16
-  exitErrorSqliteOpen,//17
-  exitErrorGroupLength//18
-};
+
 
 //https://stackoverflow.com/questions/53522586/variadic-macro-calling-fprintf-how-to-add-arguments-to-va-args
 //el if permite sumar los niveles más fundamentales

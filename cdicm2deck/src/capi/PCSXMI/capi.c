@@ -29,15 +29,6 @@ void cClose(int argc, char *argv[])
 
 #pragma mark append
 
-bool csAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
-{
-   //no vvread
-   //the value is found in kbuf+kloc+12
-
-   return true;
-}
-
-
 //         printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx-12,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
 
 bool eAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)

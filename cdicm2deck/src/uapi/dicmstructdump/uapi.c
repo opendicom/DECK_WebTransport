@@ -8,21 +8,20 @@
 
 extern char *DICMbuf;
 extern u64 DICMidx;
-extern uint8_t *kbuf;
+extern char *kbuf;
 
 #pragma mark - read
 
 static u64 bytesreceived;
-bool vvread(u32 bytesaskedfor)
+bool vvRead(u32 bytesaskedfor)
 {
    bytesreceived=fread(DICMbuf+DICMidx,1,bytesaskedfor,stdin);
    DICMidx+=bytesreceived;
    return (bytesaskedfor==bytesreceived);
 }
-bool kvRead(u32 bytesaskedfor, u32 kloc)
+bool kvRead(u32 bytesaskedfor, u32 kloc12)
 {
-   bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
-   DICMidx+=bytesreceived;
+   bytesreceived=fread(kbuf+kloc12,1,bytesaskedfor,stdin);
    return (bytesaskedfor==bytesreceived);
 }
 
@@ -36,26 +35,28 @@ bool kkRead(u8 kloc)
    //reorders group and unit at kloc
    // copies the VR and empty bytes at kloc+4
    // eventually reads the four additional bytes of long length at kloc+8
-   if (fread(kbuf+kloc+12,1,8,stdin)!=8)
+   if (fread(DICMbuf+DICMidx,1,8,stdin)!=8)
    {
       if (ferror(stdin)) E("%s","stdin error");
       return false;
    }
-   
+
    //group LE>BE
-   kbuf[kloc]=kbuf[kloc+13];
-   kbuf[kloc+1]=kbuf[kloc+12];
+   kbuf[kloc]=DICMbuf[DICMidx+1];
+   kbuf[kloc+1]=DICMbuf[DICMidx];
    //element LE>BE
-   kbuf[kloc+2]=kbuf[kloc+15];
-   kbuf[kloc+3]=kbuf[kloc+14];
+   kbuf[kloc+2]=DICMbuf[DICMidx+3];
+   kbuf[kloc+3]=DICMbuf[DICMidx+2];
    //vr vl copied (LE)
-   kbuf[kloc+4]=kbuf[kloc+16];
-   kbuf[kloc+5]=kbuf[kloc+17];
-   kbuf[kloc+8]=kbuf[kloc+18];
-   kbuf[kloc+9]=kbuf[kloc+19];
+   kbuf[kloc+4]=DICMbuf[DICMidx+4];
+   kbuf[kloc+5]=DICMbuf[DICMidx+5];
+   //kbuf[kloc+6] for repertoire
+   //kbuf[kloc+7] for repertoire
+   kbuf[kloc+8]=DICMbuf[DICMidx+6];
+   kbuf[kloc+9]=DICMbuf[DICMidx+7];
    kbuf[kloc+10]=0;
    kbuf[kloc+11]=0;
-
+   DICMidx+=8;
    switch ((kbuf[kloc+5]<<8)|(kbuf[kloc+4])) {
       case OB://other byte
       case OW://other word
@@ -70,11 +71,14 @@ bool kkRead(u8 kloc)
       case UR://universal ressource url identifier/locator
       case SQ://sequence
       {
-         if (fread(kbuf+kloc+8,1,4,stdin)!=4)
+         if (fread(DICMbuf+DICMidx,1,4,stdin)!=4)
          {
             if (ferror(stdin)) E("%s","stdin error");
             return false;
          }
+         //replace short length by long one
+         memcpy(kbuf+kloc+8,DICMbuf+DICMidx,4);
+         DICMidx+=4;
       }break;
       case IA:
       case IZ:
@@ -91,10 +95,30 @@ bool kkRead(u8 kloc)
 #pragma mark - instance transactions
 
 int uPrerequisite(u64 filesize, int argc, char *argv[]) {
+   DICMbuf=malloc(filesize);
+
+#pragma mark filesystem
+   const char* outdir = getenv("CDICM2DECKoutdir");
+   D("CDICM2DECKoutdir:  %s", outdir);
+   chdir(outdir);
+
+   const char* errdir = getenv("CDICM2DECKerrdir");
+   D("CDICM2DECKerrdir:  %s", errdir);
+
+   char cwd[1024];
+   getcwd(cwd, sizeof(cwd));
+   D("working dir:  %s", cwd);
+
    return exitZeroError;
 }
 int uCreate(FILE *inFILE, int argc, char *argv[])
 {
+   DICMidx=0x9E;//0x9E 0002,0002
+   bytesreceived=fread(DICMbuf,1,DICMidx,stdin);
+   if (DICMidx!=bytesreceived) return exitNotDICM;
+   //if (fseek(stdin, DICMidx, SEEK_SET)!=0) return exitNotDICM;
+
+   kbuf = malloc(0x3000);
    return exitZeroError;
 }
 int uCommit(bool hastrailing,int argc, char *argv[])
@@ -109,32 +133,16 @@ void uClose(int count, char *vector[])
    return;
 }
 
-#pragma mark - write
-
 const char *space=" ";
 bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    switch (vrcat) {
-      case kvSA: {
-         printf("%8lu%*s%02X%02X%02X%02X+\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3]);
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 12);
-         DICMidx+=12;
-      }break;
-      case kvSZ: {
-         printf("%8lu%*s%02X%02X%02X%02X~\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3]);
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
-      }break;
-      case kvIA: {
-         printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,kloc+kloc-8,space,kbuf[kloc-4],kbuf[kloc-3],kbuf[kloc-2],kbuf[kloc-1]);
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
-      }break;
-      case kvIZ: {
-         printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,kloc+kloc-8,space,kbuf[kloc-4],kbuf[kloc-3],kbuf[kloc-2],kbuf[kloc-1]);
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
-   }break;
+#pragma mark -sequence
+      case kvSA: {printf("%8lu%*s%02X%02X%02X%02X+\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3]);}break;
+      case kvSZ: {printf("%8lu%*s%02X%02X%02X%02X~\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3]);}break;
+      case kvIA: {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,kloc+kloc-8,space,kbuf[kloc-4],kbuf[kloc-3],kbuf[kloc-2],kbuf[kloc-1]);}break;
+      case kvIZ: {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,kloc+kloc-8,space,kbuf[kloc-4],kbuf[kloc-3],kbuf[kloc-2],kbuf[kloc-1]);}break;
+#pragma mark -long length
       case kv01://OB OD OF OL OV OW SV UV
       //OB Encapsulated​Document 00420011 xml cda o pdf
       //OF 0x7FE00008
@@ -148,9 +156,7 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       //UV Encapsulated​Pixel​Data​Value​Total​Length 7FE00003
       case kvUN: {
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 12);
-         DICMidx+=12;
-         if (!vvread(vlen)) return false;
+         if (!vvRead(vlen)) return false;
          printf("{%lu,%u}\n",DICMidx-vlen,vlen);
       }break;
       case kvTL://UC
@@ -158,28 +164,25 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       //UT AccessionNumberIssuer universal 00080051.00400032
       case kvTU: { //UR
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 12);
-         DICMidx+=12;
          if (vlen>0)
          {
             //charset -> utf-8
             u32 repidx=kbuf[kloc+6] + (kbuf[kloc+7] << 8);
             u32 charstart=(u32)DICMidx;
             u32 utf8length=0;
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             utf8(repidx,DICMbuf,charstart,vlen,DICMbuf,(u32)DICMidx,&utf8length);
             printf( "\"%.*s\"\n", utf8length,DICMbuf+DICMidx );
          }
       } break;
+#pragma mark -numbers
       case kvFD: { //floating point double
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             printf("(");
             double d;
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             for (u16 idx=DICMidx-vlen; idx<DICMidx; idx+=8)
             {
                memcpy(&d, DICMbuf+idx, 8);
@@ -191,13 +194,11 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       }break;
       case kvFL: { //floating point single
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             printf("(");
             float f;
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             for (u16 idx=DICMidx-vlen; idx<DICMidx; idx+=4)
             {
                memcpy(&f, DICMbuf+idx, 4);
@@ -209,13 +210,11 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       }break;
       case kvSL: { //signed long
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             printf("(");
             s32 s4B;
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             for (u16 idx=DICMidx-vlen; idx<DICMidx; idx+=4)
             {
                memcpy(&s4B, DICMbuf+idx, 4);
@@ -227,13 +226,11 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       }break;
       case kvSS: { //signed short
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             printf("(");
             s16 s2B;
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             for (u16 idx=DICMidx-vlen; idx<DICMidx; idx+=2)
             {
                memcpy(&s2B, DICMbuf+idx, 2);
@@ -245,13 +242,11 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       }break;
       case kvUL: { //unsigned long
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             printf("(");
             u32 u4B;
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             for (u16 idx=DICMidx-vlen; idx<DICMidx; idx+=4)
             {
                memcpy(&u4B, DICMbuf+idx, 4);
@@ -263,13 +258,11 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       }break;
       case kvUS:{ //unsigned short
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             printf("(");
             u16 u2B;
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             for (u16 idx=DICMidx-vlen; idx<DICMidx; idx+=2)
             {
                memcpy(&u2B, DICMbuf+idx, 2);
@@ -281,12 +274,10 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       }break;
       case kvAT: { //attribute tag
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             printf("(");
-            if (!vvread(vlen)) return false;
+            if (!vvRead(vlen)) return false;
             for (u16 idx=DICMidx-vlen; idx<DICMidx; idx+=2)
             {
                printf(" %04x%04x",*DICMbuf+idx,*DICMbuf+idx+1);
@@ -295,38 +286,45 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
          }
          printf("\n");
       }break;
+#pragma mark -ascii
       case kvUI://unique ID
       //00080019 PyramidUID
       case kvTP:
       case kvTA://AE DS IS
       //ST HL7InstanceIdentifier 0040E001  root^extension
-      {  printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
+      {
+         printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
          if (vlen > 0)
-        {
-           if (!vvread(vlen)) return false;
+         {
+           if (!vvRead(vlen)) return false;
            printf( "\"%.*s\"\n", vlen,DICMbuf+DICMidx-vlen );
-        }
-        else printf("\"\"\n");
+         }
+         else printf("\"\"\n");
      } break;
-      //charset
+      case kvCS:
+      {
+         //no vvRead, replaced by memcpy from kv
+         //the value is found in kbuf+kloc+12
+         printf("%8lu%*s%02X%02X%02X%02X %c%c %04X \"%.*s\"\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8), vlen,kbuf+kloc+12);
+         memcpy(DICMbuf+DICMidx, kbuf+kloc+12, vlen);
+         DICMidx+=vlen;
+      } break;
+#pragma mark -charset
       case kvTS://LO LT SH ST
       //ST  DocumentTitle 00420010
       case kvPN:
       {
          printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8));
-         memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-         DICMidx+=8;
          if (vlen > 0)
          {
             //charset -> utf-8
             u32 repidx=kbuf[kloc+6] + (kbuf[kloc+7] << 8);
-            u32 charstart=(u32)DICMidx;
+            u32 charstart=(u32)DICMidx;//corresponds to the offset of the original charset string. utf-8 will be written following the last character
             u32 utf8length=0;
-            if (!vvread(vlen)) return false;
-            utf8(repidx,DICMbuf,charstart,vlen,DICMbuf,(u32)DICMidx,&utf8length);
-            printf( "\"%.*s\"\n", utf8length,DICMbuf+DICMidx );
+            if (!vvRead(vlen)) return false;
+            utf8(repidx,DICMbuf,charstart,vlen,kbuf,kloc,&utf8length);
+            printf( "\"%.*s\"\n", utf8length,kbuf+kloc );
+
          }
          else printf("\"\"\n");
       } break;
@@ -334,16 +332,5 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
       default: return false;
    
    }
-   return true;
-}
-
-
-bool csAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
-{
-   //no vvread
-   //the value is found in kbuf+kloc+12
-   printf("%8lu%*s%02X%02X%02X%02X %c%c %04X \"%.*s\"\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5],kbuf[kloc+6] + (kbuf[kloc+7] << 8), vlen,kbuf+kloc+12);
-   memcpy(DICMbuf+DICMidx, kbuf+kloc, 8);
-   DICMidx+=8;
    return true;
 }

@@ -11,8 +11,13 @@
 //defined global
 FILE *inFile;
 char *DICMbuf=NULL;// ....accumulator of stream registering original binary DICM. Referred by external declarations everywhere
-u64 DICMidx=0x9E;//associated current pointer
-uint8_t *kbuf=NULL;//buffer (size 0xFF) for the creation of _DKV and EDKV contextual keys. max use 16 bytes x 10 encapsulation levels
+u64 DICMidx;//CDICM pointer
+char *kbuf=NULL;//keys buffer
+/*
+ *size defined in uCreate
+ *(max use 16 bytes x 10 encapsulation levels) min size 0xFF
+ *is also used as kv buffer. 0x3000 bytes can buffer LT 10280 bytes before converting it to utf-8
+ **/
 int exitValue=exitZeroError;
 
 //recursive
@@ -58,7 +63,7 @@ int dicmDataset(
                   attr->c=repidxs;
                }
             }
-            if (!csAppend(kloc,kvTA,attr->l)) return false;
+            if (!vrAppend(kloc,kvCS,attr->l)) return false;
             if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
          } break;
          case AE:
@@ -189,7 +194,7 @@ int dicmDataset(
       {
          //trailing padding
          attr->c=REPERTOIRE_GL;
-         if (!vvread(attr->l)) {
+         if (!vvRead(attr->l)) {
             E("%s","trailling padding");
             return false;
          }
@@ -207,65 +212,51 @@ int main(int argc,  char *argv[]) {
    2 ...
    */
    if ((argc >2) && (strcmp(argv[2],"1.2.840.10008.1.2.1")!=0)) exit(exitNotExplicitLittleEndian);
-    //1.2.840.10008.5.1.4.1.1.104.2
-//environment variables
-   
-#pragma mark CDICM2DECKloglevel
+
+//environment CDICM2DECKloglevel
    const char* loglevel = getenv("DICM2DECKloglevel");
    if (loglevel==NULL) loglevel="D";
    //[ D | I | W | E | F ] ( Debug, Info, Warning, Error, Fault )
 
-#pragma mark CDICM2DECKbeforebyte
+//environment CDICM2DECKbeforebyte
    u32 beforebyte=0xFFFFFFFF;
    //const char* abeforebyte = getenv("DICM2DECKbeforebyte");
    //if (abeforebyte!=NULL) beforebyte=(u32)strtoll(abeforebyte, NULL, 16);
    
-#pragma mark CDICM2DECKbeforetag
+//environment CDICM2DECKbeforetag (using trailling padding attr as marker)
    // agradado en dcmtk-storescp storescp al final de cada instancia, para delimitarla dentro del stream
    u32 beforetag=0xFFFCFFFC;
    //const char* abeforetag = getenv("DICM2DECKbeforetag");
    //if (abeforetag!=NULL) beforetag=(u32)strtoll(abeforetag, NULL, 16);
 
-
-#pragma mark filesystem
-   const char* outdir = getenv("CDICM2DECKoutdir");
-   D("CDICM2DECKoutdir:  %s", outdir);
-   chdir(outdir);
-
-   const char* errdir = getenv("CDICM2DECKerrdir");
-   D("CDICM2DECKerrdir:  %s", errdir);
-
-   char cwd[1024];
-   getcwd(cwd, sizeof(cwd));
-   D("working dir:  %s", cwd);
-
+//CDICM size
    struct stat st;
    stat(argv[1], &st);
    u64 size = st.st_size;
    D("cdicm file: %s (%lu bytes)", argv[1], size);
-
    if (size < 140) exit(exitNoDataset);
 
+//uPrerequisite
    if ((exitValue=uPrerequisite(size, argc, argv))!=exitZeroError) exit(exitValue);
 
-
-#pragma mark - read file and process
-   DICMbuf=malloc(size);
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL) exit (exitErrorIn);
-//9E
-   //file opened
+
+//uCreate
    if ((exitValue=uCreate(inFile, argc, argv))!=exitZeroError) exit(exitValue);
-   if (fseek(inFile, DICMidx, SEEK_SET)!=0) exit(exitNotDICM);//0x9E 0002,0002
-   kbuf = malloc(0xFF);
+
+//read first tag after group 2 length
+//   if (fseek(inFile, DICMidx, SEEK_SET)!=0) exit(exitNotDICM);//0x9E 0002,0002
    struct trcl * baseattr=(struct trcl*) kbuf;
    if (kkRead(0) && (baseattr->t==0x02000200))
    {
+//uAppend (repeated call within dicmDataset) and uCommit
       if ((exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))==exitZeroError) exitValue=uCommit(baseattr,argc,argv); //successfull parsing (exitValue==0, everything OK)
+//uClose
       uClose(argc, argv);
    }
-      else exitValue=exitNotDICM;
-      fclose(inFile);
+   else exitValue=exitNotDICM;
+   fclose(inFile);
    
    exit(exitValue);
 }

@@ -1012,9 +1012,9 @@ bool vvread(u32 bytesaskedfor)
    return (bytesaskedfor==bytesreceived);
 }
 
-bool kvRead(u32 bytesaskedfor, u32 kloc)
+bool kvRead(u32 bytesaskedfor, u32 kloc12)
 {
-   bytesreceived=fread(kbuf+kloc,1,bytesaskedfor,stdin);
+   bytesreceived=fread(kbuf+kloc12,1,bytesaskedfor,stdin);
    DICMidx+=bytesreceived;
    return (bytesaskedfor==bytesreceived);
 }
@@ -1090,6 +1090,7 @@ int uPrerequisite(u64 filesize, int argc, char *argv[]) {
 
 //called after opening file
 int uCreate(FILE *inFILE, int argc, char *argv[]){
+   kbuf = malloc(0x3000);
    return cCreate(inFILE,argc,argv);
 }
 

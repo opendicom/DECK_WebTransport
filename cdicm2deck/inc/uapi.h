@@ -22,7 +22,8 @@ kvUS,//US 5 unsigned short
 kvAT,//AT 6 attribute tag, 2 u16 hexa
 kvUI,//UI 7 unique ID eventualmente terminado por 0x00
 kvTP,//8 AS DT TM DA text short ascii pair length
-kvTA,//9 CS AE DS IS 13 text short ascii
+kvTA,//9 AE DS IS 13 text short ascii
+kvCS,//10 CS value read in main to enable charset adjustment
 kvTS,//10 LO LT SH ST text short charset
 kvPN,//11 PN person name has a special treatment in json and xml
 kv01,//12 other OB OD OF OL OV OW SV UV binary
@@ -38,20 +39,14 @@ kvUN,//19 UN
 
 #pragma mark - read blocking code
 
-bool vvread(u32 bytesaskedfor);
-bool kvRead(u32 bytesaskedfor, u32 kloc);
+bool vvRead(u32 bytesaskedfor);
+bool kvRead(u32 bytesaskedfor, u32 kloc12);
 bool kkRead(u8 kloc);
 
 
 #pragma mark - TO BE IMPLEMENTED FOR EACH TARGET
 
 bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
-//vvread
-bool csAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
-//no vvread
-//the value is found in kbuf+kloc+12
-
-
 
 #pragma mark - transaction hooks
 
