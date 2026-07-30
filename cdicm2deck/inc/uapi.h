@@ -53,7 +53,7 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
 int uPrerequisite(u64 filesize, int argc, char *argv[]);
 
 //called after preliminar parsing of class, sop instance and transfer syntax
-int uCreate(FILE *inFILE, int argc, char *argv[]);
+int uCreate(int argc, char *argv[]);
 
 //called after parsing successfully all the attributes
 int uCommit(bool hastrailing,int argc, char *argv[]);

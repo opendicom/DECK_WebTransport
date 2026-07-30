@@ -7,8 +7,10 @@
 
 #include <stdint.h>
 #include <sys/stat.h>
+#include <time.h>
 
 //defined global
+struct timespec start,append,commit,finish;
 FILE *inFile;
 char *DICMbuf=NULL;// ....accumulator of stream registering original binary DICM. Referred by external declarations everywhere
 u64 DICMidx;//CDICM pointer
@@ -211,6 +213,7 @@ int main(int argc,  char *argv[]) {
    1 #p/#f dir path / dicm file name
    2 ...
    */
+   clock_gettime(CLOCK_MONOTONIC, &start);
    if ((argc >2) && (strcmp(argv[2],"1.2.840.10008.1.2.1")!=0)) exit(exitNotExplicitLittleEndian);
 
 //environment CDICM2DECKloglevel
@@ -243,7 +246,7 @@ int main(int argc,  char *argv[]) {
    if (inFile==NULL) exit (exitErrorIn);
 
 //uCreate
-   if ((exitValue=uCreate(inFile, argc, argv))!=exitZeroError) exit(exitValue);
+   if ((exitValue=uCreate(argc, argv))!=exitZeroError) exit(exitValue);
 
 //read first tag after group 2 length
 //   if (fseek(inFile, DICMidx, SEEK_SET)!=0) exit(exitNotDICM);//0x9E 0002,0002
@@ -251,12 +254,22 @@ int main(int argc,  char *argv[]) {
    if (kkRead(0) && (baseattr->t==0x02000200))
    {
 //uAppend (repeated call within dicmDataset) and uCommit
-      if ((exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))==exitZeroError) exitValue=uCommit(baseattr,argc,argv); //successfull parsing (exitValue==0, everything OK)
+      clock_gettime(CLOCK_MONOTONIC, &append);
+      if ((exitValue=dicmDataset(0,baseattr,0,beforebyte,beforetag))==exitZeroError) {
+         //successfull parsing (exitValue==0, everything OK)
+         clock_gettime(CLOCK_MONOTONIC, &commit);
+         exitValue=uCommit(baseattr,argc,argv);
+      }
 //uClose
       uClose(argc, argv);
    }
    else exitValue=exitNotDICM;
    fclose(inFile);
-   
-   exit(exitValue);
+   clock_gettime(CLOCK_MONOTONIC, &finish);
+   D(" total= nanoseconds: %09lld", finish.tv_nsec - start.tv_nsec);
+   D("%s","------------------------------");
+   D(" before nanoseconds: %09lld", append.tv_nsec - start.tv_nsec);
+   D(" parse  nanoseconds: %09lld", commit.tv_nsec - append.tv_nsec);
+   D(" commit nanoseconds: %09lld", finish.tv_nsec - commit.tv_nsec);
+ exit(exitValue);
 }

@@ -8,7 +8,6 @@
 extern char *DICMbuf;
 extern u64 DICMidx;
 extern uint8_t *kbuf;
-extern FILE *inFile;
 
 #pragma mark base dataset level patient
 /*
@@ -1089,9 +1088,9 @@ int uPrerequisite(u64 filesize, int argc, char *argv[]) {
 }
 
 //called after opening file
-int uCreate(FILE *inFILE, int argc, char *argv[]){
+int uCreate(int argc, char *argv[]){
    kbuf = malloc(0x3000);
-   return cCreate(inFILE,argc,argv);
+   return cCreate(argc,argv);
 }
 
 //called after parsing successfully all the attributes
@@ -1118,7 +1117,7 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
    //skip group length
    //memcmp(kbuf, const void *ptr2, 4);
    if ((kbuf[kloc+2]==0) && (kbuf[kloc+3]==0)){
-      if (! fseek(inFile, 4, SEEK_CUR)) return false;
+      //if (! fseek(inFile, 4, SEEK_CUR)) return false;
       return true;
    }
    

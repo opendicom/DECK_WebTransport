@@ -1,6 +1,6 @@
 # dicm2cda
 
-This implementation of uapi.h does nothing with the values of the attributes, except for 
-- title, which it writes to console
-- SOPInstanceUID, which it uses to form the file name with a suffix ".dscd.xml"
-- encapsulatedDocument which it writes to the file (created or previously truncated in the working directory)
+This implementation of uapi.h does nothing with the values of the attributes, except for encapsulatedDocument,
+which it writes to stdout
+
+one fread for each attribute followd by fseek to skip the reading of the value.

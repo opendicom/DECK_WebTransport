@@ -9,8 +9,9 @@
 extern char *DICMbuf;
 extern u64 DICMidx;
 extern char *kbuf;
+const char *space=" ";
 
-#pragma mark - read
+#pragma mark ----------------------------- file read
 
 static u64 bytesreceived;
 bool vvRead(u32 bytesaskedfor)
@@ -92,12 +93,11 @@ bool kkRead(u8 kloc)
 }
 
 
-#pragma mark - instance transactions
+#pragma mark ----------------------------- SOP instance transactions
 
 int uPrerequisite(u64 filesize, int argc, char *argv[]) {
    DICMbuf=malloc(filesize);
 
-#pragma mark filesystem
    const char* outdir = getenv("CDICM2DECKoutdir");
    D("CDICM2DECKoutdir:  %s", outdir);
    chdir(outdir);
@@ -111,7 +111,7 @@ int uPrerequisite(u64 filesize, int argc, char *argv[]) {
 
    return exitZeroError;
 }
-int uCreate(FILE *inFILE, int argc, char *argv[])
+int uCreate( int argc, char *argv[])
 {
    DICMidx=0x9E;//0x9E 0002,0002
    bytesreceived=fread(DICMbuf,1,DICMidx,stdin);
@@ -133,7 +133,8 @@ void uClose(int count, char *vector[])
    return;
 }
 
-const char *space=" ";
+
+#pragma mark ---------------------------- attributes processing
 bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    switch (vrcat) {

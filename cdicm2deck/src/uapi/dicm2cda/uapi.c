@@ -8,15 +8,15 @@
 #include <stdint.h>
 #include <string.h>
 
-//extern char *DICMbuf;
-//extern FILE *inFile;
+
 extern u64 DICMidx;
 extern uint8_t *kbuf;
 u64 xmlOffset=0;
 u32 xmlLength=0;
-#pragma mark - read
-
+const char *space=" ";
 static u64 bytesreceived;
+
+#pragma mark ----------------------------- file read
 bool vvRead(u32 bytesaskedfor)
 {
    DICMidx+=bytesaskedfor;
@@ -32,7 +32,6 @@ bool kvRead(u32 bytesaskedfor, u32 kloc12)
 
 
 //returns true when 8(+4) bytes were read
-const char *space=" ";
 bool kkRead(u8 kloc)
 {
    // read 8 bytes, and, eventually, four additional bytes of long length at kloc+8
@@ -94,17 +93,17 @@ bool kkRead(u8 kloc)
    return true;
 }
 
-
+#pragma mark ----------------------------- SOP instance transactions
 int uPrerequisite(u64 filesize, int argc, char *argv[]) {
    if ((argc >4) && (strcmp(argv[4],"1.2.840.10008.5.1.4.1.1.104.2")!=0)) return exitNotEncapsulatedCDA;
    return exitZeroError;
 }
 
-int uCreate(FILE *inFILE, int argc, char *argv[])
+int uCreate(int argc, char *argv[])
 {
    DICMidx=0x9E;//0x9E 0002,0002
    if (fseek(stdin, DICMidx, SEEK_SET)!=0) return exitNotDICM;//0x9E 0002,0002
-   kbuf = malloc(0x3000);
+   kbuf = malloc(0xFFFF);
    return exitZeroError;
 }
 
@@ -112,33 +111,12 @@ void uClose(int argc, char *argv[]){
    return;
 }
 
-static u32 titlerepidx=0;
-static unsigned char documentpadding=0;//0 or 1
-static u32 documentoffset=0;
-static u32 documentlength=0;
-
-
-
 int uCommit(bool hastrailing,int argc, char *argv[]){
-
-   char cwd[1024];
-   getcwd(cwd, sizeof(cwd));
-   D("working dir:  %s", cwd);
-   FILE *fptr;
-   // 2. Open (or create) the file in write mode
-   fptr = fopen("filename.txt", "w");
-
-   FILE *fileptr=fopen("/home/jacquesfauquex/DECK_WebTransport/cdicm2deck/cmake-build-debug/Testing/Temporary/dscd.xml", "w");
-   if (fileptr==NULL) return exitErrorOutPath;
-   if (!fwrite(kbuf+12 ,1, 1 , fileptr)) return exitErrorFwrite;
-   fclose(fileptr);
-   I("%s","dscd.xml written");
-   system("xdg-open dscd.xml");
-
+   printf("%.*s",xmlLength,kbuf+32);
    return exitZeroError;
 }
 
-#pragma mark - write
+#pragma mark ---------------------------- attributes processing
 //const unsigned long B0040E001=0x0E002000;//ST CDA root^extension
 //const unsigned long B00080060=0x60000800;//CS Modality
 //const unsigned long B0008103E=0x3E100800;//LO Series name
@@ -169,7 +147,7 @@ bool vrAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
          //OB encapsulaed document 00420011 xml cda o pdf
          if (!memcmp(kbuf, &B00420011, 4))
          {
-            if (!kvRead(vlen,kloc+12)) return false;
+            if (!kvRead(vlen,kloc+32)) return false;//next CS may overwrite 16 chars after char 12
             xmlOffset=DICMidx-vlen;//was adjusted in kvReed, we need to roll it back
             xmlLength=vlen - (kbuf[kloc+vlen+11]==0);
             D("xmlOffset:%lu xmlLength:%d\n",xmlOffset,xmlLength);

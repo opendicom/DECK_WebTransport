@@ -41,7 +41,7 @@ int cPrerequisite(u64 filesize, int argc, char *argv[]){
    return exitZeroError;
 }
 
-int cCreate(FILE *inFILE, int argc, char *argv[])
+int cCreate(int argc, char *argv[])
 {
    sqlite3open();//opens the db and instantiates the statements
    return exitZeroError;

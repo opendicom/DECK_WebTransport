@@ -5,13 +5,11 @@
 
 #include "capi.h"
 
-extern FILE *inFile;
-
 int cPrerequisite(u64 filesize, int argc, char *argv[]){
    return exitZeroError;
 }
 
-int cCreate(FILE *inFILE, int argc, char *argv[])
+int cCreate(int argc, char *argv[])
 {
    return exitZeroError;
 }
@@ -34,21 +32,21 @@ void cClose(int argc, char *argv[])
 bool eAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    if (vlen==0) return true;
-   if (!fseek(inFile, vlen, SEEK_CUR)) return false;
+   //if (!fseek(inFile, vlen, SEEK_CUR)) return false;
    return true;
 }
 
 bool sAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    if (vlen==0) return true;
-   if (!fseek(inFile, vlen, SEEK_CUR)) return false;
+   //if (!fseek(inFile, vlen, SEEK_CUR)) return false;
    return true;
 }
 
 bool pAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    if (vlen==0) return true;
-   if (fseek(inFile, vlen, SEEK_CUR)!=0) return false;
+   //if (fseek(inFile, vlen, SEEK_CUR)!=0) return false;
    return true;
 }
 
@@ -56,6 +54,6 @@ bool pAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 bool iAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
 {
    if (vlen==0) return true;
-   if (fseek(inFile, vlen, SEEK_CUR)!=0) return(exitNotDICM);
+   //if (fseek(inFile, vlen, SEEK_CUR)!=0) return(exitNotDICM);
    return true;
 }

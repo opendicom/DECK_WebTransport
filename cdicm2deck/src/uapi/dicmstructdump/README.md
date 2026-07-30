@@ -1,6 +1,6 @@
 # dicmstructdump
 
-- dicm transformed on the flight to deck and dumped pretty printed on utf-8 console
+- CDICM parsed and DECK dumped pretty printed on utf-8 console
 - dicmstructdump parses:  
   - values contents up to 0xFFFF bytes
   - separates multivalues in distinct components
@@ -98,6 +98,15 @@ start=`date +%s.%N`; /home/jacquesfauquex/dcmtk/cmake-build-debug/bin/dcmdump /h
 
 - cdicm2deck dicmstructdump
 ````
-start=`date +%s.%N`; /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/cmake-build-debug/dicmstructdump /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/Testing/dscd.cdicm; stop=`date +%s.%N`; echo "$stop - $start" | bc
+/home/jacquesfauquex/DECK_WebTransport/cdicm2deck/cmake-build-debug/dicmstructdump /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/Testing/dscd.cdicm
 ````
-0.0020 a 0.0030
+total= 0.000288241
+------------------
+before 0.000045369
+parse  0.000100380
+commit 0.000142492
+
+
+## performance improvement
+This version execute 2 fread for each attribute
+This can be improved with an unique fread the whole file and parsing from memory
