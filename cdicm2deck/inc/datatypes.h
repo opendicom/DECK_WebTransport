@@ -10,7 +10,7 @@
 
 #include <stdio.h>  //puts() printf()
 #include <stdbool.h>
-#include <stdlib.h> //malloc()
+#include <stdlib.h> //malloc() exit()
 #include <string.h> //memcpy()
 #include <ctype.h>
 #include <unistd.h>
@@ -19,16 +19,26 @@
 #include <sys/stat.h>//for directory creation
 #include <time.h>
 //#include <sqlite3.h>
-//#include <errno.h>
+#include <errno.h>
+
+
 
 //openjpeg
 #include <math.h>
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>
-enum exitCdicm2deck{
+
+
+
+//errno.h (>0) completed by specific error codes (<0)
+typedef enum {
   exitZeroError=0,
-  exitErrorIn,//1
+  exitReadTruncated=-1,
+  exitErrorFropenCDICM=-2,
+  exitProgramError=-3,
+  exitErrorSQtruncated=-4,
+  exitErrorITtruncated=-5,
   exitErrorOutPath,//2
   exitErrorWrite,//3
   exitErrorCreateKV,//4
@@ -45,8 +55,12 @@ enum exitCdicm2deck{
   exitNotEncapsulatedCDA,//15
   exitErrorFwrite,//16
  exitErrorSqliteOpen,//17
- exitErrorGroupLength//18
-};
+ exitErrorGroupLength,//18
+  exitBadtrailingPadding//19
+} exitcode;
+
+
+typedef uint32_t ugLE;
 
 typedef   int8_t s8;//%c
 typedef  uint8_t u8;//%c
@@ -67,6 +81,15 @@ struct trcl {
    u16 r;//representation
    u16 c;//charset
    u32 l;//length
+};
+
+struct Ercle {
+  u32 E;//tag big Endian
+  u16 r;//representation
+  u16 c;//charset
+  u32 l;//length (file size may be larger than u32 !!! little endian keeps u32 in bytes 8-11
+  u32 e;//tag little endian
+
 };
 
 enum DICMvr {
@@ -124,51 +147,6 @@ extern char const  base64DecodingTable[128];
 void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length );
 
 #pragma mark - main & log
-
-
-
-//https://stackoverflow.com/questions/53522586/variadic-macro-calling-fprintf-how-to-add-arguments-to-va-args
-//el if permite sumar los niveles más fundamentales
-enum DIWEFenum {D,I,W,E,F};
-extern enum DIWEFenum DIWEF;
-bool loglevel(const char * logletter);
-
-#define D(format, ...) do {                 \
-  if (DIWEF <= D){                          \
-    fprintf(stderr, (format), __VA_ARGS__); \
-    fputc('\n', stderr);                    \
-  }                                         \
-} while (0)
-
-
-#define I(format, ...) do {                 \
-  if (DIWEF <= I){                          \
-    fprintf(stderr, (format), __VA_ARGS__); \
-    fputc('\n', stderr);                    \
-  }                                         \
-} while (0)
-
-
-#define W(format, ...) do {                 \
-  if (DIWEF <= W){                          \
-    fprintf(stderr, (format), __VA_ARGS__); \
-    fputc('\n', stderr);                    \
-  }                                         \
-} while (0)
-
-
-#define E(format, ...) do {                 \
-  if (DIWEF <= E){                          \
-    fprintf(stderr, (format), __VA_ARGS__); \
-    fputc('\n', stderr);                    \
-  }                                         \
-  false;                                    \
-} while (0)
-
-
-#define F(format, ...) do {                \
-  fprintf(stderr, @"%@", __FAULT__);       \
-} while (0)
 
 
 

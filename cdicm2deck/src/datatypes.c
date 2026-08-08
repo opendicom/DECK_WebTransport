@@ -99,7 +99,7 @@ u64 u64swap(u64 x)
 }
 
 u32 u32swap(u32 x)
-{
+{  //1234 -> 4321
    return ((x>>24) & 0xff)
          |((x>>8)  & 0xff00)
          |((x<<8)  & 0xff0000)
@@ -187,35 +187,6 @@ void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length )
          break;
    }
 }
-
-
-#pragma mark - main & log
-
-enum DIWEFenum DIWEF;
-bool loglevel(const char * logletter)
-{
-   switch ((int)*logletter) {
-      case 'D':
-         DIWEF=D;
-         break;
-      case 'I':
-         DIWEF=I;
-         break;
-      case 'W':
-         DIWEF=W;
-         break;
-      case 'E':
-         DIWEF=E;
-         break;
-      case 'F':
-         DIWEF=F;
-         break;
-      default:
-         return false;
-   }
-   return true;
-}
-
 
 #pragma mark - repertoires
 

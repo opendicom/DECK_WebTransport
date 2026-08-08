@@ -5,62 +5,59 @@
 
 #include "uapi.h"
 
-#include <stdint.h>
-#include <string.h>
-
-
 extern u64 DICMidx;
-extern uint8_t *kbuf;
-u64 xmlOffset=0;
-u32 xmlLength=0;
-const char *space=" ";
-static u64 bytesreceived;
+extern char *CKEY;
+extern char *BUFF;
+u64 bytesreceived;
 
 #pragma mark ----------------------------- file read
-bool vvRead(u32 bytesaskedfor)
-{
-   DICMidx+=bytesaskedfor;
-   return (fseek(stdin, bytesaskedfor, SEEK_CUR)==0);
-}
 
-bool kvRead(u32 bytesaskedfor, u32 kloc12)
-{
-   bytesreceived=fread(kbuf+kloc12,1,bytesaskedfor,stdin);
-   DICMidx+=bytesaskedfor;
-   return (bytesaskedfor==bytesreceived);
-}
-
-
-//returns true when 8(+4) bytes were read
-bool kkRead(u8 kloc)
-{
-   // read 8 bytes, and, eventually, four additional bytes of long length at kloc+8
-
-   //starts above used space (+12), to copy then byte by byte in current space
-   if (fread(kbuf+kloc+12,1,8,stdin)!=8)
-   {
-      if (ferror(stdin)) E("%s","stdin error");
-      return false;
+//DICM not buffered
+void DICMread(u32 bytesaskedfor){
+   if (fseek(stdin, bytesaskedfor, SEEK_CUR)!=0) {
+      if (ferror(stdin)) {
+         fprintf(stderr,"DICMread [DICMidx %lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+         exit(errno);
+      }
+      fprintf(stderr,"DICMread [%lu] read %u bytes truncated (%d)\n", DICMidx, bytesaskedfor, exitReadTruncated);
+      exit(exitReadTruncated);
    }
+   DICMidx+=bytesaskedfor;
+}
+
+//small 16 bytes buffer (CS size)
+void BUFFread(u32 bytesaskedfor){
+   bytesreceived=fread(BUFF,1,bytesaskedfor,stdin);
+   if (bytesaskedfor!=bytesreceived) {
+      if (ferror(stdin)) {
+         fprintf(stderr,"BUFFread [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+         exit(errno);
+      }
+      fprintf(stderr,"BUFFread [%lu] read %u bytes truncated (%d)\n", DICMidx, bytesaskedfor, exitReadTruncated);
+      exit(exitReadTruncated);
+   }
+   DICMidx+=bytesaskedfor;
+}
+
+void CKEYread(struct Ercle* attr) {
+   if (fread(attr,1,8,stdin)!=8) {
+      if (ferror(stdin)) {
+         fprintf(stderr,"CKEYread [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+         exit(errno);
+      }
+      fprintf(stderr,"CKEYread [%lu] read truncated (%d)\n", DICMidx, exitReadTruncated);
+      exit(exitReadTruncated);
+   }
+   //fprintf(stderr,"%8lu %08X\n",DICMidx,attr->e);
+
    DICMidx+=8;
+   attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
+   attr->e=u32swap(attr->E);//tag in little endian
 
-   //group LE>BE
-   kbuf[kloc]=kbuf[kloc+13];
-   kbuf[kloc+1]=kbuf[kloc+12];
-   //element LE>BE
-   kbuf[kloc+2]=kbuf[kloc+15];
-   kbuf[kloc+3]=kbuf[kloc+14];
-   //vr vl copied (LE)
-   kbuf[kloc+4]=kbuf[kloc+16];
-   kbuf[kloc+5]=kbuf[kloc+17];
-   //kbuf[kloc+6] for repertoire
-   //kbuf[kloc+7] for repertoire
-   kbuf[kloc+8]=kbuf[kloc+18];
-   kbuf[kloc+9]=kbuf[kloc+19];
-   kbuf[kloc+10]=0;
-   kbuf[kloc+11]=0;
-
-   switch ((kbuf[kloc+5]<<8)|(kbuf[kloc+4])) {
+   //attr->r is ascii (left to right)
+   attr->l=attr->c;//short length is transferred to long length (bytes 8-11)
+   //attr->c short length will be modified before parsing the value to register repositoire index
+   switch (attr->r) {
       case OB://other byte
       case OW://other word
       case OD://other double
@@ -71,48 +68,39 @@ bool kkRead(u8 kloc)
       case UV://unsigned 64-bit very long
       case UC://unlimited characters
       case UT://unlimited text
-      case UR://universal ressource url identifier/locator
+      case UR://universal resource url identifier/locator
       case SQ://sequence
       {
-         if (fread(kbuf+kloc+8,1,4,stdin)!=4)
+         if (fread(&attr->l,1,4,stdin)!=4)
          {
-            if (ferror(stdin)) E("%s","stdin error");
-            return false;
+            if (ferror(stdin)) {
+               fprintf(stderr,"CKEYread ll [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+               exit(errno);
+            }
+            fprintf(stderr,"CKEYread ll [%lu] read truncated (%d)\n", DICMidx, exitReadTruncated);
+            exit(exitReadTruncated);
          }
          DICMidx+=4;
       }break;
-      case IA:
-      case IZ:
-      case SZ: {
-         //IA,IZ,SZ require postprocessing in dicm2dckv
-         kbuf[kloc+10]=0;
-         kbuf[kloc+11]=0;
-      }break;
+      default:break;
    }
-   //D("%8lu%*s%02X%02X%02X%02X %c%c\n",DICMidx,kloc+kloc+(kloc!=0),space, kbuf[kloc],kbuf[kloc+1],kbuf[kloc+2],kbuf[kloc+3],kbuf[kloc+4],kbuf[kloc+5]);
-   return true;
 }
 
 #pragma mark ----------------------------- SOP instance transactions
-int uPrerequisite(u64 filesize, int argc, char *argv[]) {
+void uPrerequisite(int argc, char *argv[]) {
    if ((argc >4) && (strcmp(argv[4],"1.2.840.10008.5.1.4.1.1.104.2")!=0)) return exitNotEncapsulatedCDA;
    return exitZeroError;
 }
 
-int uCreate(int argc, char *argv[])
+void uCreate(int argc, char *argv[])
 {
    DICMidx=0x9E;//0x9E 0002,0002
-   if (fseek(stdin, DICMidx, SEEK_SET)!=0) return exitNotDICM;//0x9E 0002,0002
-   kbuf = malloc(0xFFFF);
+   if (fseek(stdin, (s64)DICMidx, SEEK_SET)!=0) return exitNotDICM;//0x9E 0002,0002
+   BUFF = malloc(256);//up to 15 16 bytes CS
    return exitZeroError;
 }
 
 void uClose(int argc, char *argv[]){
-   return;
-}
-
-int uCommit(bool hastrailing,int argc, char *argv[]){
-   printf("%.*s",xmlLength,kbuf+32);
    return exitZeroError;
 }
 
@@ -123,47 +111,33 @@ int uCommit(bool hastrailing,int argc, char *argv[]){
 //const unsigned long B00420010=0x10004200;//ST DocumentTitle
 const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
 //const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
-bool vrAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
+void vrAppend(u32 kloc, enum kvVRcategory  vrcat, u32 vlen)
 {
    switch (vrcat) {
       case kvSA:
       case kvSZ:
       case kvIA:
-      case kvIZ: break;
-/*
-      case kvTS: {
-         if ((vlen > 0) && (!vvread(vlen))) return false;
-         //ST DocumentTitle 00420010
-
-         if (!memcmp(kbuf, &B00420010, 4)) {
-            titlerepidx=kbuf[kloc+6] + (kbuf[kloc+7] << 8);
-            u32 utf8length=0;
-            utf8(titlerepidx,DICMbuf,DICMidx-vlen,vlen,DICMbuf,(u32)DICMidx,&utf8length);
-            printf( "%.*s\n", utf8length,DICMbuf+DICMidx );
-         }
-
-      } break;*/
+      case kvIZ:
+      case kvCS://no DICMread. BUFread already performed when reading key. DICMidx already adjusted
+         break;
       case kv01: {
          //OB encapsulaed document 00420011 xml cda o pdf
-         if (!memcmp(kbuf, &B00420011, 4))
-         {
-            if (!kvRead(vlen,kloc+32)) return false;//next CS may overwrite 16 chars after char 12
-            xmlOffset=DICMidx-vlen;//was adjusted in kvReed, we need to roll it back
-            xmlLength=vlen - (kbuf[kloc+vlen+11]==0);
-            D("xmlOffset:%lu xmlLength:%d\n",xmlOffset,xmlLength);
+         if (!memcmp(CKEY, &B00420011, 4)) {
+            char *CDA= malloc(vlen);
+            if (fread(CDA,1,vlen,stdin)!=vlen) {
+               //CKEY[0] is base level, as the enclosed CDA is
+               if (ferror(stdin)) {
+                  fprintf(stderr,"vrAppend kv01 CDA [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+                  exit(errno);
+               }
+               fprintf(stderr,"vrAppend kv01 CDA  [%lu] read truncated (%d)\n", DICMidx, exitReadTruncated);
+               exit(exitReadTruncated);
+            }
+            fprintf(stdout,"%s",CDA);
+            DICMidx+=vlen;
          }
-         else {
-            if (!vvRead(vlen)) return false;
-         }
+         else DICMread(vlen);
       } break;
-      case kvCS:
-      {
-         //no vvRead
-         //kvRead already performed and DICMidx adjusted
-      } break;
-      default: {
-         if (!vvRead(vlen)) return false;
-      } break;
+      default: DICMread(vlen);//fseek
    }
-   return true;
 }

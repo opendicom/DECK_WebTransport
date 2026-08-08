@@ -16,27 +16,21 @@ The first only is mandatory: CDICM file path
 xcr.sh #p/#f #u #v #s #k #i #o #t #l #a #r #c'
 ````
 
-## environment variables
-- CDICM2DECKloglevel : [ D | I | W | E | F ] ( Debug, Info, Warning, Error, Fault )
-- CDICM2DECKwoutdir: where to write or move the files on successfull parsing
-- CDICM2DECKerrdir: where to move the files on failed parsing
-
-## hardcoded selectors
-- CDICM2DECKbeforebyte: limit parsing from beginning to attribute before byte x of the input
-- CDICM2DECKbeforetag: limit parsing from beginning to attribute y
 
 ## How it works?
 
 Using cascading handlers:
 (1) main
 (2) uapi
-(4) capi
+(3) capi
 
 ### (1) main
-Open the file and reads dicm structure
+- opens the file
+- parses CDICM structure, including sequences and items
+- delegates read operations to uapi
 
 ### (3) uapi (uncategorized)
-Reads the attribute values in dicm order
+reads attributes properties and values
 Read and append are performed by distinct functions:
 - vvread (valueBuffer value read)
 - kvread (keyBuffer value read)

@@ -23,7 +23,7 @@ enum categories{
 #pragma mark - transaction hooks
 
 //called with parameters before opening file
-int cPrerequisite(u64 filesize, int argc, char *argv[]);
+int cPrerequisite(int argc, char *argv[]);
 
 //called after opening file
 int cCreate(FILE *inFILE, int argc, char *argv[]);

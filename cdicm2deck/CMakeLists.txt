@@ -13,6 +13,13 @@ add_library(dicmlib STATIC EXCLUDE_FROM_ALL
         src/datatypes.c
         src/main.c
 )
+add_library(dicmlibERCLe STATIC EXCLUDE_FROM_ALL
+        src/datatypes.c
+)
+add_library(dicmlibBYTE STATIC EXCLUDE_FROM_ALL
+        src/datatypes.c
+        src/mainBYTE.c
+)
 add_library(sqlite3lib STATIC EXCLUDE_FROM_ALL
         thirdparty/sqlite3/sqlite3.h
         thirdparty/sqlite3/sqlite3.c
@@ -42,10 +49,19 @@ target_link_libraries(dicm2cda
 )
 
 
+
+
 add_executable(dicmstructdump
         src/uapi/dicmstructdump/uapi.c
 )
 target_link_libraries(dicmstructdump
+        dicmlib
+)
+
+add_executable(memdicmstructdump
+        src/uapi/memdicmstructdump/uapi.c
+)
+target_link_libraries(memdicmstructdump
         dicmlib
 )
 

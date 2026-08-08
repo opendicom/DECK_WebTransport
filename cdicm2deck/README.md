@@ -1,51 +1,54 @@
-# dicm2deck
+# cdicm2deck
 
 Dicom Exam Contextualized Keys (DECK) is a flat hashmap parser result language 
 for DICM files. The objective of this presentation of the DICOM metadata is
-consumer lowest latency. It implies discrete acceses to any attribute. 
+consumer lowest latency, which implies discrete acceses to any attribute. 
 
-dicm2deck, executable command written in C, 
+cdicm2deck, executable command written in C, 
 parses DICM (DICOM standard part 10 file format),
-outputting DECK key values. As input, it requires an explicit little endian representation
+outputting DECK key values representation. 
+
+As input, it requires an explicit little endian representation
 of the dataset terminated by an empty trailling padding attribute.
-We call this presentation "canonicalized". 
-Files containing such presentation have a name with ".cdicm" extension.
+We call this presentation "canonicalized" (CDICM). 
+An ".cdicm" extension may be append to such files.
 
 
-## dcmtk storescp -> dicm2deck
+## dcmtk storescp -> cdicm2deck
 
 We modified dcmtk storescp to receive DICOM DIMSE communication 
-and forward the canonicalized presentation (with trailing padding attribute) to dicm2deck.
-We also added parameters to the invocation of dicm2deck by storescp 
-so that the critical information of the DIMSE association shall be passed to dicm2deck.
+and write the canonicalized presentation (with trailing padding attribute).
+Moreover, dcmtk storescp can invoque an executable with parameters to post process each SOP instance.
+We added the critical information of the DIMSE association as parameters to the invocation, 
+in this case of a cdicm2deck executable.
 
-The modified dcmtk storescp and dicm2deck work as a binome.
+The modified dcmtk storescp and cdicm2deck work as a binome.
 
 
 ## dicm2deck design
 
-dicm2deck has a generic layered structure which is extended by the implementation of of one or another class
-in order to create diferent products.
+dicm2deck has a extensible layered structure.
 
 Common to all products is the main file which:
-- reads the canonicalized file
 - parses the dataset structure
-- calls second layer "uapi" (u meaning uncategorized) functions:
-   - uPrerequisite with association params. This delegates the possibility to abort the parsing without reading the file.
-   - uCreate with association params invoked after opening the canonicalized file to enable the implementation of uapi to start a transaction to be commited or canceled later
-   - uAppend called for each attribute passes its properties and delegates the reading of the value
-   - uCommit is called when the trailling padding attribue is reached
-   - uClose gives an oportunity to cancel the transaction, in cases where the parsing of the canonicalized file was not successfull.
- 
-A simple product may implement uAppend only. 
-For instance, uapi/dicmstructdump uses the properties of the attribute, reads it and outputs to stdout a dump of the canonicalized dicom file.
+- delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
+   - CKEYread (Contextualized KEY forge)
+   - BUFread (temporary value buffer)
+   - DICMread (deep copy of DICM into memory)
+   - uPrerequisite (delegates the possibility to abort the parsing without reading the file)
+   - uCreate (invoked after opening the canonicalized file to start a transaction to be commited or canceled later)
+   - uAppend (called for each attribute)
+   - uCommit (called when the trailling padding attribue is reached)
+   - uClose (closes the transaction opened by uCreate).
 
 ### Third level capi
-This class is not used by uapi products.
-capi is exposed by a specific implementation of uapi and delegates the same functions to the capi, except uAppend, which is replaced by distinct functions, depending on the category.
+This class is not used by uapi executables.
+capi is exposed by a specific implementation of uapi which delegates the functions, except uAppend, 
+which is replaced by one or another function, depending on the category.
 
-- eAppend patient and study attributes
-- sAppend series attributes
+- eAppend for patient and study attributes
+- sAppend for series attributes
+- xAppend for special series attributes
 - pAppend private attributes
 - iAppend instance attributes
 - fAppend float pixel 7FE00008 (not implemented)
@@ -57,16 +60,14 @@ capi is exposed by a specific implementation of uapi and delegates the same func
 
 Note: 
 the DICOM explicit little endian syntax represents pixels in native format, 
-that is, as a succession of lines without any markup between them. 
+that is, as a succession of pixel lines without any markup between them. 
 This applies also to multiframe images where the first line of the next frame 
 follows immediately the last line of the previous one.
 
 ### forth level capi sqlite implementation
 The sqlite default implementation of capi (categorized api) builds up an instance sqlite with the attributes subdivided into categories.
-When everything worked well and cCommit is called, this sqlite is exported to an exam sqlite.
 
 ## Testing environment
-
 The folder Testing contains canonicalized test files. 
 The modified storescp outputs DICOM datasets received as files into this directory.
 
@@ -82,13 +83,16 @@ cmake-build-debug/Testing/Temporary
 
 ### dicm2deck targets:
 
-- uapi: **dicm2cda** extracts the enclosed CDA from a DICM. 
-   - Example infile: dscd.dicm
-- uapi: **dicmstructdump** dumps a textual representation of the DICM file. 
-   - Example infile: dscd.dicm
+- uapi: **cdicm2cda** extracts the enclosed CDA from a DICM encapsulatedCDA SOP instance
+- uapi: **dicmstructdump** dumps a textual representation of the DICM file.
+- uapi: **deepcopy** creates an explicit little endian copy by appending each attribute, one by one
+- uapi: **cdicm2ile** transforms cdicm to explicit little endian
+- uapi: **utf8dump** writes to utf-8 text console a list of contextual attributes
+- uapi: **cdicm2xml**
+- uapi: **cdicm2json**
+
 - capi: **sqlite** keeps the parsing into an in-memory sqlite.
-- capi: **examsqlite**, builds on sqlite and on commit exports the registers to an exam sqlite server, 
-after prepending a series/instance prefix to the keys.
+- capi: **examsqlite**
 
 ___
 
