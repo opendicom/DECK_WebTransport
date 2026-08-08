@@ -36,8 +36,8 @@ enum kvVRcategory{
     kvUN,//19 UN
     };
 
-void DICMread(u32 bytesaskedfor);//appending buffer
-void BUFFread(u32 bytesaskedfor);//single value buffer
+void DICMread(u64 bytesaskedfor);//appending buffer
+char * BUFFread(u32 bytesaskedfor);//single value buffer returns pointer to offset of the bytes read
 void CKEYread(struct Ercle* attr);//returns little endian of the key or 0 if error
 void vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
 void uPrerequisite(int argc, char *argv[]);

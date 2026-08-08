@@ -47,7 +47,12 @@ add_executable(dicm2cda
 target_link_libraries(dicm2cda
         dicmlib
 )
-
+add_executable(dicm2cda1
+        src/uapi/dicm2cda/uapi1.c
+)
+target_link_libraries(dicm2cda1
+        dicmlib
+)
 
 
 

@@ -8,50 +8,25 @@
 extern u64 DICMsize;
 extern u64 DICMidx;
 extern char *CKEY;
+extern char *DICM;
 extern char *BUFF;
 u64 bytesreceived;
 
 #pragma mark ----------------------------- file read
 
-//DICM not buffered
+//DICM buffered
 void DICMread(u64 bytesaskedfor){
-   if (fseek(stdin, bytesaskedfor, SEEK_CUR)!=0) {
-      if (ferror(stdin)) {
-         fprintf(stderr,"DICMread [DICMidx %lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-         exit(errno);
-      }
-      fprintf(stderr,"DICMread [%lu] read %u bytes truncated (%d)\n", DICMidx, bytesaskedfor, exitReadTruncated);
-      exit(exitReadTruncated);
-   }
    DICMidx+=bytesaskedfor;
 }
 
 //small 16 bytes buffer (CS size)
 char * BUFFread(u32 bytesaskedfor){
-   bytesreceived=fread(BUFF,1,bytesaskedfor,stdin);
-   if (bytesaskedfor!=bytesreceived) {
-      if (ferror(stdin)) {
-         fprintf(stderr,"BUFFread [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-         exit(errno);
-      }
-      fprintf(stderr,"BUFFread [%lu] read %u bytes truncated (%d)\n", DICMidx, bytesaskedfor, exitReadTruncated);
-      exit(exitReadTruncated);
-   }
    DICMidx+=bytesaskedfor;
-   return BUFF;
+   return DICM+DICMidx-bytesaskedfor;
 }
 
 void CKEYread(struct Ercle* attr) {
-   if (fread(attr,1,8,stdin)!=8) {
-      if (ferror(stdin)) {
-         fprintf(stderr,"CKEYread [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-         exit(errno);
-      }
-      fprintf(stderr,"CKEYread [%lu] read truncated (%d)\n", DICMidx, exitReadTruncated);
-      exit(exitReadTruncated);
-   }
-   //fprintf(stderr,"%8lu %08X\n",DICMidx,attr->e);
-
+   memcpy(attr,DICM+DICMidx,8);
    DICMidx+=8;
    attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
    attr->e=u32swap(attr->E);//tag in little endian
@@ -73,15 +48,7 @@ void CKEYread(struct Ercle* attr) {
       case UR://universal resource url identifier/locator
       case SQ://sequence
       {
-         if (fread(&attr->l,1,4,stdin)!=4)
-         {
-            if (ferror(stdin)) {
-               fprintf(stderr,"CKEYread ll [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-               exit(errno);
-            }
-            fprintf(stderr,"CKEYread ll [%lu] read truncated (%d)\n", DICMidx, exitReadTruncated);
-            exit(exitReadTruncated);
-         }
+         memcpy(&attr->l,DICM+DICMidx,4);
          DICMidx+=4;
       }break;
       default:break;
@@ -95,12 +62,18 @@ void uPrerequisite(int argc, char *argv[]) {
 
 void uCreate(int argc, char *argv[])
 {
-   DICMidx=0x9E;//0x9E 0002,0002
-   if (fseek(stdin, (s64)DICMidx, SEEK_SET)!=0) {
-      fprintf(stderr,"uCreate  [0x9E] no (0002,0002) (%d)\n", exitReadTruncated);
+   DICM = malloc(DICMsize);
+   bytesreceived=fread(DICM,1,DICMsize,stdin);
+   if (DICMsize!=bytesreceived) {
+      if (ferror(stdin)) {
+         fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+         exit(errno);
+      }
+      fprintf(stderr,"uCreate [%lu] read %u bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
       exit(exitReadTruncated);
-   }
-   BUFF = malloc(256);//up to 15 16 bytes CS
+   };
+   DICMidx=0x9E;//0x9E 0002,0002
+//BUFF malloc(256);//up to 15 16 bytes CS NOT NECESSARY (written in DICM)
 }
 
 void uClose(int argc, char *argv[]){
@@ -125,17 +98,7 @@ void vrAppend(u32 keyoffset, enum kvVRcategory  vrcat, u32 vlen) //keyoffset=key
       case kv01: {
          //OB encapsulaed document 00420011 xml cda o pdf
          if (!memcmp(CKEY, &B00420011, 4)) {
-            char *CDA= malloc(vlen);
-            if (fread(CDA,1,vlen,stdin)!=vlen) {
-               //CKEY[0] is base level, as the enclosed CDA is
-               if (ferror(stdin)) {
-                  fprintf(stderr,"vrAppend kv01 CDA [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-                  exit(errno);
-               }
-               fprintf(stderr,"vrAppend kv01 CDA  [%lu] read truncated (%d)\n", DICMidx, exitReadTruncated);
-               exit(exitReadTruncated);
-            }
-            fprintf(stdout,"%s",CDA);
+            fprintf(stdout,"%.*s",vlen,DICM+DICMidx);
             DICMidx+=vlen;
          }
          else DICMread((u64)vlen);

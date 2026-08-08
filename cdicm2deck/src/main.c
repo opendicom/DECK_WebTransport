@@ -8,12 +8,12 @@
 #include "uapi.h"
 
 //defined global
-int exitValue=exitZeroError;
+u64   DICMsize;//CDICM length
 u64   DICMidx;//CDICM pointer
 
 void E(int code, const char *format, ...) {
    if (code==0) return;
-   fprintf(stderr, "%lu [%d] ",DICMidx, exitValue);
+   fprintf(stderr, "%lu [%d] ",DICMidx, code);
    va_list args;
    va_start(args, format);
    vfprintf(stderr, format, args);
@@ -27,6 +27,7 @@ struct timespec start,append,commit,finish;
 FILE *inFile;
 
 char *CKEY;//contextual keys buffer
+char *DICM;//CDICM in memory
 char *BUFF;//used for CS preread and other temp one read buffer. malloc in prerequisite or open
 /*
  *size defined in uCreate
@@ -36,44 +37,40 @@ char *BUFF;//used for CS preread and other temp one read buffer. malloc in prere
 
 //recursive
 int dicmDataset(
-   u32 kloc,         // current offset
+   u32 keyidx,         // current offset
    struct Ercle *attr,// read attr up to before value
    u16 keycs,        // key charset
    u64 beforebyte,   // read up to byte
    u32 beforetag     // read up to attr. On return, attr is read and found in CKEY
 )
 {
-   while (
-       (exitValue==exitZeroError)
-    && (DICMidx < beforebyte)
-    && (attr->e < beforetag) //comparison in little endian
-   )
+   while ((DICMidx < beforebyte) && (attr->e < beforetag))
    {
       switch (attr->r) {
          //num
-         case FD: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvFD,attr->l);CKEYread(attr);} break;
-         case FL: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvFL,attr->l);CKEYread(attr);} break;
-         case SL: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvSL,attr->l);CKEYread(attr);} break;
-         case SS: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvSS,attr->l);CKEYread(attr);} break;
-         case UL: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvUL,attr->l);CKEYread(attr);} break;
-         case US: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvUS,attr->l);CKEYread(attr);} break;
-         case AT: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvAT,attr->l);CKEYread(attr);} break;
-         case UI: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvUI,attr->l);CKEYread(attr);} break;
+         case FD: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvFD,attr->l);CKEYread(attr);} break;
+         case FL: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvFL,attr->l);CKEYread(attr);} break;
+         case SL: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvSL,attr->l);CKEYread(attr);} break;
+         case SS: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvSS,attr->l);CKEYread(attr);} break;
+         case UL: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvUL,attr->l);CKEYread(attr);} break;
+         case US: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvUS,attr->l);CKEYread(attr);} break;
+         case AT: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvAT,attr->l);CKEYread(attr);} break;
+         case UI: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvUI,attr->l);CKEYread(attr);} break;
          //ascii
          case AS:
          case DT:
          case DA:
-         case TM: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvTP,attr->l);CKEYread(attr);} break;
+         case TM: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvTP,attr->l);CKEYread(attr);} break;
          //code
          case CS: {
             attr->c=REPERTOIRE_GL;
-            BUFFread(attr->l);
+            char *csString=BUFFread(attr->l);
             if (attr->e == 0x00080005){
-               u16 repidxs=repertoireidx(BUFF,attr->l);
+               u16 repidxs=repertoireidx(csString,attr->l);
                if (repidxs==0x09)
                {
-                  E(exitBadRepertoire, "bad repertoire %.*s",attr->l,BUFF);
-                  exitValue=exitBadRepertoire;
+                  fprintf(stderr,"main CS [%lu] bad repertoire  %.*s (%d)\n", DICMidx,attr->l,csString, exitBadRepertoire);
+                  exit(exitBadRepertoire);
                }
                else
                {
@@ -81,18 +78,17 @@ int dicmDataset(
                   attr->c=repidxs;
                }
             }
-            DICMidx+=attr->l;
             CKEYread(attr);
          } break;
          case AE:
          case DS:
-         case IS: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kvTA,attr->l);CKEYread(attr);} break;
+         case IS: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kvTA,attr->l);CKEYread(attr);} break;
          //repertoire
          case LO:
          case LT:
          case SH:
-         case ST: { attr->c=keycs;         vrAppend(kloc,kvTA,attr->l);CKEYread(attr);} break;
-         case PN: { attr->c=keycs;         vrAppend(kloc,kvPN,attr->l);CKEYread(attr);} break;
+         case ST: { attr->c=keycs;         vrAppend(keyidx,kvTA,attr->l);CKEYread(attr);} break;
+         case PN: { attr->c=keycs;         vrAppend(keyidx,kvPN,attr->l);CKEYread(attr);} break;
          //large length numbers
          case OF:
          case OD:
@@ -101,11 +97,11 @@ int dicmDataset(
          case OL:
          case OV:
          case SV:
-         case UV: { attr->c=REPERTOIRE_GL; vrAppend(kloc,kv01,attr->l);CKEYread(attr);} break;
+         case UV: { attr->c=REPERTOIRE_GL; vrAppend(keyidx,kv01,attr->l);CKEYread(attr);} break;
          //large length repertoire
          case UC:
-         case UT: { attr->c=keycs;         vrAppend(kloc,kvTL,attr->l);CKEYread(attr);} break;
-         case UR: { attr->c=ISO_IR192;     vrAppend(kloc,kvTU,attr->l);CKEYread(attr);} break;//RFC3986
+         case UT: { attr->c=keycs;         vrAppend(keyidx,kvTL,attr->l);CKEYread(attr);} break;
+         case UR: { attr->c=ISO_IR192;     vrAppend(keyidx,kvTU,attr->l);CKEYread(attr);} break;//RFC3986
 #pragma mark SQ
          case SQ://sequence
          {
@@ -114,35 +110,34 @@ int dicmDataset(
             else {
                beforebyteSQ=DICMidx + attr->l;
                if (beforebyteSQ > beforebyte) {
-                  E(exitErrorSQtruncated,"%s","SQ truncated %lu");
-                  exitValue=exitErrorSQtruncated;
-                  continue;
+                  fprintf(stderr,"main SQ [%lu] truncated (%d)\n", DICMidx, exitErrorSQtruncated);
+                  exit(exitErrorSQtruncated);
                }
             }
-            u32 *itemnumber=(u32 *)(CKEY+kloc+4);//pointer to last four bytes of SQ
+            u32 *itemnumber=(u32 *)(CKEY+keyidx+4);//pointer to last four bytes of SQ
 
             //SQ length = 0x00000000
             if (attr->l==0) {
                *itemnumber=0x0;
-               vrAppend(kloc,kvSA, attr->l);
+               vrAppend(keyidx,kvSA, attr->l);
                *itemnumber=0xffffffff;
-               vrAppend(kloc,kvSZ, 0);
+               vrAppend(keyidx,kvSZ, 0);
                CKEYread(attr);
                continue;
             }
-            vrAppend(kloc,kvSA, 0);
+            vrAppend(keyidx,kvSA, 0);
 
 #pragma mark itemattr
             //SQ is part of the context and should not be overwritten
-            kloc+=8;
-            struct Ercle * itemattr=(struct Ercle*) (CKEY+kloc);
+            keyidx+=8;
+            struct Ercle * itemattr=(struct Ercle*) (CKEY+keyidx);
             //read first IT tag (or SQ end tag)
             CKEYread(itemattr);
             if (itemattr->e==0xfffee0dd) {
                //SQ end tag
-               kloc-=8;
+               keyidx-=8;
                *itemnumber=0xFFFFFFFF;
-               vrAppend(kloc,kvSZ, 0);
+               vrAppend(keyidx,kvSZ, 0);
                CKEYread(attr);//read attr post SQ
                continue;
             }
@@ -162,26 +157,26 @@ int dicmDataset(
                   }
                }
 
-               vrAppend(kloc,kvIA, 0);
+               vrAppend(keyidx,kvIA, 0);
                CKEYread(itemattr);
-               dicmDataset(kloc,itemattr,keycs,(u32)beforebyteIT,0xfffee00d);
+               dicmDataset(keyidx,itemattr,keycs,(u32)beforebyteIT,0xfffee00d);
                //write IZ
                if (itemattr->e==0xfffee00d)
                {  //end item tag present
                   itemattr->E=0xFFFFFFFF;
                   itemattr->r=IZ;
                   itemattr->l=0;
-                  vrAppend(kloc,kvIZ, 0);
+                  vrAppend(keyidx,kvIZ, 0);
                   CKEYread(itemattr);
                }
-               else vrAppend(kloc,kvIZ, 0);
+               else vrAppend(keyidx,kvIZ, 0);
                *itemnumber=u32swap(u32swap(*itemnumber)+1);
             }//end while item
 
 
 #pragma mark back to SQ level
-            kloc-=8;
-            vrAppend(kloc,kvSZ, 0);
+            keyidx-=8;
+            vrAppend(keyidx,kvSZ, 0);
             if (itemattr->e==0xfffee0dd)
             {  //end sq tag present
                //read new attr
@@ -203,7 +198,7 @@ int dicmDataset(
             //unknown
             // https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_6.2.2
             //5. The Value Length Field of VR UN may contain Undefined Length (FFFFFFFFH), in which case the contents can be assumed to be encoded with Implicit VR. See Section 7.5.1 to determine how to parse Data Elements with an Undefined Length.
-         case UN: { attr->l=REPERTOIRE_GL; vrAppend(kloc,kvUN,attr->l);CKEYread(attr);} break;
+         case UN: { attr->l=REPERTOIRE_GL; vrAppend(keyidx,kvUN,attr->l);CKEYread(attr);} break;
 
          case 0xFFFF:return true;//end of buffer
 
@@ -223,7 +218,7 @@ int dicmDataset(
       {
          //real trailing padding
          attr->c=REPERTOIRE_GL;
-         vrAppend(kloc,kv01,attr->l);
+         vrAppend(keyidx,kv01,attr->l);
       }
    }
    return exitZeroError;
@@ -243,8 +238,8 @@ int main(int argc,  char *argv[]) {
 //CDICM size
    struct stat st;
    stat(argv[1], &st);
-   u64 beforebyte= st.st_size;
-   if (beforebyte < 140) exit(exitNoDataset);
+   DICMsize= st.st_size;
+   if (DICMsize < 140) exit(exitNoDataset);
 
 //uPrerequisite
    uPrerequisite(argc, argv);
@@ -271,7 +266,7 @@ int main(int argc,  char *argv[]) {
 
 //uAppend (repeated call within dicmDataset) and uCommit
    clock_gettime(CLOCK_MONOTONIC, &append);
-   dicmDataset(0,baseattr,0,beforebyte,0xfffcfffc);
+   dicmDataset(0,baseattr,0,DICMsize,0xfffcfffc);
    clock_gettime(CLOCK_MONOTONIC, &commit);
    uClose(argc, argv);
    fclose(inFile);
@@ -282,5 +277,5 @@ int main(int argc,  char *argv[]) {
    fprintf(stderr,"pre   0.%09lld\n", append.tv_nsec - start.tv_nsec);
    fprintf(stderr,"parse 0.%09lld\n", commit.tv_nsec - append.tv_nsec);
    fprintf(stderr,"post  0.%09lld\n", finish.tv_nsec - commit.tv_nsec);
- exit(exitValue);
+ exit(exitZeroError);
 }
