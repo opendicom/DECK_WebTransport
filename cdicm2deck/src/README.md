@@ -16,7 +16,6 @@ The first only is mandatory: CDICM file path
 xcr.sh #p/#f #u #v #s #k #i #o #t #l #a #r #c'
 ````
 
-
 ## How it works?
 
 Using cascading handlers:
@@ -31,14 +30,6 @@ Using cascading handlers:
 
 ### (3) uapi (uncategorized)
 reads attributes properties and values
-Read and append are performed by distinct functions:
-- vvread (valueBuffer value read)
-- kvread (keyBuffer value read)
-- kkRead (keyBuffer key read)
-
-- vrAppend
-- csAppend
-
 
 ## (3) capi (categorized)
 Overrides uapi and dispatch the attributes into patient/study, series, instance, pixel and private categories

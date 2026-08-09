@@ -32,20 +32,13 @@ dicm2deck has a extensible layered structure.
 Common to all products is the main file which:
 - parses the dataset structure
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
-   - CKEYread (Contextualized KEY forge)
-   - BUFread (temporary value buffer)
-   - DICMread (deep copy of DICM into memory)
-   - uPrerequisite (delegates the possibility to abort the parsing without reading the file)
-   - uCreate (invoked after opening the canonicalized file to start a transaction to be commited or canceled later)
-   - uAppend (called for each attribute)
-   - uCommit (called when the trailling padding attribue is reached)
-   - uClose (closes the transaction opened by uCreate).
-
+   - input (delegates the opening the canonicalized file)
+   - props and value (delegates reading at attribute level)
+   - trail (called when the trailling padding attribue has been reached)
+   
 ### Third level capi
 This class is not used by uapi executables.
-capi is exposed by a specific implementation of uapi which delegates the functions, except uAppend, 
-which is replaced by one or another function, depending on the category.
-
+capi is exposed by a specific implementation of uapi which delegates append functions depending on attribute category:
 - eAppend for patient and study attributes
 - sAppend for series attributes
 - xAppend for special series attributes

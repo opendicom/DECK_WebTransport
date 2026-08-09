@@ -1,6 +1,6 @@
 # dicmstructdump
 
-- CDICM parsed and DECK dumped pretty printed on utf-8 console
+- CDICM parsed and DECK dumped pretty printed on utf-8 console, and also deep copy to file of the original DICM
 - dicmstructdump parses:  
   - values contents up to 0xFFFF bytes
   - separates multivalues in distinct components
@@ -108,5 +108,5 @@ commit 0.000142492
 
 
 ## performance improvement
-This version execute 2 fread for each attribute
-This can be improved with an unique fread the whole file and parsing from memory
+This version execute 2 fread and 2 fprint for each attribute
+This can be improved with an unique fread for the whole file which then is parsed from memory and written as a dump to memory too.
