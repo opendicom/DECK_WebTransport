@@ -39,7 +39,7 @@ enum kvVRcategory{
 
 void input(int argc, char *argv[]);//CDICM opened
 void key(struct Ercle* attr);//returns little endian of the key or 0 if error
-void val(u32 kloc,enum kvVRcategory vrcat,struct Ercle* attr);
+void val(enum kvVRcategory vrcat,struct Ercle* attr);
 void trail(int argc, char *argv[]);//after dataset read
 
 #endif /* uapi_h */

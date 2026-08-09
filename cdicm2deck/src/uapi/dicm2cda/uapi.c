@@ -5,11 +5,12 @@
 
 #include "uapi.h"
 
-extern FILE * inFile;
-extern u64 DICMsize;
-extern u64 DICMidx;
-extern char *CKEY;
+extern FILE *inFile;
 extern char *DICM;
+extern u64   DICMsize;
+extern u64   DICMidx;
+extern char *CKEY;
+extern u32   CKEYidx;
 
 void key(struct Ercle* attr) {
    memcpy(attr,DICM+DICMidx,8);
@@ -82,7 +83,7 @@ void trail(int argc, char *argv[]){
 //const unsigned long B00420010=0x10004200;//ST DocumentTitle
 const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
 //const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
-void val(u32 keyoffset, enum kvVRcategory  vrcat, struct Ercle* attr) //keyoffset=keyidx
+void val(enum kvVRcategory  vrcat, struct Ercle* attr)
 {
    switch (vrcat) {
       case kvSA:

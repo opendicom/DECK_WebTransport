@@ -14,10 +14,9 @@ char *DICM;//CDICM in memory
 u64   DICMsize;
 u64   DICMidx;
 char *CKEY;//contextual keys
-
+u32  CKEYidx=0;
 //recursive
 int dicmDataset(
-   u32 keyidx,         // current offset
    struct Ercle *attr,// read attr up to before value
    u16 keycs,        // key charset
    u64 beforebyte,   // read up to byte
@@ -28,23 +27,23 @@ int dicmDataset(
    {
       switch (attr->r) {
          //num
-         case FD: { attr->c=REPERTOIRE_GL; val(keyidx,kvFD,attr);key(attr);} break;
-         case FL: { attr->c=REPERTOIRE_GL; val(keyidx,kvFL,attr);key(attr);} break;
-         case SL: { attr->c=REPERTOIRE_GL; val(keyidx,kvSL,attr);key(attr);} break;
-         case SS: { attr->c=REPERTOIRE_GL; val(keyidx,kvSS,attr);key(attr);} break;
-         case UL: { attr->c=REPERTOIRE_GL; val(keyidx,kvUL,attr);key(attr);} break;
-         case US: { attr->c=REPERTOIRE_GL; val(keyidx,kvUS,attr);key(attr);} break;
-         case AT: { attr->c=REPERTOIRE_GL; val(keyidx,kvAT,attr);key(attr);} break;
+         case FD: { attr->c=REPERTOIRE_GL; val(kvFD,attr);key(attr);} break;
+         case FL: { attr->c=REPERTOIRE_GL; val(kvFL,attr);key(attr);} break;
+         case SL: { attr->c=REPERTOIRE_GL; val(kvSL,attr);key(attr);} break;
+         case SS: { attr->c=REPERTOIRE_GL; val(kvSS,attr);key(attr);} break;
+         case UL: { attr->c=REPERTOIRE_GL; val(kvUL,attr);key(attr);} break;
+         case US: { attr->c=REPERTOIRE_GL; val(kvUS,attr);key(attr);} break;
+         case AT: { attr->c=REPERTOIRE_GL; val(kvAT,attr);key(attr);} break;
          //ascii
-         case UI: { attr->c=REPERTOIRE_GL; val(keyidx,kvUI,attr);key(attr);} break;
+         case UI: { attr->c=REPERTOIRE_GL; val(kvUI,attr);key(attr);} break;
          case AS:
          case DT:
          case DA:
-         case TM: { attr->c=REPERTOIRE_GL; val(keyidx,kvTP,attr);key(attr);} break;
+         case TM: { attr->c=REPERTOIRE_GL; val(kvTP,attr);key(attr);} break;
          //code
          case CS: {
             attr->c=REPERTOIRE_GL;
-            val(keyidx,kvCS,attr);
+            val(kvCS,attr);
             if (attr->e == 0x00080005){
                u16 repidxs=repertoireidx(DICM+DICMidx-attr->l,attr->l);
                if (repidxs==0x09)
@@ -58,13 +57,13 @@ int dicmDataset(
          } break;
          case AE:
          case DS:
-         case IS: { attr->c=REPERTOIRE_GL; val(keyidx,kvTA,attr);key(attr);} break;
+         case IS: { attr->c=REPERTOIRE_GL; val(kvTA,attr);key(attr);} break;
          //repertoire
          case LO:
          case LT:
          case SH:
-         case ST: { attr->c=keycs;         val(keyidx,kvTA,attr);key(attr);} break;
-         case PN: { attr->c=keycs;         val(keyidx,kvPN,attr);key(attr);} break;
+         case ST: { attr->c=keycs;         val(kvTA,attr);key(attr);} break;
+         case PN: { attr->c=keycs;         val(kvPN,attr);key(attr);} break;
          //large length numbers
          case OF:
          case OD:
@@ -73,11 +72,11 @@ int dicmDataset(
          case OL:
          case OV:
          case SV:
-         case UV: { attr->c=REPERTOIRE_GL; val(keyidx,kv01,attr);key(attr);} break;
+         case UV: { attr->c=REPERTOIRE_GL; val(kv01,attr);key(attr);} break;
          //large length repertoire
          case UC:
-         case UT: { attr->c=keycs;         val(keyidx,kvTL,attr);key(attr);} break;
-         case UR: { attr->c=ISO_IR192;     val(keyidx,kvTU,attr);key(attr);} break;//RFC3986
+         case UT: { attr->c=keycs;         val(kvTL,attr);key(attr);} break;
+         case UR: { attr->c=ISO_IR192;     val(kvTU,attr);key(attr);} break;//RFC3986
 #pragma mark SQ
          case SQ://sequence
          {
@@ -90,30 +89,30 @@ int dicmDataset(
                   exit(exitErrorSQtruncated);
                }
             }
-            u32 *itemnumber=(u32 *)(CKEY+keyidx+4);//pointer to last four bytes of SQ
+            u32 *itemnumber=(u32 *)(CKEY+CKEYidx+4);//pointer to last four bytes of SQ
 
             //SQ length = 0x00000000
             if (attr->l==0) {
                *itemnumber=0x0;
-               val(keyidx,kvSA, attr);
+               val(kvSA, attr);
                *itemnumber=0xffffffff;
-               val(keyidx,kvSZ, attr);
+               val(kvSZ, attr);
                key(attr);
                continue;
             }
-            val(keyidx,kvSA, attr);
+            val(kvSA, attr);
 
 #pragma mark itemattr
             //SQ is part of the context and should not be overwritten
-            keyidx+=8;
-            struct Ercle * itemattr=(struct Ercle*) (CKEY+keyidx);
+            CKEYidx+=8;
+            struct Ercle * itemattr=(struct Ercle*) (CKEY+CKEYidx);
             //read first IT tag (or SQ end tag)
             key(itemattr);
             if (itemattr->e==0xfffee0dd) {
                //SQ end tag
-               keyidx-=8;
+               CKEYidx-=8;
                *itemnumber=0xFFFFFFFF;
-               val(keyidx,kvSZ, 0);
+               val(kvSZ, 0);
                key(attr);//read attr post SQ
                continue;
             }
@@ -133,26 +132,26 @@ int dicmDataset(
                   }
                }
 
-               val(keyidx,kvIA, 0);
+               val(kvIA, 0);
                key(itemattr);
-               dicmDataset(keyidx,itemattr,keycs,(u32)beforebyteIT,0xfffee00d);
+               dicmDataset(itemattr,keycs,(u32)beforebyteIT,0xfffee00d);
                //write IZ
                if (itemattr->e==0xfffee00d)
                {  //end item tag present
                   itemattr->E=0xFFFFFFFF;
                   itemattr->r=IZ;
                   itemattr->l=0;
-                  val(keyidx,kvIZ, 0);
+                  val(kvIZ, 0);
                   key(itemattr);
                }
-               else val(keyidx,kvIZ, 0);
+               else val(kvIZ, 0);
                *itemnumber=u32swap(u32swap(*itemnumber)+1);
             }//end while item
 
 
 #pragma mark back to SQ level
-            keyidx-=8;
-            val(keyidx,kvSZ, attr);
+            CKEYidx-=8;
+            val(kvSZ, attr);
             if (itemattr->e==0xfffee0dd)
             {  //end sq tag present
                //read new attr
@@ -174,7 +173,7 @@ int dicmDataset(
             //unknown
             // https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_6.2.2
             //5. The Value Length Field of VR UN may contain Undefined Length (FFFFFFFFH), in which case the contents can be assumed to be encoded with Implicit VR. See Section 7.5.1 to determine how to parse Data Elements with an Undefined Length.
-         case UN: { attr->l=REPERTOIRE_GL; val(keyidx,kvUN,attr);key(attr);} break;
+         case UN: { attr->l=REPERTOIRE_GL; val(kvUN,attr);key(attr);} break;
          default: {exit(-10);} break;
       }//end switch
    }//end while (*index < beforebyte)
@@ -185,7 +184,7 @@ int dicmDataset(
       {
          //real trailing padding
          attr->c=REPERTOIRE_GL;
-         val(keyidx,kv01,attr);
+         val(kv01,attr);
       }
    }
    return exitZeroError;
@@ -215,7 +214,7 @@ int main(int argc,  char *argv[]) {
    key(baseattr);
    if (baseattr->e!=0x00020002) exit(exitNotDICM);
    clock_gettime(CLOCK_MONOTONIC, &inputtime);
-   dicmDataset(0,baseattr,0,DICMsize,0xfffcfffc);
+   dicmDataset(baseattr,0,DICMsize,0xfffcfffc);
    clock_gettime(CLOCK_MONOTONIC, &parsetime);
    trail(argc, argv);
    clock_gettime(CLOCK_MONOTONIC, &finishtime);
