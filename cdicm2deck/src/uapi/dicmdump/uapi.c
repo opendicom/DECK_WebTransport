@@ -5,34 +5,30 @@
 
 
 #include "uapi.h"
+#include <locale.h>
 
-extern u64   DICMidx;extern FILE * inFile;
-extern u64   DICMsize;
-extern char *CKEY;
+extern FILE * inFile;
+
 extern char *DICM;
-extern char *BUFF;
-const char *space=" ";
-static u64 bytesreceived;
+extern u64   DICMidx;
+extern u64   DICMsize;
+
+extern char *CKEY;
+extern u8   CKEYidx;
+
+static const char *space=" ";
+static char *UTF8;
+
 
 #pragma mark ----------------------------- file read
 
-void DICMread(u64 bytesaskedfor)
-{
-   DICMidx+=bytesaskedfor;
-}
-
-char * BUFFread(u32 bytesaskedfor)
-{
-   DICMidx+=bytesaskedfor;
-   return DICM+DICMidx-bytesaskedfor;
-}
 
 void key(struct Ercle* attr)
 {
-   //reads at keyoffset+8 the new 8 first bytes of the attribute
-   //reorders group and unit at keyoffset
-   // copies the VR and empty bytes at keyoffset+4
-   // eventually reads the four additional bytes of long length at keyoffset+8
+   //reads at CKEYidx+8 the new 8 first bytes of the attribute
+   //reorders group and unit at CKEYidx
+   // copies the VR and empty bytes at CKEYidx+4
+   // eventually reads the four additional bytes of long length at CKEYidx+8
    memcpy(attr,DICM+DICMidx,8);
    DICMidx+=8;
    attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
@@ -67,6 +63,7 @@ void key(struct Ercle* attr)
 
 void input( int argc, char *argv[])
 {
+   setlocale(LC_ALL, "");//output in UTF-8
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL)
    {
@@ -78,13 +75,12 @@ void input( int argc, char *argv[])
    }
 
    DICM=malloc(DICMsize);
-   bytesreceived=fread(DICM,1,DICMsize,stdin);
-   if (DICMsize!=bytesreceived) {
+   if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
       if (ferror(stdin)) {
          fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
          exit(errno);
       }
-      fprintf(stderr,"uCreate [%lu] read %u bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
+      fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
       exit(exitReadTruncated);
    };
 
@@ -92,6 +88,9 @@ void input( int argc, char *argv[])
       fclose(inFile);
       inFile=NULL;
    }
+   UTF8=malloc(0x4000);
+   //LT max 10240,UT max 2^32 !!!
+   //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
 }
 
 void trail(int count, char *vector[]) {
@@ -105,14 +104,14 @@ void trail(int count, char *vector[]) {
 
 
 #pragma mark ---------------------------- attributes
-void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
+void val(enum kvVRcategory vrcat,struct Ercle* attr)
 {
    switch (vrcat) {
 #pragma mark -sequence
-      case kvSA: {printf("%8lu%*s%08X+\n",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e);}break;
-      case kvSZ: {printf("%8lu%*s%08X~\n",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e);}break;
-      case kvIA: {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,keyoffset+keyoffset-8,space,CKEY[keyoffset-4],CKEY[keyoffset-3],CKEY[keyoffset-2],CKEY[keyoffset-1]);}break;
-      case kvIZ: {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,keyoffset+keyoffset-8,space,CKEY[keyoffset-4],CKEY[keyoffset-3],CKEY[keyoffset-2],CKEY[keyoffset-1]);}break;
+      case kvSA: {printf("%8lu%*s%08X+\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e);}break;
+      case kvSZ: {printf("%8lu%*s%08X~\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, u32swap(attr->E));}break;
+      case kvIA: {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
+      case kvIZ: {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
 #pragma mark -long length
       case kv01://OB OD OF OL OV OW SV UV
       //OB Encapsulated​Document 00420011 xml cda o pdf
@@ -126,36 +125,25 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
       //OV Extended​Offset​TableLengths fragments offset 7FE00002
       //UV Encapsulated​Pixel​Data​Value​Total​Length 7FE00003
       case kvUN: {
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
-         DICMread(attr->l);
-         printf("{%lu,%u}\n",DICMidx-attr->l,attr->l);
-
+         printf("%8lu%*s%08X %c%c      {%lu,%u}\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],DICMidx,attr->l);
+         DICMidx+=attr->l;
       }break;
       case kvTL://UC
       //UT AccessionNumberIssuer local 00080051.00400031
       //UT AccessionNumberIssuer universal 00080051.00400032
       case kvTU: { //UR
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
-         if (attr->l>0)
-         {
-            //charset -> utf-8
-            u32 repidx=CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8);
-            u32 charstart=(u32)DICMidx;
-            u32 utf8length=0;
-            DICMread(attr->l);
-            utf8(repidx,DICM,charstart,attr->l,DICM,(u32)DICMidx,&utf8length);
-            printf( "\"%.*s\"\n", utf8length,DICM+DICMidx );
-         }
+         printf("%8lu%*s%08X %c%cF-8  \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
+         DICMidx+=attr->l;
       } break;
 #pragma mark -numbers
       case kvFD: { //floating point double
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
             double d;
-            DICMread(attr->l);
-            for (u16 idx=DICMidx-attr->l; idx<DICMidx; idx+=8)
+            DICMidx+=attr->l;
+            for (u32 idx=DICMidx-attr->l; idx<DICMidx; idx+=8)
             {
                memcpy(&d, DICM+idx, 8);
                printf(" %f",d);
@@ -165,13 +153,13 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvFL: { //floating point single
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
             float f;
-            DICMread(attr->l);
-            for (u16 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
+            DICMidx+=attr->l;
+            for (u64 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
             {
                memcpy(&f, DICM+idx, 4);
                printf(" %f",f);
@@ -181,13 +169,13 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvSL: { //signed long
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
             s32 s4B;
-            DICMread(attr->l);
-            for (u16 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
+            DICMidx+=attr->l;
+            for (u64 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
             {
                memcpy(&s4B, DICM+idx, 4);
                printf(" %d",s4B);
@@ -197,13 +185,13 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvSS: { //signed short
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
             s16 s2B;
-            DICMread(attr->l);
-            for (u16 idx=DICMidx-attr->l; idx<DICMidx; idx+=2)
+            DICMidx+=attr->l;
+            for (u64 idx=DICMidx-attr->l; idx<DICMidx; idx+=2)
             {
                memcpy(&s2B, DICM+idx, 2);
                printf(" %hd",s2B);
@@ -213,13 +201,13 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvUL: { //unsigned long
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
             u32 u4B;
-            DICMread(attr->l);
-            for (u16 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
+            DICMidx+=attr->l;
+            for (u64 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
             {
                memcpy(&u4B, DICM+idx, 4);
                printf(" %u",u4B);
@@ -229,13 +217,13 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvUS:{ //unsigned short
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
             u16 u2B;
-            DICMread(attr->l);
-            for (u16 idx=DICMidx-attr->l; idx<DICMidx; idx+=2)
+            DICMidx+=attr->l;
+            for (u64 idx=DICMidx-attr->l; idx<DICMidx; idx+=2)
             {
                memcpy(&u2B, DICM+idx, 2);
                printf(" %hu",u2B);
@@ -245,18 +233,19 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvAT: { //attribute tag
-         printf("%8lu%*s%08X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
-            DICMread(attr->l);
-            for (u16 idx=DICMidx-attr->l; idx<DICMidx; idx+=2)
+            for (u64 idx=DICMidx-attr->l; idx<(DICMidx+attr->l); idx+=4)
             {
-               printf(" %04x%04x",*DICM+idx,*DICM+idx+1);
+               printf(" %02x%02x%02x%02x",DICM[idx+1],DICM[idx],DICM[idx+3],DICM[idx+2]);
             }
             printf(" )");
          }
          printf("\n");
+         DICMidx+=attr->l;
+
       }break;
 #pragma mark -ascii
       case kvUI://unique ID
@@ -266,7 +255,7 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
       //ST HL7InstanceIdentifier 0040E001  root^extension
       case kvCS:
       {
-         printf("%8lu%*s%08X %c%c %04X \"%.*s\"\n",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8), attr->l,DICM+DICMidx);
+         printf("%8lu%*s%08X %c%c      \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], attr->l,DICM+DICMidx);
          DICMidx+=attr->l;
       } break;
 #pragma mark -charset
@@ -274,19 +263,8 @@ void val(u32 keyoffset,enum kvVRcategory vrcat,struct Ercle* attr)
       //ST  DocumentTitle 00420010
       case kvPN:
       {
-         printf("%8lu%*s%02X%02X%02X%02X %c%c %04X ",DICMidx,keyoffset+keyoffset+(keyoffset!=0),space, attr->e,CKEY[keyoffset+4],CKEY[keyoffset+5],CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8));
-         if (attr->l > 0)
-         {
-            //charset -> utf-8
-            u32 repidx=CKEY[keyoffset+6] + (CKEY[keyoffset+7] << 8);
-            u32 charstart=(u32)DICMidx;//corresponds to the offset of the original charset string. utf-8 will be written following the last character
-            u32 utf8length=0;
-            DICMread(attr->l);
-            utf8(repidx,DICM,charstart,attr->l,CKEY,keyoffset,&utf8length);
-            printf( "\"%.*s\"\n", utf8length,CKEY+keyoffset );
-
-         }
-         else printf("\"\"\n");
+         printf("%8lu%*s%08X %c%c %02X   \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],CKEY[CKEYidx+6], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
+         DICMidx+=attr->l;
       } break;
          
       default:break;

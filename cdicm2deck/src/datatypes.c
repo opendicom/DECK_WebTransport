@@ -839,39 +839,35 @@ const uint16_t repertoires2utf8[16][256] =
  */
 
 //https://github.com/nigels-com/tutf8e/blob/master/src/tutf8e.c
-bool utf8
+u32 utf8
 (
  u32 repidx,
  const char *charbytes,
- const u32   charstart,
  size_t      charlength,
- 
- char      *utf8bytes,
- u32        utf8start,
- u32       *utf8length
+ char      *utf8bytes
 )
 {
-  *utf8length=0;
+  u32 utf8length=0;
   uint16_t u;
   for (size_t cursor = 0; cursor < charlength; cursor++) {
-    u = repertoires2utf8[repidx][(u8)charbytes[charstart + cursor]];
+    u = repertoires2utf8[repidx][(u8)charbytes[cursor]];
     if (u<0x80) {
-      utf8bytes[utf8start + (*utf8length)++] = u;
+      utf8bytes[utf8length++] = u;
       continue;
     }
     if (u<0x800) {
-      utf8bytes[utf8start + (*utf8length)++] = 0xc0 | (u>>6);
-      utf8bytes[utf8start + (*utf8length)++] = 0x80 | (u&0x3f);
+      utf8bytes[utf8length++] = 0xc0 | (u>>6);
+      utf8bytes[utf8length++] = 0x80 | (u&0x3f);
       continue;
     }
     if (u<0xffff) {
-      utf8bytes[utf8start + (*utf8length)++] = 0xe0 | (u>>12);
-      utf8bytes[utf8start + (*utf8length)++] = 0x80 | ((u>>6)&0x3f);
-      utf8bytes[utf8start + (*utf8length)++] = 0x80 | (u&0x3f);
+      utf8bytes[utf8length++] = 0xe0 | (u>>12);
+      utf8bytes[utf8length++] = 0x80 | ((u>>6)&0x3f);
+      utf8bytes[utf8length++] = 0x80 | (u&0x3f);
     }
   }
-  utf8bytes[utf8start + (*utf8length)] = 0x00;
-  return true;
+  utf8bytes[utf8length] = 0x00;
+   return utf8length;
 }
 
 #pragma mark - SopClasses

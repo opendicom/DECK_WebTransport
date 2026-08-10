@@ -27,13 +27,13 @@ The modified dcmtk storescp and cdicm2deck work as a binome.
 
 ## dicm2deck design
 
-dicm2deck has a extensible layered structure.
+dicm2deck is layered.
 
 Common to all products is the main file which:
 - parses the dataset structure
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
    - input (delegates the opening the canonicalized file)
-   - props and value (delegates reading at attribute level)
+   - key and val (delegates reading at attribute level)
    - trail (called when the trailling padding attribue has been reached)
    
 ### Third level capi
@@ -78,6 +78,7 @@ cmake-build-debug/Testing/Temporary
 
 - uapi: **cdicm2cda** extracts the enclosed CDA from a DICM encapsulatedCDA SOP instance
 - uapi: **dicmstructdump** dumps a textual representation of the DICM file.
+- 
 - uapi: **deepcopy** creates an explicit little endian copy by appending each attribute, one by one
 - uapi: **cdicm2ile** transforms cdicm to explicit little endian
 - uapi: **utf8dump** writes to utf-8 text console a list of contextual attributes

@@ -75,13 +75,6 @@ typedef uint64_t u64;//%llu
 
 u8 intdecsize(int i);
 
-//DICOM atribute header 8 bytes tag vr vl
-struct trcl {
-   u32 t;//tag
-   u16 r;//representation
-   u16 c;//charset
-   u32 l;//length
-};
 
 struct Ercle {
   u32 E;//tag big Endian
@@ -194,17 +187,13 @@ enum repertoireenum{
 
 u32 repertoireidx( unsigned char *vbuf, u16 vallength );
 
-bool utf8
+u32 utf8
 (
- u32         repidx,
- const char *charbytes,
- u32         charstart,
- size_t      charlength,
- 
- char      *utf8bytes,
- u32        utf8start,
- u32       *utf8length
- );
+    u32 repidx,
+    const char *charbytes,
+    size_t      charlength,
+    char       *utf8bytes
+);
 
 
 #pragma mark - SopClasses

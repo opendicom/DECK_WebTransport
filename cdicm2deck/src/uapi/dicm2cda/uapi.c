@@ -12,6 +12,8 @@ extern u64   DICMidx;
 extern char *CKEY;
 extern u32   CKEYidx;
 
+#pragma mark ---------------------------- attributes
+
 void key(struct Ercle* attr) {
    memcpy(attr,DICM+DICMidx,8);
    DICMidx+=8;
@@ -42,8 +44,32 @@ void key(struct Ercle* attr) {
    }
 }
 
-#pragma mark ----------------------------- SOP instance
 
+//const unsigned long B0040E001=0x0E002000;//ST CDA root^extension
+//const unsigned long B00080060=0x60000800;//CS Modality
+//const unsigned long B0008103E=0x3E100800;//LO Series name
+//const unsigned long B00420010=0x10004200;//ST DocumentTitle
+const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
+//const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
+void val(enum kvVRcategory  vrcat, struct Ercle* attr)
+{
+   switch (vrcat) {
+      case kvSA:
+      case kvSZ:
+      case kvIA:
+      case kvIZ:
+         break;
+      case kv01: {
+         //OB encapsulaed document 00420011 xml cda o pdf
+         if (!memcmp(CKEY, &B00420011, 4)) fprintf(stdout,"%.*s",attr->l,DICM+DICMidx);
+         DICMidx+=attr->l;
+      } break;
+      default: DICMidx+=attr->l;
+   }
+}
+
+
+#pragma mark ----------------------------- SOP instance
 
 void input(int argc, char *argv[])
 {
@@ -76,26 +102,3 @@ void input(int argc, char *argv[])
 void trail(int argc, char *argv[]){
 }
 
-#pragma mark ---------------------------- attributes
-//const unsigned long B0040E001=0x0E002000;//ST CDA root^extension
-//const unsigned long B00080060=0x60000800;//CS Modality
-//const unsigned long B0008103E=0x3E100800;//LO Series name
-//const unsigned long B00420010=0x10004200;//ST DocumentTitle
-const unsigned long B00420011=0x11004200;//OB EncapsulatedDocument
-//const unsigned long B00420012=0x12004200;//LO MIME of EncapsulatedDocument
-void val(enum kvVRcategory  vrcat, struct Ercle* attr)
-{
-   switch (vrcat) {
-      case kvSA:
-      case kvSZ:
-      case kvIA:
-      case kvIZ:
-         break;
-      case kv01: {
-         //OB encapsulaed document 00420011 xml cda o pdf
-         if (!memcmp(CKEY, &B00420011, 4)) fprintf(stdout,"%.*s",attr->l,DICM+DICMidx);
-         DICMidx+=attr->l;
-      } break;
-      default: DICMidx+=attr->l;
-   }
-}

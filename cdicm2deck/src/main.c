@@ -14,7 +14,7 @@ char *DICM;//CDICM in memory
 u64   DICMsize;
 u64   DICMidx;
 char *CKEY;//contextual keys
-u32  CKEYidx=0;
+u32   CKEYidx=0;
 //recursive
 int dicmDataset(
    struct Ercle *attr,// read attr up to before value
@@ -62,7 +62,7 @@ int dicmDataset(
          case LO:
          case LT:
          case SH:
-         case ST: { attr->c=keycs;         val(kvTA,attr);key(attr);} break;
+         case ST: { attr->c=keycs;         val(kvTS,attr);key(attr);} break;
          case PN: { attr->c=keycs;         val(kvPN,attr);key(attr);} break;
          //large length numbers
          case OF:
@@ -112,7 +112,7 @@ int dicmDataset(
                //SQ end tag
                CKEYidx-=8;
                *itemnumber=0xFFFFFFFF;
-               val(kvSZ, 0);
+               val(kvSZ, attr);
                key(attr);//read attr post SQ
                continue;
             }
