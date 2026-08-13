@@ -9,7 +9,7 @@
 #include "../../thirdparty/blake3/blake3.h"
 #include "../../thirdparty/openjpeg/opj_compress.h"
 
-extern char *DICMbuf;
+extern char *DICM;
 extern u64 DICMidx;
 extern uint8_t *kbuf;
 
@@ -37,7 +37,7 @@ static u8 *registeredhashbytes;//32 bytes
 #pragma mark -
 
 
-int cPrerequisite(u64 filesize, int argc, char *argv[]){
+int cPrerequisite(int argc, char *argv[]){
    return exitZeroError;
 }
 
@@ -99,7 +99,7 @@ bool eAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    Eidx+=4;
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
-   memcpy(Ebuf+Eidx, DICMbuf+DICMidx-vlen, vlen);
+   memcpy(Ebuf+Eidx, DICM+DICMidx-vlen, vlen);
 
 
    case UI: {
@@ -113,7 +113,7 @@ bool eAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
             //case B00081150:
          default:        if (!vrAppend(kloc,kvUI,  attr->l)) return false;break;
       }
-      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! CKEYread(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
    case DA: {
       attr->c=REPERTOIRE_GL;
@@ -123,7 +123,7 @@ bool eAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          case B00100030: if (!vrAppend(kloc,kvpbirth,attr->l)) return false;break;
          default:        if (!vrAppend(kloc,kvTP,    attr->l)) return false;break;
       }
-      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! CKEYread(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
 
    switch (vrcat)
@@ -266,9 +266,9 @@ bool sAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    Sidx+=4;
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
-   memcpy(Sbuf+Sidx, DICMbuf+DICMidx-vlen, vlen);
+   memcpy(Sbuf+Sidx, DICM+DICMidx-vlen, vlen);
 
-   case DS: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTA,attr->l)) return false; if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
+   case DS: { attr->c=REPERTOIRE_GL; if (!vrAppend(kloc,kvTA,attr->l)) return false; if (! CKEYread(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}} break;
    case IS: {
       attr->c=REPERTOIRE_GL;
       switch (attr->t) {
@@ -278,7 +278,7 @@ bool sAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          case B00280008:if (!vrAppend(kloc,kvframesnumber, attr->l)) return false; break;
          default:       if (!vrAppend(kloc,kvTA,      attr->l)) return false; break;
       }
-      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! CKEYread(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
 
 
@@ -356,7 +356,7 @@ bool pAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    Pidx+=4;
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
-   memcpy(Pbuf+Pidx, DICMbuf+DICMidx-vlen, vlen);
+   memcpy(Pbuf+Pidx, DICM+DICMidx-vlen, vlen);
    Pidx+=vlen;
    return true;
 }
@@ -464,7 +464,7 @@ bool iAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    Iidx+=4;
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
-   memcpy(Ibuf+Iidx, DICMbuf+DICMidx-vlen, vlen);
+   memcpy(Ibuf+Iidx, DICM+DICMidx-vlen, vlen);
 
    case US: {
       attr->c=REPERTOIRE_GL;
@@ -479,7 +479,7 @@ bool iAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          case B00280106: if (!vrAppend(kloc,kvplanar,attr->l)) return false; break;//planar
          default:        if (!vrAppend(kloc,kvUS,    attr->l)) return false;
       }
-      if (! kkRead(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
+      if (! CKEYread(kloc)) {attr->t=u32swap(beforetag);attr->r=0xFFFF;attr->l=0;}
    } break;
 
    case CS: {
@@ -503,10 +503,10 @@ bool iAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
             // https://dicom.innolitics.com/ciods/rt-dose/image-pixel/00280004
          case B00080005: {
             if (!vrAppend(kloc,kvTA,attr->l)) return false;
-            u16 repidxs=repertoireidx(DICMbuf+DICMidx-attr->l,attr->l);
+            u16 repidxs=repertoireidx(DICM+DICMidx-attr->l,attr->l);
             if (repidxs==0x09)
             {
-               E("bad repertoire %.*s",attr->l,DICMbuf+DICMidx-attr->l);
+               E("bad repertoire %.*s",attr->l,DICM+DICMidx-attr->l);
                return false;
             }
             else
@@ -617,10 +617,10 @@ bool bAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          {
             for (u64 i=DICMidx - DICMlen; i < DICMidx; i++)
             {
-               DICMbuf[cidx++]=(char)DICMbuf[i];
-               DICMbuf[cidx++]=0;
-               DICMbuf[cidx++]=0;
-               DICMbuf[cidx++]=0;
+               DICM[cidx++]=(char)DICM[i];
+               DICM[cidx++]=0;
+               DICM[cidx++]=0;
+               DICM[cidx++]=0;
             }
          }
          else //multi comp pixels
@@ -631,10 +631,10 @@ bool bAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
             {
                for (j=0; j<spp; j++)
                {
-                  DICMbuf[cidx+(compsize*j)]=(char)DICMbuf[i];
-                  DICMbuf[cidx+(compsize*j)+1]=0;
-                  DICMbuf[cidx+(compsize*j)+2]=0;
-                  DICMbuf[cidx+(compsize*j)+3]=0;
+                  DICM[cidx+(compsize*j)]=(char)DICM[i];
+                  DICM[cidx+(compsize*j)+1]=0;
+                  DICM[cidx+(compsize*j)+2]=0;
+                  DICM[cidx+(compsize*j)+3]=0;
                }
                cidx++;
             }
@@ -647,10 +647,10 @@ bool bAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          {
             for (u64 i=DICMidx - DICMlen; i < DICMidx; i++)
             {
-               DICMbuf[cidx++]=DICMbuf[i];
-               DICMbuf[cidx++]=0;
-               DICMbuf[cidx++]=0;
-               DICMbuf[cidx++]=0;
+               DICM[cidx++]=DICM[i];
+               DICM[cidx++]=0;
+               DICM[cidx++]=0;
+               DICM[cidx++]=0;
             }
          }
          else //multi comp pixels
@@ -661,10 +661,10 @@ bool bAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
             {
                for (j=0; j<spp; j++)
                {
-                  DICMbuf[cidx+(compsize*j)]=DICMbuf[i];
-                  DICMbuf[cidx+(compsize*j)+1]=0;
-                  DICMbuf[cidx+(compsize*j)+2]=0;
-                  DICMbuf[cidx+(compsize*j)+3]=0;
+                  DICM[cidx+(compsize*j)]=DICM[i];
+                  DICM[cidx+(compsize*j)+1]=0;
+                  DICM[cidx+(compsize*j)+2]=0;
+                  DICM[cidx+(compsize*j)+3]=0;
                }
                cidx++;
             }
@@ -720,7 +720,7 @@ bool bAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    
    
    
-   memcpy(Ibuf+Iidx, DICMbuf+DICMidx-vlen, vlen);
+   memcpy(Ibuf+Iidx, DICM+DICMidx-vlen, vlen);
    Iidx+=vlen;
    return true;
 
@@ -754,7 +754,7 @@ bool bAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    Fidx+=8;
    
    //key
-   memcpy(Fbuf+Fidx, kbuf, kloc+8);
+   memcpy(Fbuf+Fidx, KEYbuf, kloc+8);
    Fidx+=kloc+8;
    
    //value length
@@ -762,7 +762,7 @@ bool bAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    Fidx+=4;
    if (vlen==0) return true;
    if (!ufread(vlen)) return false;
-   memcpy(Fbuf+Fidx, DICMbuf+DICMidx-vlen, vlen);
+   memcpy(Fbuf+Fidx, DICM+DICMidx-vlen, vlen);
    Fidx+=vlen;
 */
    return false;
@@ -846,7 +846,7 @@ bool lAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
          Ibuf[Iidx++]=16;//key size
          //memcpy(Ibuf+Iidx, &Iprefix, 8);//copy Iprefix
          Iidx+=8;
-         memcpy(Ibuf+Iidx, kbuf, 8);//copy key
+         memcpy(Ibuf+Iidx, KEYbuf, 8);//copy key
          Iidx+=8;
          memcpy(Ibuf+Iidx, &(fragmentstruct->l), 4);//val length
          Iidx+=8;
@@ -893,7 +893,7 @@ bool vAppend(int kloc,enum kvVRcategory vrcat,u32 vlen)
    Fidx+=8;
    
    //key
-   memcpy(Fbuf+Fidx, kbuf, kloc+8);
+   memcpy(Fbuf+Fidx, KEYbuf, kloc+8);
    Fidx+=kloc+8;
    
    //value length

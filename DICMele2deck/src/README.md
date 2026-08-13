@@ -26,6 +26,7 @@ Using cascading handlers:
 ### (1) main
 - opens the file
 - parses CDICM structure, including sequences and items
+- echos charset code
 - delegates read operations to uapi
 
 ### (3) uapi (uncategorized)

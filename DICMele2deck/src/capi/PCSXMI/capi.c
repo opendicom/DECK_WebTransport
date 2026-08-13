@@ -5,7 +5,7 @@
 
 #include "capi.h"
 
-int cPrerequisite(u64 filesize, int argc, char *argv[]){
+int cPrerequisite(int argc, char *argv[]){
    return exitZeroError;
 }
 

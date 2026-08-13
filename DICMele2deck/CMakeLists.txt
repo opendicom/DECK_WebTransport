@@ -51,6 +51,14 @@ target_link_libraries(dicmdump
 )
 
 
+add_executable(dicmhtj2k
+        src/uapi/dicmhtj2k/uapi.c
+)
+target_link_libraries(dicmhtj2k
+        dicmlib
+)
+
+
 ########
 # capi #
 ########

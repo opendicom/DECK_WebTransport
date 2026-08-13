@@ -1,4 +1,4 @@
-The PACS is written in RUST with the UDP capable tokio library as the server backbone. It serves HTTP/3 and is WebTransport capable. [wtransport](https://github.com/BiagioFesta/wtransport) is used as the prototype of the server.
+The PACS is written in RUST on the kyber framework
 
 It accesses the DECK resources using [Turso](https://github.com/tursodatabase/turso/tree/main/bindings/rust), a rust-embeded SQLite-compatible database library, which supports natively TOKIO async operations. 
 

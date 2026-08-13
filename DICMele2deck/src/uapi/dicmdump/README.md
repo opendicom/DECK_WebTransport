@@ -1,15 +1,12 @@
-# dicmstructdump
+# dicmdump
 
-- CDICM parsed and DECK dumped pretty printed on utf-8 console, and also deep copy to file of the original DICM
-- dicmstructdump parses:  
-  - values contents up to 0xFFFF bytes
+- CDICM parsed and DECK dumped pretty printed on utf-8 console
   - separates multivalues in distinct components
   - writes offset and length for values of vr with large vl
-  - does not fetch attributes names from dictionary
+  - does not fetch attribute names from dictionary
 
 ## output sample
 ```
-#0
      144 00020001 OB 0000 {156,2}
      166 00020002 UI 0000 "1.2.840.10008.5.1.4.1.1.104.2" [189]
      204 00020003 UI 0000 "2.16.858.2.10001442.67430.20240722090012.6478534.8.0"
@@ -100,13 +97,13 @@ start=`date +%s.%N`; /home/jacquesfauquex/dcmtk/cmake-build-debug/bin/dcmdump /h
 ````
 /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/cmake-build-debug/dicmstructdump /home/jacquesfauquex/DECK_WebTransport/cdicm2deck/Testing/dscd.cdicm
 ````
-total= 0.000288241
-------------------
-before 0.000045369
-parse  0.000100380
-commit 0.000142492
+
+total 0.000163004
+input 0.000066691
+parse 0.000096295
+trail 0.000000018
 
 
 ## performance improvement
-This version execute 2 fread and 2 fprint for each attribute
-This can be improved with an unique fread for the whole file which then is parsed from memory and written as a dump to memory too.
+- 20 times faster
+- 40% used in IO reading (not application dependant)

@@ -1,19 +1,15 @@
-# stream dcmtk storescp to dicm2deck
+# dcmtk storescp -> dcmele2deck
 
-````
-storescp [> bash] > exe
-compression
-````
-
-
-The entry point of dicm2deck is a DICM receiver. 
-We use the opensource [dcmtk](https://support.dcmtk.org/docs/storescp.html) C++ implementation of it.
+The main entry point of dcmele2deck is a DICM receiver. 
+We use the c++ opensource [dcmtk storescp](https://support.dcmtk.org/docs/storescp.html).
 storescp writes files exactly as received (option --bit-preserving). 
 This option disables DCMTK DICM parsing. STORESCP:
 - receives packets through DIMSE protol, 
 - assembles them to recreate a DICM file, 
 - writes the result to the storage, 
-- triggers an executable, passing it parameters of the association on which the packets were received
+- triggers an executable of the dcmele2deck family, passing it parameters of the association on which the packets were received
+  - either a bash script which then may be calling the dcmele2deck family executable
+  - or the dcmele2deck family executable directly
 
 ## available parameters
 - t transfer syntax uid
@@ -55,20 +51,6 @@ echo "key=${8} id=${9} uid=${3} ts=${2}"
 echo "contexts=${10}"
 ````
 
-The debug script can call another executable
-
-## sop parser to memory sqlite executable 
-requires 1 xcr parameters: 
-- source file
-- if transfert syntax is known, it can follow source file. Explicit little endian is the only accepted syntax.
-- Then the sop class can follow
-- and the param list continues with other params of the association.
-- 
-example:
-
-````
--xcr 'dicm2cda ../../../Testing/dscd.cdicm   1.2.840.10008.1.2.1  1.2.840.10008.5.1.4.1.1.104.2'
-````
 
 ## sop parser to memory sqlite executable
 

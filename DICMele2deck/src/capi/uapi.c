@@ -5,9 +5,11 @@
 
 #include "capi.h"
 
-extern char *DICMbuf;
-extern u64 DICMidx;
-extern uint8_t *kbuf;
+extern char    *DICM;
+extern u64      DICMidx;
+extern uint8_t *KEYbuf;
+extern uint8_t *VALbuf;
+
 
 #pragma mark base dataset level patient
 /*
@@ -1005,43 +1007,43 @@ const u8 PCStype[]={
 static u64 bytesreceived;
 bool vvread(u32 bytesaskedfor)
 {
-   bytesreceived=fread(DICMbuf+DICMidx,1,bytesaskedfor,stdin);
+   bytesreceived=fread(DICM+DICMidx,1,bytesaskedfor,stdin);
    if (bytesreceived>0xFFFFFFFF)return 0;
    DICMidx+=bytesreceived;
    return (bytesaskedfor==bytesreceived);
 }
 
-bool kvRead(u32 bytesaskedfor, u32 kloc12)
+bool BUFread(u32 bytesaskedfor)
 {
-   bytesreceived=fread(kbuf+kloc12,1,bytesaskedfor,stdin);
+   bytesreceived=fread(VALbuf,1,bytesaskedfor,stdin);
    DICMidx+=bytesreceived;
    return (bytesaskedfor==bytesreceived);
 }
 
 
-//reads to DICMbuf and copies to kbuf
+//reads to DICM and copies to CKEY
 //returns true when 8(+4) bytes were read
-bool kkRead(u8 kloc)
+bool CKEYread(u8 kloc)
 {
-   if (fread(DICMbuf+DICMidx,1,8,stdin)!=8)
+   if (fread(DICM+DICMidx,1,8,stdin)!=8)
    {
       if (ferror(stdin)) E("%s","stdin error");
       return false;
    }
    
    //group LE>BE
-   kbuf[kloc]=DICMbuf[DICMidx+1];
-   kbuf[kloc+1]=DICMbuf[DICMidx];
+   kbuf[kloc]=DICM[DICMidx+1];
+   kbuf[kloc+1]=DICM[DICMidx];
    //element LE>BE
-   kbuf[kloc+2]=DICMbuf[DICMidx+3];
-   kbuf[kloc+3]=DICMbuf[DICMidx+2];
+   kbuf[kloc+2]=DICM[DICMidx+3];
+   kbuf[kloc+3]=DICM[DICMidx+2];
    //vr vl copied (LE)
-   kbuf[kloc+4]=DICMbuf[DICMidx+4];
-   kbuf[kloc+5]=DICMbuf[DICMidx+5];
-   kbuf[kloc+6]=DICMbuf[DICMidx+6];
-   kbuf[kloc+7]=DICMbuf[DICMidx+7];
+   kbuf[kloc+4]=DICM[DICMidx+4];
+   kbuf[kloc+5]=DICM[DICMidx+5];
+   kbuf[kloc+6]=DICM[DICMidx+6];
+   kbuf[kloc+7]=DICM[DICMidx+7];
 
-   switch ((DICMbuf[DICMidx+5]<<8)|(DICMbuf[DICMidx+4])) {
+   switch ((DICM[DICMidx+5]<<8)|(DICM[DICMidx+4])) {
       case OB://other byte
       case OW://other word
       case OD://other double
@@ -1056,19 +1058,19 @@ bool kkRead(u8 kloc)
       case SQ://sequence
       {
          DICMidx+=8;
-         if (fread(DICMbuf+DICMidx,1,4,stdin)!=4)
+         if (fread(DICM+DICMidx,1,4,stdin)!=4)
          {
             if (ferror(stdin)) E("%s","stdin error");
             return false;
          }
-         memcpy(kbuf+kloc+8, DICMbuf+DICMidx, 4);
+         memcpy(kbuf+kloc+8, DICM+DICMidx, 4);
          DICMidx+=4;
       }break;
       default:
       {
          //IA,IZ,SZ require postprocessing in dicm2dckv
          DICMidx+=8;
-         memcpy(kbuf+kloc+8, DICMbuf+DICMidx-2, 2);
+         memcpy(kbuf+kloc+8, DICM+DICMidx-2, 2);
          kbuf[kloc+10]=0;
          kbuf[kloc+11]=0;
       }break;
@@ -1083,8 +1085,8 @@ bool kkRead(u8 kloc)
 static u16 PCSidx;
 
 //called with parameters before opening file
-int uPrerequisite(u64 filesize, int argc, char *argv[]) {
-   return cPrerequisite(filesize,argc,argv);
+int uPrerequisite(int argc, char *argv[]) {
+   return cPrerequisite(argc,argv);
 }
 
 //called after opening file
@@ -1115,7 +1117,7 @@ bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
    if (vrcat==kvSZ){D("%s","SZ");return true;}
    
    //skip group length
-   //memcmp(kbuf, const void *ptr2, 4);
+   //memcmp(CKEY, const void *ptr2, 4);
    if ((kbuf[kloc+2]==0) && (kbuf[kloc+3]==0)){
       //if (! fseek(inFile, 4, SEEK_CUR)) return false;
       return true;

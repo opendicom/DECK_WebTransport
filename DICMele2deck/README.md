@@ -1,28 +1,17 @@
-# cdicm2deck
+# DICMele2deck
 
 Dicom Exam Contextualized Keys (DECK) is a flat hashmap parser result language 
-for DICM files. The objective of this presentation of the DICOM metadata is
-consumer lowest latency, which implies discrete acceses to any attribute. 
+for DICM files. The goal for this presentation of the DICOM metadata is discrete access to any attribute and consumer lowest latency. 
 
-cdicm2deck, executable command written in C, 
-parses DICM (DICOM standard part 10 file format),
-outputting DECK key values representation. 
-
-As input, it requires an explicit little endian representation
-of the dataset terminated by an empty trailling padding attribute.
-We call this presentation "canonicalized" (CDICM). 
-An ".cdicm" extension may be append to such files.
-
+DICMele2deck, executable commands written in C, 
+parses DICM (DICOM standard part 10 file format) with explicit little endian syntax,
+outputting DECK key values representation.
 
 ## dcmtk storescp -> cdicm2deck
 
 We modified dcmtk storescp to receive DICOM DIMSE communication 
-and write the canonicalized presentation (with trailing padding attribute).
-Moreover, dcmtk storescp can invoque an executable with parameters to post process each SOP instance.
-We added the critical information of the DIMSE association as parameters to the invocation, 
-in this case of a cdicm2deck executable.
-
-The modified dcmtk storescp and cdicm2deck work as a binome.
+and invoque an executable with parameters to process each SOP instance.
+We added the critical information of the DIMSE association as parameters to the invocation.
 
 
 ## dicm2deck design
@@ -32,9 +21,9 @@ dicm2deck is layered.
 Common to all products is the main file which:
 - parses the dataset structure
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
-   - input (delegates the opening the canonicalized file)
-   - key and val (delegates reading at attribute level)
-   - trail (called when the trailling padding attribue has been reached)
+   - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3)
+   - key and val (delegates parsing at attribute level)
+   - trail (called when the trailing padding attribute has been reached)
    
 ### Third level capi
 This class is not used by uapi executables.
