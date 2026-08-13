@@ -191,22 +191,26 @@ int dicmDataset(
 }
 
 int main(int argc,  char *argv[]) {
-   /*  (args defined in the calling script or directly in the xcr option of dcmtk storescp
-    *  The first four are required in the same order
-    *  all the args are passed to uCreate
+   /*  args
    0 command name defined by target
    1 #p/#f dir path / dicm file name
    2 ...
    */
    clock_gettime(CLOCK_MONOTONIC, &starttime);
-   if ((argc >2) && (strcmp(argv[2],"1.2.840.10008.1.2.1")!=0)) exit(exitNotExplicitLittleEndian);
-
+   if (argc<2) exit(exitNoArg1FilePath);
    struct stat st;
    stat(argv[1], &st);
    DICMsize= st.st_size;
    if (DICMsize < 140) exit(exitNoDataset);
 
    input(argc, argv);
+
+   //DICM explicit little endian?
+   u16 *cVL=(u16*)(DICM+0xA4);//class value offset 0xA6
+   u16 *iVL=(u16*)(DICM+0xA4+*cVL+0x8);//value offset 0xAE+*cVL
+   u16 *sVL=(u16*)(DICM+0xA4+*cVL+0x8+*iVL+0x8);//value offset 0xB6+*cVL+*iVL
+   if (strncmp(DICM+0xB6+*cVL+*iVL,"1.2.840.10008.1.2.1",*sVL)!=0) exit(exitNotExplicitLittleEndian);
+
    CKEY=malloc(96);
    struct Ercle * baseattr=(struct Ercle*) CKEY;
 

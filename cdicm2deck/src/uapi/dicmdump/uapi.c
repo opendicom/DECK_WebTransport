@@ -7,6 +7,9 @@
 #include "uapi.h"
 #include <locale.h>
 
+const u_int64_t tpaBlake3attr=0x424FFCFFCFF;
+const u_int32_t tpaBlake3size=32;
+
 extern FILE * inFile;
 
 extern char *DICM;
@@ -63,7 +66,6 @@ void key(struct Ercle* attr)
 
 void input( int argc, char *argv[])
 {
-   setlocale(LC_ALL, "");//output in UTF-8
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL)
    {
@@ -71,10 +73,10 @@ void input( int argc, char *argv[])
          fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
          exit(errno);
       }
-      exit(exitErrorFropenCDICM);
+      exit(exitErrorFropenDICM);
    }
 
-   DICM=malloc(DICMsize);
+   DICM=malloc(DICMsize+44);
    if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
       if (ferror(stdin)) {
          fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -88,9 +90,13 @@ void input( int argc, char *argv[])
       fclose(inFile);
       inFile=NULL;
    }
+   setlocale(LC_ALL, "");//output in UTF-8
    UTF8=malloc(0x4000);
    //LT max 10240,UT max 2^32 !!!
    //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
+
+   memcpy(DICM+DICMsize,&tpaBlake3attr,8);
+   memcpy(DICM+DICMsize,&tpaBlake3size,4);
 }
 
 void trail(int count, char *vector[]) {
@@ -128,11 +134,14 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          printf("%8lu%*s%08X %c%c      {%lu,%u}\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],DICMidx,attr->l);
          DICMidx+=attr->l;
       }break;
-      case kvTL://UC
+      case kvTL:{//UC
       //UT AccessionNumberIssuer local 00080051.00400031
       //UT AccessionNumberIssuer universal 00080051.00400032
-      case kvTU: { //UR
-         printf("%8lu%*s%08X %c%cF-8  \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
+         printf("%8lu%*s%08X %c%c %02X   \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],CKEY[CKEYidx+6], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
+         DICMidx+=attr->l;
+      } break;
+      case kvTU: { //UR originally UTF-8
+         printf("%8lu%*s%08X %c%cF-8  \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], attr->l,DICM+DICMidx);
          DICMidx+=attr->l;
       } break;
 #pragma mark -numbers

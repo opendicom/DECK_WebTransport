@@ -5,6 +5,9 @@
 
 #include "uapi.h"
 
+const u_int64_t tpaBlake3attr=0x424FFCFFCFF;
+const u_int32_t tpaBlake3size=32;
+
 extern FILE *inFile;
 extern char *DICM;
 extern u64   DICMsize;
@@ -60,8 +63,8 @@ void val(enum kvVRcategory  vrcat, struct Ercle* attr)
       case kvIZ:
          break;
       case kv01: {
-         //OB encapsulaed document 00420011 xml cda o pdf
-         if (!memcmp(CKEY, &B00420011, 4)) fprintf(stdout,"%.*s",attr->l,DICM+DICMidx);
+         //OB encapsulaed document 00420011 xml cda
+         if (memcmp(CKEY, &B00420011, 4)==0) fprintf(stdout,"%.*s",attr->l - ((DICM+DICMidx+attr->l -1 )==0x00) ,DICM+DICMidx);
          DICMidx+=attr->l;
       } break;
       default: DICMidx+=attr->l;
@@ -73,8 +76,6 @@ void val(enum kvVRcategory  vrcat, struct Ercle* attr)
 
 void input(int argc, char *argv[])
 {
-   if ((argc >4) && (strcmp(argv[4],"1.2.840.10008.5.1.4.1.1.104.2")!=0)) exit(exitNotEncapsulatedCDA);
-
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL)
    {
@@ -82,9 +83,9 @@ void input(int argc, char *argv[])
          fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
          exit(errno);
       }
-      exit(exitErrorFropenCDICM);
+      exit(exitErrorFropenDICM);
    }
-   DICM = malloc(DICMsize);
+   DICM = malloc(DICMsize+44);
    if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
       if (ferror(stdin)) {
          fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -93,10 +94,13 @@ void input(int argc, char *argv[])
       fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
       exit(exitReadTruncated);
    };
-   if (inFile!=NULL) {
-      fclose(inFile);
-      inFile=NULL;
-   }
+   fclose(inFile);
+   inFile=NULL;
+   if (strcmp(DICM+0xA6,"1.2.840.10008.5.1.4.1.1.104.2")!=0) exit(exitNotEncapsulatedCDA);
+
+
+   memcpy(DICM+DICMsize,&tpaBlake3attr,8);
+   memcpy(DICM+DICMsize,&tpaBlake3size,4);
 }
 
 void trail(int argc, char *argv[]){

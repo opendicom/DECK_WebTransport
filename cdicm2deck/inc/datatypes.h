@@ -35,10 +35,12 @@
 typedef enum {
   exitZeroError=0,
   exitReadTruncated=-1,
-  exitErrorFropenCDICM=-2,
+  exitErrorFropenDICM=-2,
   exitProgramError=-3,
   exitErrorSQtruncated=-4,
   exitErrorITtruncated=-5,
+  exitNotExplicitLittleEndian=-5,
+  exitNoArg1FilePath=-6,
   exitErrorOutPath,//2
   exitErrorWrite,//3
   exitErrorCreateKV,//4
@@ -51,7 +53,6 @@ typedef enum {
   exitErrorDataset,//11
   exitErrorRead,//12
   exitNoDataset,//13
-  exitNotExplicitLittleEndian,//14
   exitNotEncapsulatedCDA,//15
   exitErrorFwrite,//16
  exitErrorSqliteOpen,//17
@@ -198,6 +199,7 @@ u32 utf8
 
 #pragma mark - SopClasses
 
+bool isImage(u64 u64Code, u8 idx, u8 median);
 //sc_=1.2.840.10008
 enum sc_uidenum{
 sc_1_1=0,
