@@ -5,14 +5,14 @@ for DICM files. The goal for this presentation of the DICOM metadata is discrete
 
 DICMele2deck, executable set of commands written in C, 
 parses DICM (DICOM standard part 10 file format) in explicit little endian syntax,
-outputting DECK contextual key values representation.
+outputting DECK contextual key (CKEY) values representation.
 
 ## dcmtk storescp -> DICMele2deck
 
 dcmtk storescp receives DICOM DIMSE communication 
-and invoques a DICMele2deck executable with parameters to process each SOP instance immediately ayer reception.
+and invoques a DICMele2deck executable with parameters to process each SOP instance immediately after reception.
 
-We added the critical information of the DIMSE association as parameters to the invocation. The base implementation does not use ir. Other DIMSE receptors can be used un replacement yo dcmttk's one.
+We added the critical information of the DIMSE association as parameters to the invocation though the base implementation does not use it. Other DIMSE receptors can be used in replacement to dcmtk's one.
 
 ## dicm2deck design
 
@@ -20,10 +20,10 @@ dicm2deck is layered.
 
 Common to all products is the main file which:
 - parses the dataset structure
-- creates marking for end of ítem and end of Sequence when these are explicitly size-defined
-- manager repertoire inheritance (which charset should be applied within each item)
+- creates marking for end of ítem and end of sequence when these are size-defined
+- manages repertoire inheritance (which charset should be applied within each item)
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
-   - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3)
+   - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3 sumcheck of the uncomprressed pixels)
    - key and val (delegates parsing at attribute level)
    - trail (called when the trailing padding attribute has been reached)
    
