@@ -14,14 +14,11 @@ preserving the network security of the hospital.
 SIRIUS WebTransportPacs is no standard PACS, 
 neither is interoperable with Standard DICOM viewers. 
 SIRIUS WebTransportPacs is an all-in-one system for storage, data mining, distribution and visualization.
-It is designed starting from the specifications of modern web browsers.
-
-in order to offer the lowest latency in most challenging network conditions, 
-such as for instance source communting (wifi/3,4,5G or satelite).
+It is designed starting from the specifications of modern web browsers in order to offer the lowest latency in most challenging network conditions, such as for instance source communting (wifi/3,4,5G or satelite).
 This implies streaming and datagram management over UDP.
 W3C WebTransport QUIC UDP enables UDP channels creation vía javascript client side.
-This also implies to distantiate the product from DICOM part 10 and DICOMweb, 
-which were designed for files only and adopted complex metadata structures.
+This also implies some optimization of DICOM part 10 and incompatibility with DICOMweb, 
+which were designed for files TCP transport and adopted complex metadata structures.
 
 ## Goals
 - first: complex large imaging study diagnostic from high quality cell phone, tablet 
