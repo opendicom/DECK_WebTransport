@@ -18,3 +18,6 @@ adjusts
 - trailing padding with checksum of uncomprressed pixels
 
 Can be modified to enable compression to a explicit little endian derived transfer syntax
+
+## dicmisqlite
+- crea una base SQLite con los atributos de la instancia y la guarda dentro de un mount point aaaammdd/euid/suid/iuid
