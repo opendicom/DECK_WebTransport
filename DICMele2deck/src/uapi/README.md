@@ -1,21 +1,20 @@
 # uapi
 
 ## dicm2cda
-Extracts encapsulatedCDA to stdout
+Extracts encapsulatedCDA to stdout. Additional parámetros may apply an XSLT stylesheet to the XML streamed.
 
-Can be extended to extract any set of metadata
+dicm2cda can be moodified to extract a PDF or any set of metadata.
 
-## dicmdump
+## utf8dump
 Dumps to console the description of the attributes.
-With simple attribute output modifications, dicmdump can be transformed into dicm2json or dicm2xml
+With simple value output modifications, utf8dump can be transformed into dicm2json or dicm2xml
 
-## dicm2cdicm
-cdicm means canonicalized dicm. The adjustments are
+## dicmhtj2k
+adjusts
 - utf8 instead of any other charset
 - sequence end tag
 - series end tag
-- empty trailing padding tag
+- high throughput j2k comprensión
+- trailing padding with checksum of uncomprressed pixels
 
-needs explicit little endian as input (does not parse implicit or big)
-
-Can be extended to enable compression to a explicit little endian derived transfer syntax
+Can be modified to enable compression to a explicit little endian derived transfer syntax
