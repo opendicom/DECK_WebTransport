@@ -20,7 +20,7 @@ dicm2deck is layered.
 
 Common to all products is the main file which:
 - parses the dataset structure
-- creates marking "Sa" AND "Ia" for end of ítem and end of sequence when these are size-defined (instead off "SA" and "IA").
+- creates marking "Sa" and "Ia" for end of ítem and end of sequence when these are size-defined (instead off "SA" and "IA").
 - manages repertoire inheritance (which charset should be applied within each item)
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
    - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3 sumcheck of the uncomprressed pixels)
