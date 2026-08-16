@@ -3,16 +3,16 @@
 Dicom Exam Contextualized Keys (DECK) is a flat hashmap parser result language 
 for DICM files. The goal for this presentation of the DICOM metadata is discrete access to any attribute and consumer lowest latency. 
 
-DICMele2deck, executable commands written in C, 
-parses DICM (DICOM standard part 10 file format) with explicit little endian syntax,
-outputting DECK key values representation.
+DICMele2deck, executable set of commands written in C, 
+parses DICM (DICOM standard part 10 file format) in explicit little endian syntax,
+outputting DECK contextual key values representation.
 
-## dcmtk storescp -> cdicm2deck
+## dcmtk storescp -> DICMele2deck
 
-We modified dcmtk storescp to receive DICOM DIMSE communication 
-and invoque an executable with parameters to process each SOP instance.
-We added the critical information of the DIMSE association as parameters to the invocation.
+dcmtk storescp receives DICOM DIMSE communication 
+and invoques a DICMele2deck executable with parameters to process each SOP instance immediately ayer reception.
 
+We added the critical information of the DIMSE association as parameters to the invocation. The base implementation does not use ir. Other DIMSE receptors can be used un replacement yo dcmttk's one.
 
 ## dicm2deck design
 
@@ -20,6 +20,8 @@ dicm2deck is layered.
 
 Common to all products is the main file which:
 - parses the dataset structure
+- creates marking for end of ítem and end of Sequence when these are explicitly size-defined
+- manager repertoire inheritance (which charset should be applied within each item)
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
    - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3)
    - key and val (delegates parsing at attribute level)
