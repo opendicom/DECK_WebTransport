@@ -43,8 +43,8 @@ int dicmDataset(
          //code
          case CS: {
             attr->c=REPERTOIRE_GL;
-            val(kvCS,attr);
             if (attr->e == 0x00080005){
+               val(kvCs,attr);
                u16 repidxs=repertoireidx(DICM+DICMidx-attr->l,attr->l);
                if (repidxs==0x09)
                {
@@ -53,6 +53,7 @@ int dicmDataset(
                }
                else keycs=(keycs & 0x8000) | repidxs;
             }
+            else val(kvCS,attr);
             key(attr);
          } break;
          case AE:
@@ -80,9 +81,20 @@ int dicmDataset(
 #pragma mark SQ
          case SQ://sequence
          {
+            //SQ length = 0x00000000
+            if (attr->l==0) {
+               val(kvSa, attr);
+               val(kvSZ, attr);
+               key(attr);
+               continue;
+            }
             u64 beforebyteSQ;
-            if (attr->l==0xFFFFFFFF) beforebyteSQ=beforebyte;//SQ undefined, byte limit will be of the dataset
+            if (attr->l==0xFFFFFFFF) {
+               val(kvSA, attr);
+               beforebyteSQ=beforebyte;//SQ undefined, byte limit will be of the dataset
+            }
             else {
+               val(kvSa, attr);
                beforebyteSQ=DICMidx + attr->l;
                if (beforebyteSQ > beforebyte) {
                   fprintf(stderr,"main SQ [%lu] truncated (%d)\n", DICMidx, exitErrorSQtruncated);
@@ -91,16 +103,7 @@ int dicmDataset(
             }
             u32 *itemnumber=(u32 *)(CKEY+CKEYidx+4);//pointer to last four bytes of SQ
 
-            //SQ length = 0x00000000
-            if (attr->l==0) {
-               *itemnumber=0x0;
-               val(kvSA, attr);
-               *itemnumber=0xffffffff;
-               val(kvSZ, attr);
-               key(attr);
-               continue;
-            }
-            val(kvSA, attr);
+
 
 #pragma mark itemattr
             //SQ is part of the context and should not be overwritten
@@ -123,18 +126,22 @@ int dicmDataset(
             while ((DICMidx < beforebyteSQ) && (itemattr->e==0xfffee000)) {
 
                //define beforebyeIT
-               if ((itemattr->r==0xffff)&&(itemattr->c==0xffff)) beforebyteIT=beforebyteSQ;
+               if ((itemattr->r==0xffff)&&(itemattr->c==0xffff)) {
+                  beforebyteIT=beforebyteSQ;
+                  val(kvIA, 0);
+               }
                else {
                   beforebyteIT=DICMidx + itemattr->r + (itemattr->c << 16);
                   if (beforebyteIT > beforebyteSQ) {
 //                     E(exitErrorITtruncated,"IT truncated %lu",DICMidx);
                      return exitErrorITtruncated;
                   }
+                  val(kvIa, 0);
                }
 
-               val(kvIA, 0);
                key(itemattr);
                dicmDataset(itemattr,keycs,(u32)beforebyteIT,0xfffee00d);
+
                //write IZ
                if (itemattr->e==0xfffee00d)
                {  //end item tag present
@@ -144,20 +151,22 @@ int dicmDataset(
                   val(kvIZ, 0);
                   key(itemattr);
                }
-               else val(kvIZ, 0);
+               else val(kvIz, 0);
+
                *itemnumber=u32swap(u32swap(*itemnumber)+1);
             }//end while item
 
 
 #pragma mark back to SQ level
             CKEYidx-=8;
-            val(kvSZ, attr);
             if (itemattr->e==0xfffee0dd)
             {  //end sq tag present
                //read new attr
+            val(kvSZ, itemattr);
                key(attr);
             }
             else {
+            val(kvSz, itemattr);
                //should not read new attr after end of switch
                //should transfer itemattr to attr instead
                attr->E=itemattr->E;

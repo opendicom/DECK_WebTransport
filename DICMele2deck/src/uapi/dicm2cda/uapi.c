@@ -61,6 +61,10 @@ void val(enum kvVRcategory  vrcat, struct Ercle* attr)
       case kvSZ:
       case kvIA:
       case kvIZ:
+      case kvSa:
+      case kvSz:
+      case kvIa:
+      case kvIz:
          break;
       case kv01: {
          //OB encapsulaed document 00420011 xml cda

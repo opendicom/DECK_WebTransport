@@ -43,10 +43,18 @@ target_link_libraries(dicm2cda
 )
 
 
-add_executable(dicmdump
-        src/uapi/dicmdump/uapi.c
+add_executable(utf8dump
+        src/uapi/utf8dump/uapi.c
 )
-target_link_libraries(dicmdump
+target_link_libraries(utf8dump
+        dicmlib
+)
+
+
+add_executable(canonical
+        src/uapi/canonical/uapi.c
+)
+target_link_libraries(canonical
         dicmlib
 )
 
@@ -54,6 +62,7 @@ target_link_libraries(dicmdump
 add_executable(dicmhtj2k
         src/uapi/dicmhtj2k/uapi.c
 )
+
 target_link_libraries(dicmhtj2k
         dicmlib
 )

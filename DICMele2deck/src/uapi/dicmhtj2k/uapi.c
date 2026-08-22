@@ -9,11 +9,6 @@
 
 extern FILE * inFile;
 
-
-const u_int64_t tpaBlake3attr=0x424FFCFFCFF;
-const u_int32_t tpaBlake3size=32;
-
-
 extern char *DICM;
 extern u64   DICMidx;
 extern u64   DICMsize;
@@ -21,13 +16,24 @@ extern u64   DICMsize;
 extern char *CKEY;
 extern u8   CKEYidx;
 
-static const char *space=" ";
-static char *UTF8;
+u8 isImage=false;
 
 //prepare output in memory
-char *SERIALIZE;
-u64   SERIALIZEidx;
+char *SERIALIZE;//is also buffer for utf-8
+u64 Doffset=0;//where to copy from
+u64 Soffset=0;//where to copy from
 
+//needed as input to grok
+u16 *columns;
+u16 *rows;
+u16 *samples;
+u16 *bits;
+u16 *sign;
+
+
+//for blake3 of non compressed image
+const u_int64_t tpaBlake3attr=0x424FFCFFCFF;
+const u_int32_t tpaBlake3size=32;
 
 
 #pragma mark ----------------------------- file read
@@ -80,7 +86,7 @@ void input( int argc, char *argv[])
          fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
          exit(errno);
       }
-      exit(exitErrorFropenCDICM);
+      exit(exitErrorFropenDICM);
    }
 
    DICM=malloc(DICMsize+44);
@@ -97,25 +103,19 @@ void input( int argc, char *argv[])
    SERIALIZE=malloc(DICMsize + 0x1000);
 
    setlocale(LC_ALL, "");//output in UTF-8
-   UTF8=malloc(0x4000);
-   //LT max 10240,UT max 2^32 !!!
-   //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
 
    memcpy(DICM+DICMsize,&tpaBlake3attr,8);
    memcpy(DICM+DICMsize,&tpaBlake3size,4);
 
 //TODO selection of pixel sop class
    u64 *offset190=(u64*)(DICM+190);
-   if (isImage(*offset190,32,16)) printf("is image\n");
-   else printf("is not Image\n");
-
-
+   isImage=isItImage(*offset190,32,16);//zero means no image
 }
 
 void trail(int count, char *vector[]) {
 
    FILE *fileptr = fopen("dscd.utf8.cdicm", "w");
-   if ((fileptr == NULL) || (fwrite(SERIALIZE, 1, SERIALIZEidx, fileptr) != SERIALIZEidx)) {
+   if ((fileptr == NULL) || (fwrite(SERIALIZE, 1, Soffset, fileptr) != Soffset)) {
       printf("%s", "cannot write dscd.utf8.cdicm\n");
       exit(-33);
    };
@@ -127,29 +127,65 @@ void trail(int count, char *vector[]) {
 void val(enum kvVRcategory vrcat,struct Ercle* attr)
 {
    switch (vrcat) {
-#pragma mark -sequence
-      case kvSA: {
+      case kvIA:
+      case kvSA:
+      case kvSZ:
+      case kvIZ:
+         break;
+      case kvIa:
+      case kvSa:
+      {
+         //change SQ and item length to undefined
          //SQ starts at -8
          //if -4 not ffffffff change it
-         //else nothing
+         memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset-4);
+         Soffset+=DICMidx-Doffset;
+         SERIALIZE[Soffset-4]=SERIALIZE[Soffset-3]=SERIALIZE[Soffset-2]=SERIALIZE[Soffset-1]=(char)0xFF;
+         Doffset=DICMidx;
       }break;
-      case kvSZ: {
+      case kvSz:
+      {
          //if 0xfffee0dd nothing to do
          //else add 0xfffee0dd00000000
+         memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset-8);//before new tag post sequence
+         Soffset+=DICMidx-Doffset;
+         SERIALIZE[Soffset-8]=(char)0xfe;
+         SERIALIZE[Soffset-7]=(char)0xff;
+         SERIALIZE[Soffset-6]=(char)0xdd;
+         SERIALIZE[Soffset-5]=(char)0xe0;
+         SERIALIZE[Soffset-4]=SERIALIZE[Soffset-3]=SERIALIZE[Soffset-2]=SERIALIZE[Soffset-1]=(char)0x0;
+         Doffset=DICMidx-8;
       }break;
-      case kvIA: {
-         //starts at -8
-         //0xfffee000
-         //if -4 not ffffffff change it
-         //else nothing
-      }break;
-      case kvIZ: {
+      case kvIz:
+      {
          //if 0xfffee00d nothing to do
          //else add 0xfffee0dd00000000
+         memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset-8);//before new tag post sequence
+         Soffset+=DICMidx-Doffset;
+         SERIALIZE[Soffset-8]=(char)0xfe;
+         SERIALIZE[Soffset-7]=(char)0xff;
+         SERIALIZE[Soffset-6]=(char)0x0d;
+         SERIALIZE[Soffset-5]=(char)0xe0;
+         SERIALIZE[Soffset-4]=SERIALIZE[Soffset-3]=SERIALIZE[Soffset-2]=SERIALIZE[Soffset-1]=(char)0x0;
+         Doffset=DICMidx-8;
       }break;
 #pragma mark -long length
       case kv01://OB OD OF OL OV OW SV UV
+         printf("%u %u %u %u %u",*columns,*rows,*samples,*bits,*sign);
          //TODO
+         /*
+          * compression
+          * frames 00280008 IS
+          * RGB interleave corrected
+          * -F c,r,s,b,s
+          * columns
+          * rows
+          * samples
+          * bits 15=16, 13=14, 11=12
+          * sign?"s":"u"
+          * -i
+          * -o
+          */
          //OB Encapsulated​Document 00420011 xml cda o pdf
          //OF 0x7FE00008
          //OD 0x7FE00009
@@ -160,52 +196,54 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          //OV Extended​Offset​Table fragments offset 7FE00001
          //OV Extended​Offset​TableLengths fragments offset 7FE00002
          //UV Encapsulated​Pixel​Data​Value​Total​Length 7FE00003
-      case kvUN: { DICMidx+=attr->l;}break;
-      case kvTL:{//UC
-         //UT AccessionNumberIssuer local 00080051.00400031
-         //UT AccessionNumberIssuer universal 00080051.00400032
-      // convert to utf-8
 
-      };break;
-      case kvTU: {DICMidx+=attr->l;} break;//UR
-#pragma mark -numbers
-      case kvFD:
-      case kvFL:
-      case kvSL:
-      case kvSS:
-      case kvUL:
-      case kvUS:
-      case kvAT: {DICMidx+=attr->l;}break;
-#pragma mark -ascii
-      case kvUI: {
-         if (attr->e == 0x20010) {
-            //option to modify the transfer syntax
-            //copy everything before value
-            memcpy(SERIALIZE,DICM,DICMidx);
-            //adjust size and new syntax
-            //old 0x14 0x00 1.2.840.10008.1.2.1 0x00
-            //new 0x18 0x00 1.2.840.10008.1.2.4.202 0x08C
-            //change group2 size (starting in 0x
-            //may end in 1 (Lossless),2 (Lossless RPCL - resolution progressive) or 3 (not specified)
-            SERIALIZE[DICMidx-2]=0x18;
-            const char *htj2krpcl="1.2.840.10008.1.2.4.202";
-            memcpy(SERIALIZE,htj2krpcl,0x18);
-            SERIALIZEidx=DICMidx+0x18;
-            //adjust DICMidx
+
+      case kvUS: {
+         switch (attr->e) {
+            case 0x280011: columns=(u16*)DICM+(DICMidx>>1); break;
+            case 0x280010: rows=(u16*)DICM+(DICMidx>>1); break;
+            case 0x280002: samples=(u16*)DICM+(DICMidx>>1); break;
+            case 0x280101: bits=(u16*)DICM+(DICMidx>>1); break;//15=16, 13=14, 11=12
+            case 0x280103: sign=(u16*)DICM+(DICMidx>>1); break;//?"s":"u"
          }
          DICMidx+=attr->l;
       } break;
-      case kvTP:
-      case kvTA://AE DS IS
-         //ST HL7InstanceIdentifier 0040E001  root^extension
-      case kvCS:{DICMidx+=attr->l;} break;
+#pragma mark -ascii
+      case kvUI: {
+         if (attr->e == 0x20010 && (isImage!=0)) {// modify the transfer syntax
+            //copy everything before value
+            memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx);
+            Soffset+=DICMidx;
 
-#pragma mark -charset
+            //adjust size and new syntax
+            //old 0x14 0x00 1.2.840.10008.1.2.1 0x00
+            //new 0x18 0x00 1.2.840.10008.1.2.4.202 0x08C
+            //may end in 1 (Lossless),2 (Lossless RPCL - resolution progressive) or 3 (not specified)
+            SERIALIZE[DICMidx-2]=0x18;//new size
+            const char *htj2krpcl="1.2.840.10008.1.2.4.202";
+            memcpy(SERIALIZE+Soffset,htj2krpcl,0x18);//new UID
+            Soffset+=0x18;
+            DICMidx+=attr->l;
+            Doffset=DICMidx;
+         }
+         else DICMidx+=attr->l;//do not copy yet
+      } break;
+
       case kvTS://LO LT SH ST
-         //ST  DocumentTitle 00420010
-      case kvPN:{DICMidx+=attr->l;} break;
+      case kvPN:
+      case kvTL:{//convert to utf-8
+         if (attr->l!=0) {
+            //copy up to utf8 value
+            memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset);
 
-      default:break;
+            //write utf8 value
+            Soffset+=DICMidx-Doffset;
+            Soffset+=utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,SERIALIZE+Soffset);
+            Doffset=DICMidx+attr->l;
+         }
+         DICMidx+=attr->l;
+      };break;
+
+      default:DICMidx+=attr->l;break;
    }
 }
-

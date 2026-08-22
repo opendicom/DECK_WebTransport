@@ -114,10 +114,18 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
 {
    switch (vrcat) {
 #pragma mark -sequence
-      case kvSA: {printf("%8lu%*s%08X+\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e);}break;
-      case kvSZ: {printf("%8lu%*s%08X~\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, u32swap(attr->E));}break;
-      case kvIA: {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
-      case kvIZ: {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
+      case kvSA:
+      case kvSa:
+      {printf("%8lu%*s%08X+\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e);}break;
+      case kvSZ:
+      case kvSz:
+      {printf("%8lu%*s%08X~\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, u32swap(attr->E));}break;
+      case kvIA:
+      case kvIa:
+      {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
+      case kvIZ:
+      case kvIz:
+      {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
 #pragma mark -long length
       case kv01://OB OD OF OL OV OW SV UV
       //OB Encapsulated​Document 00420011 xml cda o pdf

@@ -23,16 +23,21 @@ enum kvVRcategory{
     kvUI,//UI 7 unique ID possibly padded with 0x00
     kvTP,//8 AS DT TM DA text short ascii pair length
     kvTA,//9 AE DS IS 13 text short ascii
-    kvCS,//10 CS value read in main to enable charset adjustment
+    kvCS,//10 CS Code String
+    kvCs,//10 Cs Code String 00080005 read in main to enable charset control
     kvTS,//10 LO LT SH ST text short charset
     kvPN,//11 PN person name has a special treatment in json and xml
     kv01,//12 other OB OD OF OL OV OW SV UV binary
     kvTL,//13 UC UT text long charset
     kvTU,//14 UR text long url-encoded
-    kvSA,//15 SQ head
-    kvIA,//16 item head
-    kvIZ,//17 item tail
-    kvSZ,//18 SQ tail
+    kvSA,//15 SQ head with length 0xffffffff terminated by end tag
+    kvSa,//15 SQ head with specified length
+    kvIA,//16 item head with length 0xffffffff terminated by end tag
+    kvIa,//16 item head with specified length
+    kvIZ,//17 item tail tag of item of undefined size
+    kvIz,//17 item tail added
+    kvSZ,//18 SQ tail tag of SQ of undefined size
+    kvSz,//18 SQ tail added
     kvUN,//19 UN
     };
 

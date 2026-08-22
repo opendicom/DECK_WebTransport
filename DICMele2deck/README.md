@@ -3,16 +3,16 @@
 Dicom Exam Contextualized Keys (DECK) is a flat hashmap parser result language 
 for DICM files. The goal for this presentation of the DICOM metadata is discrete access to any attribute and consumer lowest latency. 
 
-DICMele2deck, executable set of commands written in C, 
-parses DICM (DICOM standard part 10 file format) in explicit little endian syntax,
-outputting DECK contextual key (CKEY) values representation.
+DICMele2deck, executable commands written in C, 
+parses DICM (DICOM standard part 10 file format) with explicit little endian syntax,
+outputting DECK key values representation.
 
-## dcmtk storescp -> DICMele2deck
+## dcmtk storescp -> cdicm2deck
 
-dcmtk storescp receives DICOM DIMSE communication 
-and invoques a DICMele2deck executable with parameters to process each SOP instance immediately after reception.
+We modified dcmtk storescp to receive DICOM DIMSE communication 
+and invoque an executable with parameters to process each SOP instance.
+We added the critical information of the DIMSE association as parameters to the invocation.
 
-We added the critical information of the DIMSE association as parameters to the invocation though the base implementation does not use it. Other DIMSE receptors can be used in replacement to dcmtk's one.
 
 ## dicm2deck design
 
@@ -20,10 +20,8 @@ dicm2deck is layered.
 
 Common to all products is the main file which:
 - parses the dataset structure
-- creates marking "Sa" and "Ia" for end of ítem and end of sequence when these are size-defined (instead off "SA" and "IA").
-- manages repertoire inheritance (which charset should be applied within each item)
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
-   - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3 sumcheck of the uncomprressed pixels)
+   - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3)
    - key and val (delegates parsing at attribute level)
    - trail (called when the trailing padding attribute has been reached)
    

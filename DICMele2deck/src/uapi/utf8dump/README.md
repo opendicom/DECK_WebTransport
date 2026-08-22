@@ -1,6 +1,6 @@
-# dicmdump
+# utf8dump
 
-- CDICM parsed and DECK dumped pretty printed on utf-8 console
+- DICM parsed and DECK dumped pretty printed on utf-8 console
   - separates multivalues in distinct components
   - writes offset and length for values of vr with large vl
   - does not fetch attribute names from dictionary
