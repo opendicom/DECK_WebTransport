@@ -23,7 +23,7 @@ u64 Soffset=0;//where to copy from
 u32 utf8size=0;
 
 
-#pragma mark ----------------------------- SOP instance
+#pragma mark ---------------------------- SOP instance
 
 void input( int argc, char *argv[])
 {
@@ -37,7 +37,7 @@ void input( int argc, char *argv[])
       exit(exitErrorFropenDICM);
    }
 
-   DICM=malloc(DICMsize+44);
+   DICM = malloc(DICMsize+8);//8=preread tag vr sh of inexistent attribute after last one
    if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
       if (ferror(stdin)) {
          fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -63,7 +63,6 @@ void trail(int count, char *vector[]) {
    };
    fclose(fileptr);
 }
-
 
 #pragma mark ---------------------------- attributes
 

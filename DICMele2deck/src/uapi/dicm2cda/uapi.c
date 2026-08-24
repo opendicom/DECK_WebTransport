@@ -89,7 +89,7 @@ void input(int argc, char *argv[])
       }
       exit(exitErrorFropenDICM);
    }
-   DICM = malloc(DICMsize+44);
+   DICM = malloc(DICMsize+8);//8=preread tag vr sh of inexistent attribute after last one
    if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
       if (ferror(stdin)) {
          fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);

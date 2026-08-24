@@ -13,8 +13,8 @@ FILE *inFile;
 char *DICM;//CDICM in memory
 u64   DICMsize;
 u64   DICMidx;
-char *CKEY;//contextual keys
-u32   CKEYidx=0;
+char *CKEY;//contextual keys [0]=key chain size
+u32   CKEYidx=1;
 //recursive
 int dicmDataset(
    struct Ercle *attr,// read attr up to before value
@@ -107,12 +107,15 @@ int dicmDataset(
 
 #pragma mark itemattr
             //SQ is part of the context and should not be overwritten
+            CKEY[0]+=8;
             CKEYidx+=8;
+
             struct Ercle * itemattr=(struct Ercle*) (CKEY+CKEYidx);
             //read first IT tag (or SQ end tag)
             key(itemattr);
             if (itemattr->e==0xfffee0dd) {
                //SQ end tag
+               CKEY[0]-=8;
                CKEYidx-=8;
                *itemnumber=0xFFFFFFFF;
                val(kvSZ, attr);
@@ -158,6 +161,7 @@ int dicmDataset(
 
 
 #pragma mark back to SQ level
+            CKEY[0]-=8;
             CKEYidx-=8;
             if (itemattr->e==0xfffee0dd)
             {  //end sq tag present
@@ -220,8 +224,9 @@ int main(int argc,  char *argv[]) {
    u16 *sVL=(u16*)(DICM+0xA4+*cVL+0x8+*iVL+0x8);//value offset 0xB6+*cVL+*iVL
    if (strncmp(DICM+0xB6+*cVL+*iVL,"1.2.840.10008.1.2.1",*sVL)!=0) exit(exitNotExplicitLittleEndian);
 
-   CKEY=malloc(96);
-   struct Ercle * baseattr=(struct Ercle*) CKEY;
+   CKEY=malloc(97);
+   CKEY[0]=(u8)8;
+   struct Ercle * baseattr=(struct Ercle*)(CKEY+1);
 
    DICMidx=0x9E;//0x9E 0002,0002
    key(baseattr);

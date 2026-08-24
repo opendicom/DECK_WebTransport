@@ -59,6 +59,14 @@ target_link_libraries(canonical
 )
 
 
+add_executable(KVserialized
+        src/uapi/KVserialized/uapi.c
+)
+target_link_libraries(KVserialized
+        dicmlib
+)
+
+
 add_executable(dicmhtj2k
         src/uapi/dicmhtj2k/uapi.c
 )

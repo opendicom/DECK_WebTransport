@@ -16,13 +16,14 @@ extern u64   DICMsize;
 extern char *CKEY;
 extern u8   CKEYidx;
 
-u8 isImage=false;
-
 //prepare output in memory
 char *SERIALIZE;//is also buffer for utf-8
 u64 Doffset=0;//where to copy from
 u64 Soffset=0;//where to copy from
+u32 utf8size=0;
 
+
+u8 isImage=false;
 //needed as input to grok
 u16 *columns;
 u16 *rows;
@@ -36,8 +37,54 @@ const u_int64_t tpaBlake3attr=0x424FFCFFCFF;
 const u_int32_t tpaBlake3size=32;
 
 
-#pragma mark ----------------------------- file read
+#pragma mark ---------------------------- SOP instance
 
+void input( int argc, char *argv[])
+{
+   inFile = freopen(argv[1],"rb",stdin);
+   if (inFile==NULL)
+   {
+      if (ferror(stdin)) {
+         fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
+         exit(errno);
+      }
+      exit(exitErrorFropenDICM);
+   }
+
+   DICM=malloc(DICMsize+44);
+   if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
+      if (ferror(stdin)) {
+         fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+         exit(errno);
+      }
+      fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
+      exit(exitReadTruncated);
+   };
+   fclose(inFile);
+
+   SERIALIZE=malloc(DICMsize + 0x1000);
+
+   setlocale(LC_ALL, "");//output in UTF-8
+
+   u64 *offset190=(u64*)(DICM+190);
+   isImage=isItImage(*offset190,32,16);//zero means no image
+}
+
+void trail(int count, char *vector[]) {
+   memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset);
+   Soffset+=DICMidx-Doffset;
+   //memcpy(DICM+DICMsize,&tpaBlake3attr,8);
+   //memcpy(DICM+DICMsize,&tpaBlake3size,4);
+
+   FILE *fileptr = fopen("result.utf8.cdicm", "w");
+   if ((fileptr == NULL) || (fwrite(SERIALIZE, 1, Soffset, fileptr) != Soffset)) {
+      printf("%s", "cannot write result.utf8.cdicm\n");
+      exit(-33);
+   };
+   fclose(fileptr);
+}
+
+#pragma mark ---------------------------- attributes
 
 void key(struct Ercle* attr)
 {
@@ -74,64 +121,18 @@ void key(struct Ercle* attr)
    }
 }
 
-
-#pragma mark ----------------------------- SOP instance transactions
-
-void input( int argc, char *argv[])
-{
-   inFile = freopen(argv[1],"rb",stdin);
-   if (inFile==NULL)
-   {
-      if (ferror(stdin)) {
-         fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
-         exit(errno);
-      }
-      exit(exitErrorFropenDICM);
-   }
-
-   DICM=malloc(DICMsize+44);
-   if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
-      if (ferror(stdin)) {
-         fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-         exit(errno);
-      }
-      fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
-      exit(exitReadTruncated);
-   };
-   fclose(inFile);
-
-   SERIALIZE=malloc(DICMsize + 0x1000);
-
-   setlocale(LC_ALL, "");//output in UTF-8
-
-   memcpy(DICM+DICMsize,&tpaBlake3attr,8);
-   memcpy(DICM+DICMsize,&tpaBlake3size,4);
-
-//TODO selection of pixel sop class
-   u64 *offset190=(u64*)(DICM+190);
-   isImage=isItImage(*offset190,32,16);//zero means no image
-}
-
-void trail(int count, char *vector[]) {
-
-   FILE *fileptr = fopen("dscd.utf8.cdicm", "w");
-   if ((fileptr == NULL) || (fwrite(SERIALIZE, 1, Soffset, fileptr) != Soffset)) {
-      printf("%s", "cannot write dscd.utf8.cdicm\n");
-      exit(-33);
-   };
-   fclose(fileptr);
-}
-
-
-#pragma mark ---------------------------- attributes
 void val(enum kvVRcategory vrcat,struct Ercle* attr)
 {
    switch (vrcat) {
+
+#pragma mark - sequence and item with end tag
       case kvIA:
       case kvSA:
       case kvSZ:
       case kvIZ:
          break;
+
+#pragma mark - sequence and item with end tag created
       case kvIa:
       case kvSa:
       {
@@ -169,7 +170,8 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          SERIALIZE[Soffset-4]=SERIALIZE[Soffset-3]=SERIALIZE[Soffset-2]=SERIALIZE[Soffset-1]=(char)0x0;
          Doffset=DICMidx-8;
       }break;
-#pragma mark -long length
+
+#pragma mark - long length
       case kv01://OB OD OF OL OV OW SV UV
          printf("%u %u %u %u %u",*columns,*rows,*samples,*bits,*sign);
          //TODO
@@ -208,6 +210,8 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          }
          DICMidx+=attr->l;
       } break;
+
+
 #pragma mark -ascii
       case kvUI: {
          if (attr->e == 0x20010 && (isImage!=0)) {// modify the transfer syntax
@@ -229,20 +233,57 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          else DICMidx+=attr->l;//do not copy yet
       } break;
 
+
+
+#pragma mark -charset
+
+      case kvCs:
+      {//change to "ISO_IR 192"
+         //copy everything before value
+         memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset);
+         Soffset+=DICMidx-Doffset;
+
+         //adjust size and new syntax
+         SERIALIZE[Soffset-2]=0x0A;//size of "ISO_IR 192"
+         memcpy(SERIALIZE+Soffset,"ISO_IR 192",0x0A);//new UID
+         Soffset+=0x0A;
+         DICMidx+=attr->l;
+         Doffset=DICMidx;
+      } break;
+
       case kvTS://LO LT SH ST
       case kvPN:
-      case kvTL:{//convert to utf-8
+      {//convert to utf-8
          if (attr->l!=0) {
             //copy up to utf8 value
             memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset);
+            Soffset+=DICMidx-Doffset;
+            Doffset=DICMidx+attr->l;
 
             //write utf8 value
-            Soffset+=DICMidx-Doffset;
-            Soffset+=utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,SERIALIZE+Soffset);
-            Doffset=DICMidx+attr->l;
+            utf8size=utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,SERIALIZE+Soffset);
+            memcpy(SERIALIZE+Soffset-2,&utf8size,2);//short length
+            Soffset+=utf8size;
          }
          DICMidx+=attr->l;
       };break;
+
+      case kvTL:
+      {//convert to utf-8
+         if (attr->l!=0) {
+            //copy up to utf8 value
+            memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset);
+            Soffset+=DICMidx-Doffset;
+            Doffset=DICMidx+attr->l;
+
+            //write utf8 value
+            utf8size=utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,SERIALIZE+Soffset);
+            memcpy(SERIALIZE+Soffset-4,&utf8size,4);//long length
+            Soffset+=utf8size;
+         }
+         DICMidx+=attr->l;
+      };break;
+
 
       default:DICMidx+=attr->l;break;
    }

@@ -22,9 +22,54 @@ extern u8   CKEYidx;
 static const char *space=" ";
 static char *UTF8;
 
+#pragma mark ----------------------------- SOP instance
 
-#pragma mark ----------------------------- file read
+void input( int argc, char *argv[])
+{
+   inFile = freopen(argv[1],"rb",stdin);
+   if (inFile==NULL)
+   {
+      if (ferror(stdin)) {
+         fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
+         exit(errno);
+      }
+      exit(exitErrorFropenDICM);
+   }
 
+   DICM = malloc(DICMsize+8);//8=preread tag vr sh of inexistent attribute after last one
+   if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
+      if (ferror(stdin)) {
+         fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+         exit(errno);
+      }
+      fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
+      exit(exitReadTruncated);
+   };
+
+   if (inFile!=NULL) {
+      fclose(inFile);
+      inFile=NULL;
+   }
+   setlocale(LC_ALL, "");//output in UTF-8
+   UTF8=malloc(0x4000);
+   //LT max 10240,UT max 2^32 !!!
+   //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
+
+   memcpy(DICM+DICMsize,&tpaBlake3attr,8);
+   memcpy(DICM+DICMsize,&tpaBlake3size,4);
+}
+
+void trail(int count, char *vector[]) {
+   /*
+   FILE *fileptr = fopen("dicmstructdump.dcm", "w");
+   if (fileptr == NULL) return false;
+   if (fwrite(DICM, 1, DICMidx, fileptr) != DICMidx) return false;
+   fclose(fileptr);
+   */
+}
+
+
+#pragma mark ---------------------------- attributes
 
 void key(struct Ercle* attr)
 {
@@ -61,71 +106,22 @@ void key(struct Ercle* attr)
    }
 }
 
-
-#pragma mark ----------------------------- SOP instance transactions
-
-void input( int argc, char *argv[])
-{
-   inFile = freopen(argv[1],"rb",stdin);
-   if (inFile==NULL)
-   {
-      if (ferror(stdin)) {
-         fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
-         exit(errno);
-      }
-      exit(exitErrorFropenDICM);
-   }
-
-   DICM=malloc(DICMsize+44);
-   if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
-      if (ferror(stdin)) {
-         fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-         exit(errno);
-      }
-      fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
-      exit(exitReadTruncated);
-   };
-
-   if (inFile!=NULL) {
-      fclose(inFile);
-      inFile=NULL;
-   }
-   setlocale(LC_ALL, "");//output in UTF-8
-   UTF8=malloc(0x4000);
-   //LT max 10240,UT max 2^32 !!!
-   //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
-
-   memcpy(DICM+DICMsize,&tpaBlake3attr,8);
-   memcpy(DICM+DICMsize,&tpaBlake3size,4);
-}
-
-void trail(int count, char *vector[]) {
-   /*
-   FILE *fileptr = fopen("dicmstructdump.dcm", "w");
-   if (fileptr == NULL) return false;
-   if (fwrite(DICM, 1, DICMidx, fileptr) != DICMidx) return false;
-   fclose(fileptr);
-   */
-}
-
-
-#pragma mark ---------------------------- attributes
 void val(enum kvVRcategory vrcat,struct Ercle* attr)
 {
    switch (vrcat) {
 #pragma mark -sequence
       case kvSA:
       case kvSa:
-      {printf("%8lu%*s%08X+\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e);}break;
+      {printf("%8lu%*s%08X+\n",DICMidx,CKEYidx+CKEYidx,space, attr->e);}break;
       case kvSZ:
       case kvSz:
-      {printf("%8lu%*s%08X~\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, u32swap(attr->E));}break;
+      {printf("%8lu%*s%08X~\n",DICMidx,CKEYidx+CKEYidx,space, u32swap(attr->E));}break;
       case kvIA:
       case kvIa:
-      {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
+      {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,CKEYidx,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
       case kvIZ:
       case kvIz:
-      {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx+CKEYidx-8,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
+      {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
 #pragma mark -long length
       case kv01://OB OD OF OL OV OW SV UV
       //OB Encapsulated​Document 00420011 xml cda o pdf
@@ -139,22 +135,22 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       //OV Extended​Offset​TableLengths fragments offset 7FE00002
       //UV Encapsulated​Pixel​Data​Value​Total​Length 7FE00003
       case kvUN: {
-         printf("%8lu%*s%08X %c%c      {%lu,%u}\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],DICMidx,attr->l);
+         printf("%8lu%*s%08X %c%c      {%lu,%u}\n",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],DICMidx,attr->l);
          DICMidx+=attr->l;
       }break;
       case kvTL:{//UC
       //UT AccessionNumberIssuer local 00080051.00400031
       //UT AccessionNumberIssuer universal 00080051.00400032
-         printf("%8lu%*s%08X %c%c %02X   \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],CKEY[CKEYidx+6], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
+         printf("%8lu%*s%08X %c%c %02X   \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],CKEY[CKEYidx+6], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
          DICMidx+=attr->l;
       } break;
       case kvTU: { //UR originally UTF-8
-         printf("%8lu%*s%08X %c%cF-8  \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], attr->l,DICM+DICMidx);
+         printf("%8lu%*s%08X %c%cF-8  \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], attr->l,DICM+DICMidx);
          DICMidx+=attr->l;
       } break;
 #pragma mark -numbers
       case kvFD: { //floating point double
-         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
@@ -170,7 +166,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvFL: { //floating point single
-         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
@@ -186,7 +182,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvSL: { //signed long
-         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
@@ -202,7 +198,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvSS: { //signed short
-         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
@@ -218,7 +214,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvUL: { //unsigned long
-         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
@@ -234,7 +230,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvUS:{ //unsigned short
-         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
@@ -250,7 +246,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          printf("\n");
       }break;
       case kvAT: { //attribute tag
-         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+         printf("%8lu%*s%08X %c%c      ",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
          if (attr->l > 0)
          {
             printf("(");
@@ -271,8 +267,9 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       case kvTA://AE DS IS
       //ST HL7InstanceIdentifier 0040E001  root^extension
       case kvCS:
+      case kvCs:
       {
-         printf("%8lu%*s%08X %c%c      \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], attr->l,DICM+DICMidx);
+         printf("%8lu%*s%08X %c%c      \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5], attr->l,DICM+DICMidx);
          DICMidx+=attr->l;
       } break;
 #pragma mark -charset
@@ -280,7 +277,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       //ST  DocumentTitle 00420010
       case kvPN:
       {
-         printf("%8lu%*s%08X %c%c %02X   \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx+(CKEYidx!=0),space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],CKEY[CKEYidx+6], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
+         printf("%8lu%*s%08X %c%c %02X   \"%.*s\"\n",DICMidx,CKEYidx+CKEYidx,space, attr->e,CKEY[CKEYidx+4],CKEY[CKEYidx+5],CKEY[CKEYidx+6], utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8),UTF8);
          DICMidx+=attr->l;
       } break;
          
