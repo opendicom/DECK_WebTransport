@@ -131,6 +131,24 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          DICMidx+=attr->l;
       } break;
 
+      case kvUI:
+      {//ui2b64 shrink
+
+         //serialize CKEY
+         if (fwrite(CKEY, 1, CKEY[0]+1, KVserializedFILE) != CKEY[0]+1) {
+            printf("%s", "cannot write KVserializedFILE\n");
+            exit(-33);
+         };
+         if (attr->l>0) {
+            utf8size=ui2b64( DICM+DICMidx, attr->l, UTF8 );
+            if (fwrite(UTF8, 1, utf8size, KVserializedFILE) != utf8size) {
+               printf("%s", "cannot write KVserializedFILE\n");
+               exit(-33);
+            };
+            DICMidx+=attr->l;
+         }
+      } break;
+
       case kvTL:
       case kvTS://LO LT SH ST
       case kvPN:

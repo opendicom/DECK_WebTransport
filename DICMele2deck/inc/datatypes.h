@@ -138,7 +138,7 @@ extern char const hb[256];
 extern char const b64char[64];
 extern char const  base64EncodingTable[65];
 extern char const  base64DecodingTable[128];
-void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length );
+u32 ui2b64( char *ui, u8 uilength, char *b64 );
 
 #pragma mark - main & log
 

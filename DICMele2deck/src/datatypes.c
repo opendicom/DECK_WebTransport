@@ -165,27 +165,35 @@ const char hb[256] =
 const char b64char[64]="-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
 //reduces size to 2/3 respecting order and with url safe characteres
-void ui2b64( char *ui, u8 uilength, char *b64, u8 *b64length )
+//uses the first four char to indicate the length in u32 little endian value
+u32 ui2b64( char *ui, u8 uilength, char *b64 )
 {
+    //returns 4 bytes size followed by shrinked uid
+   u32 *b64length = (u32*)b64;
    *b64length=0;
+   b64+=4;
    u8 ui3length= (uilength / 3) * 3;
    u8 uiidx;
    for (uiidx=0; uiidx<ui3length; uiidx+=3) {
       *b64++ = b64char[(hb[ui[uiidx]] << 2) + ((hb[ui[uiidx+1]] >> 2))];
       *b64++ = b64char[(((hb[ui[uiidx+1]]) & 0x03) << 4) + hb[ui[uiidx+2]]];
+       *b64length+=2;
    }
    switch (uilength % 3) {
       case 1:
          *b64++ = b64char[(hb[ui[uiidx]] << 2)];
          *b64++ = b64char[0];
-         break;
+       *b64length+=2;
+           break;
       case 2:
          *b64++ = b64char[(hb[ui[uiidx]] << 2) + ((hb[ui[uiidx+1]] >> 2))];
          *b64++ = b64char[(((hb[ui[uiidx+1]]) & 0x03) << 4)];
-         break;
+       *b64length+=2;
+           break;
       default://0
          break;
    }
+   return *b64length + 4;//size at bytes 0-3
 }
 
 #pragma mark - repertoires
