@@ -4,15 +4,11 @@
 // created by jacquesfauquex on 2024-04-04.
 
 #include "capi.h"
-
-extern char    *DICM;
-extern u64      DICMidx;
-extern uint8_t *KEYbuf;
-extern uint8_t *VALbuf;
+#include <locale.h>
 
 
 #pragma mark base dataset level patient
-/*
+
 const u32 B00081120P=0x20110800;//SQ Referenced Patient Sequence
 const u32 B00100010P=0x10001000;//PN Patient​Name
 const u32 B00100020P=0x20001000;//LO Patient​ID
@@ -60,7 +56,7 @@ const u32 B00120063P=0x63001200;//LO Deidentification​Method
 const u32 B00120064P=0x64001200;//SQ Deidentification​Method​Code​Sequence
 const u32 B00120081P=0x81001200;//LO Clinical​Trial​Protocol​Ethics​Committee​Name
 const u32 B00120082P=0x82001200;//LO Clinical​Trial​Protocol​Ethics​Committee​Approval​Number
-*/
+/*
 const u32 L00081120P=0x00081120;//SQ Referenced Patient Sequence
 const u32 L00100010P=0x00100010;//PN Patient​Name
 const u32 L00100020P=0x00100020;//LO Patient​ID
@@ -108,10 +104,10 @@ const u32 L00120063P=0x00120063;//LO Deidentification​Method
 const u32 L00120064P=0x00120064;//SQ Deidentification​Method​Code​Sequence
 const u32 L00120081P=0x00120081;//LO Clinical​Trial​Protocol​Ethics​Committee​Name
 const u32 L00120082P=0x00120082;//LO Clinical​Trial​Protocol​Ethics​Committee​Approval​Number
-
+*/
 
 #pragma mark base dataset level study
-/*
+
 const u32 B00080020E=0x20000800;//DA Study​Date
 const u32 B00080030E=0x30000800;//TM Study​Time
 const u32 B00080050E=0x50000800;//SH Accession​Number
@@ -163,7 +159,7 @@ const u32 B00380062E=0x62003800;//LO Service​Episode​Description
 const u32 B00380064E=0x64003800;//SQ Issuer​Of​Service​Episode​ID​Sequence
 const u32 B00385000E=0x00053800;//LO Patient​State
 const u32 B00401012E=0x12104000;//SQ Reason​For​Performed​Procedure​Code​Sequence
-*/
+/*
 const u32 L00080020E=0x00080020;//DA Study​Date
 const u32 L00080030E=0x00080030;//TM Study​Time
 const u32 L00080050E=0x00080050;//SH Accession​Number
@@ -215,10 +211,10 @@ const u32 L00380062E=0x00380062;//LO Service​Episode​Description
 const u32 L00380064E=0x00380064;//SQ Issuer​Of​Service​Episode​ID​Sequence
 const u32 L00385000E=0x00385000;//LO Patient​State
 const u32 L00401012E=0x00401012;//SQ Reason​For​Performed​Procedure​Code​Sequence
-
+*/
 
 #pragma mark base dataset level series root
-/*
+
 const u32 B00080021S=0x21000800;//DA Series​Date
 const u32 B00080031S=0x31000800;//TM Series​Time
 const u32 B00080060S=0x60000800;//CS Modality
@@ -325,7 +321,7 @@ const u32 B00400260S=0x60024000;//SQ Performed​Protocol​Code​Sequence
 const u32 B00400261S=0x61024000;//CS Performed​Protocol​Type
 const u32 B00400275S=0x75024000;//SQ Request​Attributes​Sequence
 const u32 B00400280S=0x80024000;//ST Comments​On​The​Performed​Procedure​Step
-*/
+/*
 const u32 L00080021S=0x00080021;//DA Series​Date
 const u32 L00080031S=0x00080031;//TM Series​Time
 const u32 L00080060S=0x00080060;//CS Modality
@@ -432,10 +428,10 @@ const u32 L00400260S=0x00400260;//SQ Performed​Protocol​Code​Sequence
 const u32 L00400261S=0x00400261;//CS Performed​Protocol​Type
 const u32 L00400275S=0x00400275;//SQ Request​Attributes​Sequence
 const u32 L00400280S=0x00400280;//ST Comments​On​The​Performed​Procedure​Step
-
+*/
 
 #pragma mark base dataset series modality specific
-/*
+
 const u32 B00540013X=0x13005400;//SQ Energy​Window​Range​Sequence
 const u32 B00540014X=0x14005400;//DS Energy​Window​Lower​Limit
 const u32 B00540015X=0x15005400;//DS Energy​Window​Upper​Limit
@@ -467,7 +463,7 @@ const u32 B00541210X=0x10125400;//DS Coincidence​Window​Width
 const u32 B00541220X=0x20125400;//CS Secondary​Counts​Type
 const u32 B00800013X=0x13008000;//SQ Referenced​Surface​Data​Sequence
 const u32 B300A0700X=0x00070A30;//UI Treatment​Session​UID
-*/
+/*
 const u32 L00540013X=0x00540013;//SQ Energy​Window​Range​Sequence
 const u32 L00540014X=0x00540014;//DS Energy​Window​Lower​Limit
 const u32 L00540015X=0x00540015;//DS Energy​Window​Upper​Limit
@@ -499,13 +495,18 @@ const u32 L00541210X=0x00541210;//DS Coincidence​Window​Width
 const u32 L00541220X=0x20125400;//CS Secondary​Counts​Type
 const u32 L00800013X=0x00800013;//SQ Referenced​Surface​Data​Sequence
 const u32 L300A0700X=0x300A0700;//UI Treatment​Session​UID
-
+*/
 #pragma mark Opendicom CDA series instead of instance
+const u32 B0040E001X=0x01E04000;//ST HL7InstanceIdentifier 0040E001  root^extension
+const u32 B00420010X=0x10004200;//ST DocumentTitel
+const u32 B00420011X=0x11004200;//OB Encapsulated​Document
+const u32 B00420012X=0x12004200;//LO mime type
+/*
 const u32 L0040E001X=0x0040E001;//ST HL7InstanceIdentifier 0040E001  root^extension
 const u32 L00420010X=0x00420010;//ST DocumentTitel
 const u32 L00420011X=0x00420011;//OB Encapsulated​Document
 const u32 L00420012X=0x00420012;//LO mime type
-
+*/
 
 
 //attribute type study 00 series 01 (~=level)
@@ -515,247 +516,247 @@ const u8 S=0x01;//series level
 const u8 X=0x01;//special series level
 //Patient Clinical(Study) and Series tags and parallel array with category (PCSX)
 const u32 PCStag[]={
-   L00080020E,//DA Study​Date
-   L00080021S,//DA Series​Date
-   L00080030E,//TM Study​Time
-   L00080031S,//TM Series​Time
-   L00080050E,//SH Accession​Number
-   L00080051E,//SQ Issuer​Of​Accession​Number​Sequence
-   L00080060S,//CS Modality
-   L00080064S,//CS Conversion​Type
-   L00080068S,//CS Presentation​Intent​Type
-   L00080070S,//LO Manufacturer
-   L00080080S,//LO Institution​Name (standard is series S, moved it to Exam E)
-   L00080081S,//ST Institution​Address
-   L00080090E,//PN Referring​Physician​Name
-   L00080096E,//SQ Referring​Physician​Identification​Sequence
-   L0008009CE,//PN Consulting​Physician​Name
-   L0008009DE,//SQ Consulting​Physician​Identification​Sequence
-   L00081010S,//SH Station​Name
-   L00081030E,//LO Study​Description
-   L00081032E,//SQ Procedure​Code​Sequence
-   L0008103ES,//LO Series​Description
-   L0008103FS,//SQ Series​Description​Code​Sequence
-   L00081040S,//LO Institutional​Department​Name
-   L00081041S,//SQ Institutional​Department​Type​Code​Sequence
-   L00081048E,//PN Physicians​Of​Record
-   L00081049E,//SQ Physicians​Of​Record​Identification​Sequence
-   L00081050S,//PN Performing​Physician​Name
-   L00081052S,//SQ Performing​Physician​Identification​Sequence
-   L00081060E,//PN Name​Of​Physicians​Reading​Study
-   L00081062E,//SQ Physicians​Reading​Study​Identification​Sequence
-   L00081070S,//PN Operators​Name
-   L00081072S,//SQ Operator​Identification​Sequence
-   L00081080E,//LO Admitting​Diagnoses​Description
-   L00081084E,//SQ Admitting​Diagnoses​Code​Sequence
-   L00081090S,//LO Manufacturer​Model​Name
-   L00081110E,//SQ Referenced​Study​Sequence
-   L00081111S,//SQ Referenced​Performed​Procedure​Step​Sequence
-   L00081120P,//SQ Referenced Patient Sequence
-   L00081250S,//SQ Related​Series​Sequence
-   L00100010P,//PN Patient​Name
-   L00100020P,//LO Patient​ID
-   L00100021P,//LO Issuer​Of​Patient​ID
-   L00100022P,//CS Type​Of​Patient​ID
-   L00100024P,//SQ Issuer​Of​Patient​ID​Qualifiers​Sequence
-   L00100026P,//SQ Source​Patient​Group​Identification​Sequence
-   L00100027P,//SQ Group​Of​Patients​Identification​Sequence
-   L00100030P,//DA Patient​Birth​Date
-   L00100032P,//TM Patient​Birth​Time
-   L00100033P,//LO Patient​Birth​Date​In​Alternative​Calendar
-   L00100034P,//LO Patient​Death​Date​In​Alternative​Calendar
-   L00100035P,//CS Patient​Alternative​Calendar
-   L00100040P,//CS Patient​Sex
-   L00100200P,//CS Quality​Control​Subject
-   L00100212P,//UC Strain​Description
-   L00100213P,//LO Strain​Nomenclature
-   L00100216P,//SQ Strain​Stock​Sequence
-   L00100218P,//UT Strain​Additional​Information
-   L00100219P,//SQ Strain​Code​Sequence
-   L00100221P,//SQ Genetic​Modifications​​Sequence
-   L00101000P,//LO Other​Patient​IDs
-   L00101001P,//PN Other​Patient​Names
-   L00101002P,//SQ Other​Patient​IDs​Sequence
-   L00101010E,//AS Patient​Age
-   L00101020E,//DS Patient​Size
-   L00101021E,//SQ Patient​Size​Code​Sequence
-   L00101022E,//DS Patient​Body​Mass​Index
-   L00101023E,//DS Measured​APDimension
-   L00101024E,//DS Measured​Lateral​Dimension
-   L00101030E,//DS Patient​Weight
-   L00101100P,//SQ Referenced​Patient​Photo​Sequence
-   L00102000E,//LO Medical​Alerts
-   L00102110E,//LO Allergies
-   L00102160P,//SH Ethnic​Group
-   L00102180E,//SH Occupation
-   L001021A0E,//CS Smoking​Status
-   L001021B0E,//LT Additional​Patient​History
-   L001021C0E,//US Pregnancy​Status
-   L001021D0E,//DA Last​Menstrual​Date
-   L00102201P,//LO Patient​Species​Description
-   L00102202P,//SQ Patient​Species​Code​Sequence
-   L00102203E,//CS Patient​Sex​Neutered
-   L00102292P,//LO Patient​Breed​Description
-   L00102293P,//SQ Patient​Breed​Code​Sequence
-   L00102294P,//SQ Breed​Registration​Sequence
-   L00102297P,//PN Responsible​Person
-   L00102298P,//CS Responsible​Person​Role
-   L00102299P,//LO Responsible​Organization
-   L00104000P,//LT Patient​Comments
-   L00120010P,//LO Clinical​Trial​Sponsor​Name
-   L00120020P,//LO Clinical​Trial​Protocol​ID
-   L00120021P,//LO Clinical​Trial​Protocol​Name
-   L00120030P,//LO Clinical​Trial​Site​ID
-   L00120031P,//LO Clinical​Trial​Site​Name
-   L00120040P,//LO Clinical​Trial​Subject​ID
-   L00120042P,//LO Clinical​Trial​Subject​Reading​ID
-   L00120050E,//LO Clinical​Trial​Time​Point​ID
-   L00120051E,//ST Clinical​Trial​Time​Point​Description
-   L00120052E,//FD Longitudinal​Temporal​Offset​From​Event
-   L00120053E,//CS Longitudinal​Temporal​Event​Type
-   L00120054E,//SQ Clinical​Trial​Time​Point​Type​Code​Sequence
-   L00120060S,//LO Clinical​Trial​Coordinating​Center​Name
-   L00120062P,//CS Patient​Identity​Removed
-   L00120063P,//LO Deidentification​Method
-   L00120064P,//SQ Deidentification​Method​Code​Sequence
-   L00120071S,//LO Clinical​Trial​Series​ID
-   L00120072S,//LO Clinical​Trial​Series​Description
-   L00120081P,//LO Clinical​Trial​Protocol​Ethics​Committee​Name
-   L00120082P,//LO Clinical​Trial​Protocol​Ethics​Committee​Approval​Number
-   L00120083E,//SQ Consent​For​Clinical​Trial​Use​Sequence
-   L0016004DS,//UT Camera​Owner​Name
-   L0016004ES,//DS Lens​Specification
-   L0016004FS,//UT Lens​Make
-   L00160050S,//UT Lens​Model
-   L00160051S,//UT Lens​Serial​Number
-   L00180015S,//CS Body​Part​Examined
-   L00180026S,//SQ Intervention​Drug​Information​Sequence
-   L00180071S,//CS Acquisition​Termination​Condition
-   L00180073S,//CS Acquisition​Start​Condition
-   L00180074S,//IS Acquisition​Start​Condition​Data
-   L00180075S,//IS Acquisition​Termination​Condition​Data
-   L00181000S,//LO Device​Serial​Number
-   L00181002S,//UI Device​UID
-   L00181008S,//LO Gantry​ID
-   L0018100AS,//SQ UDI​Sequence
-   L0018100BS,//UI Manufacturer​Device​Class​UID
-   L00181010S,//LO Secondary​Capture​Device​ID
-   L00181016S,//LO Secondary​Capture​Device​Manufacturer
-   L00181018S,//LO Secondary​Capture​Device​Manufacturer​Model​Name
-   L00181019S,//LO Secondary​Capture​Device​Software​Versions
-   L00181020S,//LO Software​Versions
-   L00181022S,//SH Video​Image​Format​Acquired
-   L00181023S,//LO Digital​Image​Format​Acquired
-   L00181030S,//LO Protocol​Name
-   L00181050S,//DS Spatial​Resolution
-   L00181061S,//LO Trigger​Source​Or​Type
-   L00181064S,//LO Cardiac​Framing​Type
-   L0018106AS,//CS Synchronization​Trigger
-   L0018106CS,//US Synchronization​Channel
-   L00181080S,//CS Beat​Rejection​Flag
-   L00181085S,//LO PVC​Rejection
-   L00181086S,//IS Skip​Beats
-   L00181088S,//IS Heart​Rate
-   L00181100S,//DS Reconstruction​Diameter
-   L00181120S,//DS Gantry​Detector​Tilt
-   L00181121S,//DS Gantry​Detector​Slew
-   L00181147S,//CS Field​Of​View​Shape
-   L00181149S,//IS Field​Of​View​Dimensions
-   L00181160S,//SH Filter​Type
-   L00181180S,//SH Collimator​Grid​Name
-   L00181181S,//CS Collimator​Type
-   L00181190S,//DS Focal​Spots
-   L00181200S,//DA Date​Of​Last​Calibration
-   L00181201S,//TM Time​Of​Last​Calibration
-   L00181204S,//DA Date​Of​Manufacture
-   L00181205S,//DA Date​Of​Installation
-   L00181210S,//SH Convolution​Kernel
-   L00181260S,//SH Plate​Type
-   L00181261S,//LO Phosphor​Type
-   L00181800S,//CS Acquisition​Time​Synchronized
-   L00181801S,//SH Time​Source
-   L00181802S,//CS Time​Distribution​Protocol
-   L00181803S,//LO NTP​Source​Address
-   L00185100S,//CS Patient​Position
-   L00185101S,//CS View​Position
-   L0020000DE,//UI Study​Instance​UID
-   L0020000ES,//UI Series​Instance​UID
-   L00200010E,//SH Study​ID
-   L00200011S,//IS Series​Number
-   L00200052S,//UI Frame​Of​Reference​UID
-   L00200060S,//CS Laterality
-   L00200200S,//UI Synchronization​Frame​Of​Reference​UID
-   L00201040S,//LO Position​Reference​Indicator
-   L00209307S,//CS Ultrasound​Acquisition​Geometry
-   L00209308S,//FD Apex​Position
-   L00209309S,//FD Volume​To​Transducer​Mapping​Matrix
-   L0020930AS,//FD Volume​To​Table​Mapping​Matrix
-   L0020930BS,//CS Volume​To​Transducer​Relationship
-   L0020930CS,//CS Patient​Frame​Of​Reference​Source
-   L00209312S,//UI Volume​Frame​Of​Reference​UID
-   L00209313S,//UI Table​Frame​Of​Reference​UID
-   L00280051S,//CS Corrected​Image
-   L00280108S,//US or SS Smallest​Pixel​Value​In​Series
-   L00280109S,//US or SS Largest​Pixel​Value​In​Series
-   L00280120S,//US or SS Pixel​Padding​Value
-   L00321033E,//LO Requesting​Service
-   L00321034E,//SQ Requesting​Service​Code​Sequence
-   L00321066E,//UT Reason​For​Visit
-   L00321067E,//SQ Reason​For​Visit​Code​Sequence
-   L00380010E,//LO Admission​ID
-   L00380014E,//SQ Issuer​Of​Admission​ID​Sequence
-   L00380060E,//LO Service​Episode​ID
-   L00380062E,//LO Service​Episode​Description
-   L00380064E,//SQ Issuer​Of​Service​Episode​ID​Sequence
-   L00385000E,//LO Patient​State
-   L00400244S,//DA Performed​Procedure​Step​Start​Date
-   L00400245S,//TM Performed​Procedure​Step​Start​Time
-   L00400250S,//DA Performed​Procedure​Step​End​Date
-   L00400251S,//TM Performed​Procedure​Step​End​Time
-   L00400253S,//SH Performed​Procedure​Step​ID
-   L00400254S,//LO Performed​Procedure​Step​Description
-   L00400260S,//SQ Performed​Protocol​Code​Sequence
-   L00400261S,//CS Performed​Protocol​Type
-   L00400275S,//SQ Request​Attributes​Sequence
-   L00400280S,//ST Comments​On​The​Performed​Procedure​Step
-   L00401012E,//SQ Reason​For​Performed​Procedure​Code​Sequence
+   B00080020E,//DA Study​Date
+   B00080021S,//DA Series​Date
+   B00080030E,//TM Study​Time
+   B00080031S,//TM Series​Time
+   B00080050E,//SH Accession​Number
+   B00080051E,//SQ Issuer​Of​Accession​Number​Sequence
+   B00080060S,//CS Modality
+   B00080064S,//CS Conversion​Type
+   B00080068S,//CS Presentation​Intent​Type
+   B00080070S,//LO Manufacturer
+   B00080080S,//LO Institution​Name (standard is series S, moved it to Exam E)
+   B00080081S,//ST Institution​Address
+   B00080090E,//PN Referring​Physician​Name
+   B00080096E,//SQ Referring​Physician​Identification​Sequence
+   B0008009CE,//PN Consulting​Physician​Name
+   B0008009DE,//SQ Consulting​Physician​Identification​Sequence
+   B00081010S,//SH Station​Name
+   B00081030E,//LO Study​Description
+   B00081032E,//SQ Procedure​Code​Sequence
+   B0008103ES,//LO Series​Description
+   B0008103FS,//SQ Series​Description​Code​Sequence
+   B00081040S,//LO Institutional​Department​Name
+   B00081041S,//SQ Institutional​Department​Type​Code​Sequence
+   B00081048E,//PN Physicians​Of​Record
+   B00081049E,//SQ Physicians​Of​Record​Identification​Sequence
+   B00081050S,//PN Performing​Physician​Name
+   B00081052S,//SQ Performing​Physician​Identification​Sequence
+   B00081060E,//PN Name​Of​Physicians​Reading​Study
+   B00081062E,//SQ Physicians​Reading​Study​Identification​Sequence
+   B00081070S,//PN Operators​Name
+   B00081072S,//SQ Operator​Identification​Sequence
+   B00081080E,//LO Admitting​Diagnoses​Description
+   B00081084E,//SQ Admitting​Diagnoses​Code​Sequence
+   B00081090S,//LO Manufacturer​Model​Name
+   B00081110E,//SQ Referenced​Study​Sequence
+   B00081111S,//SQ Referenced​Performed​Procedure​Step​Sequence
+   B00081120P,//SQ Referenced Patient Sequence
+   B00081250S,//SQ Related​Series​Sequence
+   B00100010P,//PN Patient​Name
+   B00100020P,//LO Patient​ID
+   B00100021P,//LO Issuer​Of​Patient​ID
+   B00100022P,//CS Type​Of​Patient​ID
+   B00100024P,//SQ Issuer​Of​Patient​ID​Qualifiers​Sequence
+   B00100026P,//SQ Source​Patient​Group​Identification​Sequence
+   B00100027P,//SQ Group​Of​Patients​Identification​Sequence
+   B00100030P,//DA Patient​Birth​Date
+   B00100032P,//TM Patient​Birth​Time
+   B00100033P,//LO Patient​Birth​Date​In​Alternative​Calendar
+   B00100034P,//LO Patient​Death​Date​In​Alternative​Calendar
+   B00100035P,//CS Patient​Alternative​Calendar
+   B00100040P,//CS Patient​Sex
+   B00100200P,//CS Quality​Control​Subject
+   B00100212P,//UC Strain​Description
+   B00100213P,//LO Strain​Nomenclature
+   B00100216P,//SQ Strain​Stock​Sequence
+   B00100218P,//UT Strain​Additional​Information
+   B00100219P,//SQ Strain​Code​Sequence
+   B00100221P,//SQ Genetic​Modifications​​Sequence
+   B00101000P,//LO Other​Patient​IDs
+   B00101001P,//PN Other​Patient​Names
+   B00101002P,//SQ Other​Patient​IDs​Sequence
+   B00101010E,//AS Patient​Age
+   B00101020E,//DS Patient​Size
+   B00101021E,//SQ Patient​Size​Code​Sequence
+   B00101022E,//DS Patient​Body​Mass​Index
+   B00101023E,//DS Measured​APDimension
+   B00101024E,//DS Measured​Lateral​Dimension
+   B00101030E,//DS Patient​Weight
+   B00101100P,//SQ Referenced​Patient​Photo​Sequence
+   B00102000E,//LO Medical​Alerts
+   B00102110E,//LO Allergies
+   B00102160P,//SH Ethnic​Group
+   B00102180E,//SH Occupation
+   B001021A0E,//CS Smoking​Status
+   B001021B0E,//LT Additional​Patient​History
+   B001021C0E,//US Pregnancy​Status
+   B001021D0E,//DA Last​Menstrual​Date
+   B00102201P,//LO Patient​Species​Description
+   B00102202P,//SQ Patient​Species​Code​Sequence
+   B00102203E,//CS Patient​Sex​Neutered
+   B00102292P,//LO Patient​Breed​Description
+   B00102293P,//SQ Patient​Breed​Code​Sequence
+   B00102294P,//SQ Breed​Registration​Sequence
+   B00102297P,//PN Responsible​Person
+   B00102298P,//CS Responsible​Person​Role
+   B00102299P,//LO Responsible​Organization
+   B00104000P,//LT Patient​Comments
+   B00120010P,//LO Clinical​Trial​Sponsor​Name
+   B00120020P,//LO Clinical​Trial​Protocol​ID
+   B00120021P,//LO Clinical​Trial​Protocol​Name
+   B00120030P,//LO Clinical​Trial​Site​ID
+   B00120031P,//LO Clinical​Trial​Site​Name
+   B00120040P,//LO Clinical​Trial​Subject​ID
+   B00120042P,//LO Clinical​Trial​Subject​Reading​ID
+   B00120050E,//LO Clinical​Trial​Time​Point​ID
+   B00120051E,//ST Clinical​Trial​Time​Point​Description
+   B00120052E,//FD Longitudinal​Temporal​Offset​From​Event
+   B00120053E,//CS Longitudinal​Temporal​Event​Type
+   B00120054E,//SQ Clinical​Trial​Time​Point​Type​Code​Sequence
+   B00120060S,//LO Clinical​Trial​Coordinating​Center​Name
+   B00120062P,//CS Patient​Identity​Removed
+   B00120063P,//LO Deidentification​Method
+   B00120064P,//SQ Deidentification​Method​Code​Sequence
+   B00120071S,//LO Clinical​Trial​Series​ID
+   B00120072S,//LO Clinical​Trial​Series​Description
+   B00120081P,//LO Clinical​Trial​Protocol​Ethics​Committee​Name
+   B00120082P,//LO Clinical​Trial​Protocol​Ethics​Committee​Approval​Number
+   B00120083E,//SQ Consent​For​Clinical​Trial​Use​Sequence
+   B0016004DS,//UT Camera​Owner​Name
+   B0016004ES,//DS Lens​Specification
+   B0016004FS,//UT Lens​Make
+   B00160050S,//UT Lens​Model
+   B00160051S,//UT Lens​Serial​Number
+   B00180015S,//CS Body​Part​Examined
+   B00180026S,//SQ Intervention​Drug​Information​Sequence
+   B00180071S,//CS Acquisition​Termination​Condition
+   B00180073S,//CS Acquisition​Start​Condition
+   B00180074S,//IS Acquisition​Start​Condition​Data
+   B00180075S,//IS Acquisition​Termination​Condition​Data
+   B00181000S,//LO Device​Serial​Number
+   B00181002S,//UI Device​UID
+   B00181008S,//LO Gantry​ID
+   B0018100AS,//SQ UDI​Sequence
+   B0018100BS,//UI Manufacturer​Device​Class​UID
+   B00181010S,//LO Secondary​Capture​Device​ID
+   B00181016S,//LO Secondary​Capture​Device​Manufacturer
+   B00181018S,//LO Secondary​Capture​Device​Manufacturer​Model​Name
+   B00181019S,//LO Secondary​Capture​Device​Software​Versions
+   B00181020S,//LO Software​Versions
+   B00181022S,//SH Video​Image​Format​Acquired
+   B00181023S,//LO Digital​Image​Format​Acquired
+   B00181030S,//LO Protocol​Name
+   B00181050S,//DS Spatial​Resolution
+   B00181061S,//LO Trigger​Source​Or​Type
+   B00181064S,//LO Cardiac​Framing​Type
+   B0018106AS,//CS Synchronization​Trigger
+   B0018106CS,//US Synchronization​Channel
+   B00181080S,//CS Beat​Rejection​Flag
+   B00181085S,//LO PVC​Rejection
+   B00181086S,//IS Skip​Beats
+   B00181088S,//IS Heart​Rate
+   B00181100S,//DS Reconstruction​Diameter
+   B00181120S,//DS Gantry​Detector​Tilt
+   B00181121S,//DS Gantry​Detector​Slew
+   B00181147S,//CS Field​Of​View​Shape
+   B00181149S,//IS Field​Of​View​Dimensions
+   B00181160S,//SH Filter​Type
+   B00181180S,//SH Collimator​Grid​Name
+   B00181181S,//CS Collimator​Type
+   B00181190S,//DS Focal​Spots
+   B00181200S,//DA Date​Of​Last​Calibration
+   B00181201S,//TM Time​Of​Last​Calibration
+   B00181204S,//DA Date​Of​Manufacture
+   B00181205S,//DA Date​Of​Installation
+   B00181210S,//SH Convolution​Kernel
+   B00181260S,//SH Plate​Type
+   B00181261S,//LO Phosphor​Type
+   B00181800S,//CS Acquisition​Time​Synchronized
+   B00181801S,//SH Time​Source
+   B00181802S,//CS Time​Distribution​Protocol
+   B00181803S,//LO NTP​Source​Address
+   B00185100S,//CS Patient​Position
+   B00185101S,//CS View​Position
+   B0020000DE,//UI Study​Instance​UID
+   B0020000ES,//UI Series​Instance​UID
+   B00200010E,//SH Study​ID
+   B00200011S,//IS Series​Number
+   B00200052S,//UI Frame​Of​Reference​UID
+   B00200060S,//CS Laterality
+   B00200200S,//UI Synchronization​Frame​Of​Reference​UID
+   B00201040S,//LO Position​Reference​Indicator
+   B00209307S,//CS Ultrasound​Acquisition​Geometry
+   B00209308S,//FD Apex​Position
+   B00209309S,//FD Volume​To​Transducer​Mapping​Matrix
+   B0020930AS,//FD Volume​To​Table​Mapping​Matrix
+   B0020930BS,//CS Volume​To​Transducer​Relationship
+   B0020930CS,//CS Patient​Frame​Of​Reference​Source
+   B00209312S,//UI Volume​Frame​Of​Reference​UID
+   B00209313S,//UI Table​Frame​Of​Reference​UID
+   B00280051S,//CS Corrected​Image
+   B00280108S,//US or SS Smallest​Pixel​Value​In​Series
+   B00280109S,//US or SS Largest​Pixel​Value​In​Series
+   B00280120S,//US or SS Pixel​Padding​Value
+   B00321033E,//LO Requesting​Service
+   B00321034E,//SQ Requesting​Service​Code​Sequence
+   B00321066E,//UT Reason​For​Visit
+   B00321067E,//SQ Reason​For​Visit​Code​Sequence
+   B00380010E,//LO Admission​ID
+   B00380014E,//SQ Issuer​Of​Admission​ID​Sequence
+   B00380060E,//LO Service​Episode​ID
+   B00380062E,//LO Service​Episode​Description
+   B00380064E,//SQ Issuer​Of​Service​Episode​ID​Sequence
+   B00385000E,//LO Patient​State
+   B00400244S,//DA Performed​Procedure​Step​Start​Date
+   B00400245S,//TM Performed​Procedure​Step​Start​Time
+   B00400250S,//DA Performed​Procedure​Step​End​Date
+   B00400251S,//TM Performed​Procedure​Step​End​Time
+   B00400253S,//SH Performed​Procedure​Step​ID
+   B00400254S,//LO Performed​Procedure​Step​Description
+   B00400260S,//SQ Performed​Protocol​Code​Sequence
+   B00400261S,//CS Performed​Protocol​Type
+   B00400275S,//SQ Request​Attributes​Sequence
+   B00400280S,//ST Comments​On​The​Performed​Procedure​Step
+   B00401012E,//SQ Reason​For​Performed​Procedure​Code​Sequence
 
-   L0040E001X,//ST HL7InstanceIdentifier 0040E001  root^extension
-   L00420010X,//ST DocumentTitel
-   L00420011X,//OB Encapsulated​Document
-   L00420012X,//LO Mime type
+   B0040E001X,//ST HL7InstanceIdentifier 0040E001  root^extension
+   B00420010X,//ST DocumentTitel
+   B00420011X,//OB Encapsulated​Document
+   B00420012X,//LO Mime type
 
-   L00540013X,//SQ Energy​Window​Range​Sequence
-   L00540014X,//DS Energy​Window​Lower​Limit
-   L00540015X,//DS Energy​Window​Upper​Limit
-   L00540016X,//SQ Radio​pharmaceutical​Information​Sequence
-   L00540061X,//US Number​Of​RR​Intervals
-   L00540071X,//US Number​Of​Time​Slots
-   L00540081X,//US Number​Of​Slices
-   L00540101X,//US Number​Of​Time​Slices
-   L00540202X,//CS Type​Of​Detector​Motion
-   L00540410X,//SQ Patient​Orientation​Code​Sequence
-   L00540414X,//SQ Patient​Gantry​Relationship​Code​Sequence
-   L00540501X,//CS Scan​Progression​Direction
-   L00541000X,//CS Series​Type
-   L00541001X,//CS Units
-   L00541002X,//CS Counts​Source
-   L00541004X,//CS Reprojection​Method
-   L00541006X,//CS SUV​Type
-   L00541100X,//CS Randoms​Correction​Method
-   L00541101X,//LO Attenuation​Correction​Method
-   L00541102X,//CS Decay​Correction
-   L00541103X,//LO Reconstruction​Method
-   L00541104X,//LO Detector​Lines​Of​Response​Used
-   L00541105X,//LO Scatter​Correction​Method
-   L00541200X,//DS Axial​Acceptance
-   L00541201X,//IS Axial​Mash
-   L00541202X,//IS Transverse​Mash
-   L00541203X,//DS Detector​Element​Size
-   L00541210X,//DS Coincidence​Window​Width
-   L00541220X,//CS Secondary​Counts​Type
-   L00800013X,//SQ Referenced​Surface​Data​Sequence
-   L300A0700X //UI Treatment​Session​UID
+   B00540013X,//SQ Energy​Window​Range​Sequence
+   B00540014X,//DS Energy​Window​Lower​Limit
+   B00540015X,//DS Energy​Window​Upper​Limit
+   B00540016X,//SQ Radio​pharmaceutical​Information​Sequence
+   B00540061X,//US Number​Of​RR​Intervals
+   B00540071X,//US Number​Of​Time​Slots
+   B00540081X,//US Number​Of​Slices
+   B00540101X,//US Number​Of​Time​Slices
+   B00540202X,//CS Type​Of​Detector​Motion
+   B00540410X,//SQ Patient​Orientation​Code​Sequence
+   B00540414X,//SQ Patient​Gantry​Relationship​Code​Sequence
+   B00540501X,//CS Scan​Progression​Direction
+   B00541000X,//CS Series​Type
+   B00541001X,//CS Units
+   B00541002X,//CS Counts​Source
+   B00541004X,//CS Reprojection​Method
+   B00541006X,//CS SUV​Type
+   B00541100X,//CS Randoms​Correction​Method
+   B00541101X,//LO Attenuation​Correction​Method
+   B00541102X,//CS Decay​Correction
+   B00541103X,//LO Reconstruction​Method
+   B00541104X,//LO Detector​Lines​Of​Response​Used
+   B00541105X,//LO Scatter​Correction​Method
+   B00541200X,//DS Axial​Acceptance
+   B00541201X,//IS Axial​Mash
+   B00541202X,//IS Transverse​Mash
+   B00541203X,//DS Detector​Element​Size
+   B00541210X,//DS Coincidence​Window​Width
+   B00541220X,//CS Secondary​Counts​Type
+   B00800013X,//SQ Referenced​Surface​Data​Sequence
+   B300A0700X //UI Treatment​Session​UID
 };
 const u8 PCStype[]={
    C,//DA Study​Date
@@ -1001,49 +1002,78 @@ const u8 PCStype[]={
    X //UI Treatment​Session​UID
 };
 
+extern FILE * inFile;
 
-#pragma mark - read
+extern char *DICM;
+extern u64   DICMidx;
+extern u64   DICMsize;
 
-static u64 bytesreceived;
-bool vvread(u32 bytesaskedfor)
+extern u8   *CKEY;
+
+extern u8    CKEYidx;
+static char *UTF8;
+u32 utf8size=0;
+FILE *KVserializedFILE;
+const u32 CSutf8size=10;
+
+static u16 PCSidx;
+
+#pragma mark ---------------------------- SOP instance
+
+void input( int argc, char *argv[])
 {
-   bytesreceived=fread(DICM+DICMidx,1,bytesaskedfor,stdin);
-   if (bytesreceived>0xFFFFFFFF)return 0;
-   DICMidx+=bytesreceived;
-   return (bytesaskedfor==bytesreceived);
-}
-
-bool BUFread(u32 bytesaskedfor)
-{
-   bytesreceived=fread(VALbuf,1,bytesaskedfor,stdin);
-   DICMidx+=bytesreceived;
-   return (bytesaskedfor==bytesreceived);
-}
-
-
-//reads to DICM and copies to CKEY
-//returns true when 8(+4) bytes were read
-bool CKEYread(u8 kloc)
-{
-   if (fread(DICM+DICMidx,1,8,stdin)!=8)
+   inFile = freopen(argv[1],"rb",stdin);
+   if (inFile==NULL)
    {
-      if (ferror(stdin)) E("%s","stdin error");
-      return false;
+      if (ferror(stdin)) {
+         fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
+         exit(errno);
+      }
+      exit(exitErrorFropenDICM);
    }
-   
-   //group LE>BE
-   kbuf[kloc]=DICM[DICMidx+1];
-   kbuf[kloc+1]=DICM[DICMidx];
-   //element LE>BE
-   kbuf[kloc+2]=DICM[DICMidx+3];
-   kbuf[kloc+3]=DICM[DICMidx+2];
-   //vr vl copied (LE)
-   kbuf[kloc+4]=DICM[DICMidx+4];
-   kbuf[kloc+5]=DICM[DICMidx+5];
-   kbuf[kloc+6]=DICM[DICMidx+6];
-   kbuf[kloc+7]=DICM[DICMidx+7];
 
-   switch ((DICM[DICMidx+5]<<8)|(DICM[DICMidx+4])) {
+   DICM=malloc(DICMsize);
+   if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
+      if (ferror(stdin)) {
+         fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
+         exit(errno);
+      }
+      fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
+      exit(exitReadTruncated);
+   };
+   fclose(inFile);
+
+   KVserializedFILE = fopen("serialized.bin", "w");
+
+   setlocale(LC_ALL, "");//output in UTF-8
+   UTF8=malloc(0x4000);
+   //LT max 10240,UT max 2^32 !!!
+   //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
+}
+
+void trail(int count, char *vector[]) {
+   fclose(KVserializedFILE);
+}
+
+
+#pragma mark ---------------------------- attributes
+
+
+void key(struct Ercle* attr)
+{
+   //reads at CKEYidx+8 the new 8 first bytes of the attribute
+   //reorders group and unit at CKEYidx
+   // copies the VR and empty bytes at CKEYidx+4
+   // eventually reads the four additional bytes of long length at CKEYidx+8
+   memcpy(attr,DICM+DICMidx,8);
+   DICMidx+=8;
+   attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
+   attr->e=u32swap(attr->E);//tag in little endian
+
+   //attr->r is ascii (left to right)
+   attr->l=attr->c;//short length is transferred to long length (bytes 8-11)
+   //attr->c short length will be modified before parsing the value to register repositoire index
+   switch (attr->r) {
       case OB://other byte
       case OW://other word
       case OD://other double
@@ -1054,122 +1084,70 @@ bool CKEYread(u8 kloc)
       case UV://unsigned 64-bit very long
       case UC://unlimited characters
       case UT://unlimited text
-      case UR://universal resrcurl identifier/locator
+      case UR://universal resource url identifier/locator
       case SQ://sequence
       {
-         DICMidx+=8;
-         if (fread(DICM+DICMidx,1,4,stdin)!=4)
-         {
-            if (ferror(stdin)) E("%s","stdin error");
-            return false;
-         }
-         memcpy(kbuf+kloc+8, DICM+DICMidx, 4);
+         memcpy(&attr->l,DICM+DICMidx,4);
          DICMidx+=4;
       }break;
-      default:
-      {
-         //IA,IZ,SZ require postprocessing in dicm2dckv
-         DICMidx+=8;
-         memcpy(kbuf+kloc+8, DICM+DICMidx-2, 2);
-         kbuf[kloc+10]=0;
-         kbuf[kloc+11]=0;
-      }break;
+      default:break;
    }
-   
-   return true;
 }
 
+void val(enum kvVRcategory vrcat,struct Ercle* attr) {
 
-#pragma mark - instance transactions
-
-static u16 PCSidx;
-
-//called with parameters before opening file
-int uPrerequisite(int argc, char *argv[]) {
-   return cPrerequisite(argc,argv);
-}
-
-//called after opening file
-int uCreate(int argc, char *argv[]){
-   kbuf = malloc(0x3000);
-   return cCreate(argc,argv);
-}
-
-//called after parsing successfully all the attributes
-int uCommit(bool hastrailing,int argc, char *argv[]) {
-   return cCommit(hastrailing,argc,argv);
-}
-
-//finalizes the opened tx
-void uClose(int argc, char *argv[]) {
-   return cClose(argc,argv);
-}
-
-
-#pragma mark - write
-
-bool vrAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen)
-{
-   //skip sequence and item delimiters
-   if (vrcat==kvSA){D("%s","SA");return true;}
-   if (vrcat==kvIA){D("%s","IA");return true;}
-   if (vrcat==kvIZ){D("%s","IZ");return true;}
-   if (vrcat==kvSZ){D("%s","SZ");return true;}
-   
-   //skip group length
-   //memcmp(CKEY, const void *ptr2, 4);
-   if ((kbuf[kloc+2]==0) && (kbuf[kloc+3]==0)){
-      //if (! fseek(inFile, 4, SEEK_CUR)) return false;
-      return true;
+   if ((attr->e & 0xFFFF)==0) { //remove group length
+      DICMidx+=attr->l;
+      return;
    }
-   
-#pragma mark private
-   if (kbuf[1] & 1)
-   {
-      D("P %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
-      return pAppend(kloc,vrcat,vlen);
+
+   u32  *rootTag = (u32*)(CKEY+1);
+   if (*rootTag & 0x10000) { //group even private
+      pAttribute(vrcat,attr);
+      return;
    }
 
    switch (vrcat) {
-      case kvUN:{
-         D("P %02X%02X%02X%02X UN",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);//unknown -> private
-         return pAppend(kloc,vrcat,vlen);
-      }
-      default:
-      {
+      case kvUN: {
+         pAttribute(vrcat,attr);
+      };break;
+
+#pragma mark - ignore useless sequence and item tags
+      case kvIA:
+      case kvSA:
+      case kvSZ:
+      case kvIZ:
+      case kvIa:
+      case kvSa:
+      case kvSz:
+      case kvIz:
+         break;
+      case kvUi://unique ID 00080008
+      case kvUe://unique ID 0020000D
+      case kvUs://unique ID 0020000E
+      case kvUp://unique ID 00080019 PyramidUID
+
+      default: {
          //PCSidx: index of next little endian tag in PCStag table (patient, clinical study, series)
          //if current tag is lower than PCStag[PCSidx], current tag is instance or frame tag
-         
-         if (memcmp(kbuf, &PCStag[PCSidx], kloc+8) < 0)
+
+         if (memcmp(rootTag, &PCStag[PCSidx], 4) < 0) //rootTag smaller than index
          {
-            D("I %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
-            return iAppend(kloc,vrcat,vlen);
+            iAttribute(vrcat,attr);
          }
          else
          {
-            while ((memcmp(kbuf, &PCStag[PCSidx], kloc+8) > 1) && (PCSidx < 234)) (PCSidx)++;
-            if (memcmp(kbuf, &PCStag[PCSidx], kloc+8)==0)
+            while ((memcmp(rootTag, &PCStag[PCSidx], 4) > 0) && (PCSidx < 234)) (PCSidx)++;
+            if (memcmp(rootTag, &PCStag[PCSidx], 4)==0)
             {
-               if (PCStype[PCSidx]==0)
-               {
-                  D("E %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
-                  return eAppend(kloc,vrcat,vlen);
-               }
-               else
-               {
-                  D("S %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
-                  return sAppend(kloc,vrcat,vlen);
-               }
+               if (PCStype[PCSidx]==0) eAttribute(vrcat,attr);
+               else                    sAttribute(vrcat,attr);
+               PCSidx++;
             }
-            else
-            {
-               D("I %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
-               return iAppend(kloc,vrcat,vlen);
-            }
+            else iAttribute(vrcat,attr);
          }
-         E("capi unknown or misplaced %02X%02X%02X%02X",kbuf[0],kbuf[1],kbuf[2],kbuf[3]);
-         return false;//should not be here
       }
    }
 }
+
 

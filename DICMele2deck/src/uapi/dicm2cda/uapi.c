@@ -68,7 +68,7 @@ void val(enum kvVRcategory  vrcat, struct Ercle* attr)
          break;
       case kv01: {
          //OB encapsulaed document 00420011 xml cda
-         if (memcmp(CKEY, &B00420011, 4)==0) fprintf(stdout,"%.*s",attr->l - ((DICM+DICMidx+attr->l -1 )==0x00) ,DICM+DICMidx);
+         if (memcmp(CKEY+1, &B00420011, 4)==0) fprintf(stdout,"%.*s",attr->l - ((DICM+DICMidx+attr->l -1 )==0x00) ,DICM+DICMidx);
          DICMidx+=attr->l;
       } break;
       default: DICMidx+=attr->l;

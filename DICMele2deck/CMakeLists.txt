@@ -90,10 +90,10 @@ target_link_libraries(dicm2decksqlite
         sqlite3lib
 )
 
-add_executable(pcsxmi src/capi/PCSXMI/capi.c
-        src/capi/PCSXMI/capi.c
+add_executable(ESIPbasetags src/capi/ESIPbasetags/capi.c
+        src/capi/ESIPbasetags/capi.c
         src/capi/uapi.c
 )
-target_link_libraries(pcsxmi
+target_link_libraries(ESIPbasetags
         dicmlib
 )

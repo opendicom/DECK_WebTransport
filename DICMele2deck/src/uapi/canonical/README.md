@@ -2,10 +2,11 @@
 
 receives an explicit little endian DICM file
 
+- removes group length
 - uses utf8 instead of any other charset
 - adds sequence end tag instead of defined length sequence
 - adds series end tag instead of defined length item
-- removes meaningless spaces
+- TODO removes meaningless spaces
 
 writes the output to file with extension .cdicm
 

@@ -14,12 +14,11 @@ extern u64   DICMidx;
 extern u64   DICMsize;
 
 extern char *CKEY;
-extern u8   CKEYidx;
+extern u8    CKEYidx;
 static char *UTF8;
-
-u32 utf8size=0;
-FILE *KVserializedFILE;
-const u32 CSutf8size=10;
+u32          utf8size=0;
+FILE        *KVserializedFILE;
+const u32    CSutf8size=10;
 
 #pragma mark ---------------------------- SOP instance
 
@@ -99,6 +98,30 @@ void key(struct Ercle* attr)
 void val(enum kvVRcategory vrcat,struct Ercle* attr)
 {
    switch (vrcat) {
+
+
+      case kvUL: {
+         if (attr->E > 0x10000) {//not group length
+            //serialize CKEY
+            if (fwrite(CKEY, 1, CKEY[0]+1, KVserializedFILE) != CKEY[0]+1) {
+               printf("%s", "cannot write KVserializedFILE\n");
+               exit(-33);
+            };
+            if (fwrite(&attr->l, 1, 4, KVserializedFILE) != 4) {
+               printf("%s", "cannot write KVserializedFILE\n");
+               exit(-33);
+            };
+            if (attr->l > 0) {
+               if (fwrite(DICM+DICMidx, 1, attr->l, KVserializedFILE) != attr->l) {
+                  printf("%s", "cannot write KVserializedFILE\n");
+                  exit(-33);
+               };
+            }
+         }
+
+      DICMidx+=attr->l;
+      } break;
+
 #pragma mark - sequence and item with end tag
       case kvIA:
       case kvSA:
@@ -132,6 +155,10 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       } break;
 
       case kvUI:
+      case kvUi://unique ID 00080008
+      case kvUe://unique ID 0020000D
+      case kvUs://unique ID 0020000E
+      case kvUp://unique ID 00080019 PyramidUID
       {//ui2b64 shrink
 
          //serialize CKEY

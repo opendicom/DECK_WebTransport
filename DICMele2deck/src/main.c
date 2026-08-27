@@ -35,7 +35,16 @@ int dicmDataset(
          case US: { attr->c=REPERTOIRE_GL; val(kvUS,attr);key(attr);} break;
          case AT: { attr->c=REPERTOIRE_GL; val(kvAT,attr);key(attr);} break;
          //ascii
-         case UI: { attr->c=REPERTOIRE_GL; val(kvUI,attr);key(attr);} break;
+         case UI: {
+            attr->c=REPERTOIRE_GL;
+            switch (attr->e) {
+               case 0x00080008: {val(kvUi,attr);key(attr);} break; //instance uid
+               case 0x0020000D: {val(kvUe,attr);key(attr);} break; //study uid
+               case 0x0020000E: {val(kvUs,attr);key(attr);} break; //series uid
+               case 0x00080019: {val(kvUs,attr);key(attr);} break; //PyramidUID
+               default:         {val(kvUI,attr);key(attr);} break;
+            }
+         } break;
          case AS:
          case DT:
          case DA:
@@ -131,7 +140,7 @@ int dicmDataset(
                //define beforebyeIT
                if ((itemattr->r==0xffff)&&(itemattr->c==0xffff)) {
                   beforebyteIT=beforebyteSQ;
-                  val(kvIA, 0);
+                  val(kvIA, attr);
                }
                else {
                   beforebyteIT=DICMidx + itemattr->r + (itemattr->c << 16);
@@ -139,7 +148,7 @@ int dicmDataset(
 //                     E(exitErrorITtruncated,"IT truncated %lu",DICMidx);
                      return exitErrorITtruncated;
                   }
-                  val(kvIa, 0);
+                  val(kvIa, attr);
                }
 
                key(itemattr);
@@ -151,10 +160,10 @@ int dicmDataset(
                   itemattr->E=0xFFFFFFFF;
                   itemattr->r=IZ;
                   itemattr->l=0;
-                  val(kvIZ, 0);
+                  val(kvIZ, attr);
                   key(itemattr);
                }
-               else val(kvIz, 0);
+               else val(kvIz, attr);
 
                *itemnumber=u32swap(u32swap(*itemnumber)+1);
             }//end while item
@@ -166,7 +175,7 @@ int dicmDataset(
             if (itemattr->e==0xfffee0dd)
             {  //end sq tag present
                //read new attr
-            val(kvSZ, itemattr);
+               val(kvSZ, itemattr);
                key(attr);
             }
             else {
@@ -190,16 +199,6 @@ int dicmDataset(
          default: {exit(-10);} break;
       }//end switch
    }//end while (*index < beforebyte)
-   if (attr->E == 0xFCFFFCFF)
-   {
-      if (attr->l==0) DICMidx-=12;
-      else
-      {
-         //real trailing padding
-         attr->c=REPERTOIRE_GL;
-         val(kv01,attr);
-      }
-   }
    return exitZeroError;
 }
 

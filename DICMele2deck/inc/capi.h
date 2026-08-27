@@ -20,23 +20,14 @@ enum categories{
    instance //instance
 };
 
-#pragma mark - transaction hooks
+void eAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 
-//called with parameters before opening file
-int cPrerequisite(int argc, char *argv[]);
-
-//called after opening file
-int cCreate(FILE *inFILE, int argc, char *argv[]);
-
-//called after parsing successfully all the attributes
-int cCommit(bool hastrailing,int argc, char *argv[]);
-
-//finalizes the opened tx
-void cClose(int argc, char *argv[]);
-
-bool eAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
-bool sAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
-bool pAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
-bool iAppend(u32 kloc,enum kvVRcategory vrcat,u32 vlen);
+void eUID(enum kvVRcategory vrcat,struct Ercle* attr);
+void sUID(enum kvVRcategory vrcat,struct Ercle* attr);
+void pUID(enum kvVRcategory vrcat,struct Ercle* attr);//pyramid
+void iUID(enum kvVRcategory vrcat,struct Ercle* attr);
 
 #endif /* capi_h */

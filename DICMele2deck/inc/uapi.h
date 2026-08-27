@@ -13,38 +13,43 @@
 
 enum kvVRcategory{
     //vl enum
-    kvFD,//FD 0 floating point double
-    kvFL,//FL 1 floating point single
-    kvSL,//SL 2 signed long
-    kvSS,//SS 3 signed short
-    kvUL,//UL 4 unsigned long
-    kvUS,//US 5 unsigned short
-    kvAT,//AT 6 attribute tag, 2 u16 hexa
-    kvUI,//UI 7 unique ID possibly padded with 0x00
-    kvTP,//8 AS DT TM DA text short ascii pair length
-    kvTA,//9 AE DS IS 13 text short ascii
-    kvCS,//10 CS Code String
-    kvCs,//10 Cs Code String 00080005 read in main to enable charset control
-    kvTS,//10 LO LT SH ST text short charset
-    kvPN,//11 PN person name has a special treatment in json and xml
-    kv01,//12 other OB OD OF OL OV OW SV UV binary
-    kvTL,//13 UC UT text long charset
-    kvTU,//14 UR text long url-encoded
-    kvSA,//15 SQ head with length 0xffffffff terminated by end tag
-    kvSa,//15 SQ head with specified length
-    kvIA,//16 item head with length 0xffffffff terminated by end tag
-    kvIa,//16 item head with specified length
-    kvIZ,//17 item tail tag of item of undefined size
-    kvIz,//17 item tail added
-    kvSZ,//18 SQ tail tag of SQ of undefined size
-    kvSz,//18 SQ tail added
-    kvUN,//19 UN
+    kvFD,// 0 FD floating point double
+    kvFL,// 1 FL floating point single
+    kvSL,// 2 SL signed long
+    kvSS,// 3 SS signed short
+    kvUL,// 4 UL unsigned long
+    kvUS,// 5 US unsigned short
+    kvAT,// 6 AT attribute tag, 2 u16 hexa
+    kvUI,// 7 UI unique ID possibly padded with 0x00
+    kvUe,// 8 UI unique ID possibly padded with 0x00 for tag 0020000D study UID
+    kvUs,// 9 UI unique ID possibly padded with 0x00 for tag 0020000E series UID
+    kvUi,//10 UI unique ID possibly padded with 0x00 for tag 00080008 Instance UID
+    kvUp,//11 UI unique ID possibly padded with 0x00 for tag 00080019 Pyramid UID
+    kvTP,//12 AS DT TM DA text short ascii pair length
+    kvTA,//13 AE DS IS 13 text short ascii
+    kvCS,//14 CS Code String
+    kvCs,//15 Cs Code String 00080005 read in main to enable charset control
+    kvTS,//16 LO LT SH ST text short charset
+    kvPN,//17 PN person name has a special treatment in json and xml
+    kv01,//18 other OB OD OF OL OV OW SV UV binary
+    kvTL,//19 UC UT text long charset
+    kvTU,//20 UR text long url-encoded
+    kvSA,//21 SQ head with length 0xffffffff terminated by end tag
+    kvSa,//22 SQ head with specified length
+    kvIA,//23 item head with length 0xffffffff terminated by end tag
+    kvIa,//24 item head with specified length
+    kvIZ,//25 item tail tag of item of undefined size
+    kvIz,//26 item tail added
+    kvSZ,//27 SQ tail tag of SQ of undefined size
+    kvSz,//28 SQ tail added
+    kvUN,//29 UN
     };
 
 
-void input(int argc, char *argv[]);//CDICM opened
+void input(int argc, char *argv[]);//opening of DICM
+void trail(int argc, char *argv[]);//after dataset read
+
 void key(struct Ercle* attr);//returns little endian of the key or 0 if error
 void val(enum kvVRcategory vrcat,struct Ercle* attr);
-void trail(int argc, char *argv[]);//after dataset read
 
 #endif /* uapi_h */
