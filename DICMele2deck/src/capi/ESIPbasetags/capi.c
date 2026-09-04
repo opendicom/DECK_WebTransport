@@ -25,33 +25,12 @@ void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
     DICMidx+=attr->l;
 }
 
-void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
-    printf("P %08X\n",u32swap(*(u32*)(CKEY+1)));
-    DICMidx+=attr->l;
-}
-
 void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("I %08X\n",u32swap(*(u32*)(CKEY+1)));
     DICMidx+=attr->l;
 }
 
-
-void eUID(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("E %08X\n",u32swap(*(u32*)(CKEY+1)));
-    DICMidx+=attr->l;
-}
-
-void sUID(enum kvVRcategory vrcat,struct Ercle* attr){
-    printf("S %08X\n",u32swap(*(u32*)(CKEY+1)));
-    DICMidx+=attr->l;
-}
-
-void pUID(enum kvVRcategory vrcat,struct Ercle* attr){
+void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
     printf("P %08X\n",u32swap(*(u32*)(CKEY+1)));
-    DICMidx+=attr->l;
-}
-
-void iUID(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("I %08X\n",u32swap(*(u32*)(CKEY+1)));
     DICMidx+=attr->l;
 }

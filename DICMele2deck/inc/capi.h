@@ -25,9 +25,5 @@ void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 
-void eUID(enum kvVRcategory vrcat,struct Ercle* attr);
-void sUID(enum kvVRcategory vrcat,struct Ercle* attr);
-void pUID(enum kvVRcategory vrcat,struct Ercle* attr);//pyramid
-void iUID(enum kvVRcategory vrcat,struct Ercle* attr);
 
 #endif /* capi_h */

@@ -18,14 +18,15 @@ We added the critical information of the DIMSE association as parameters to the 
 
 dicm2deck is layered.
 
+### main
 Common to all products is the main file which:
 - parses the dataset structure
-- instantiates globel variables
+- instantiates global variables
+  - eDA and eDAlength (study date aammdd compressed uib64)
   - iUI and iUIlength (SOP Instance UID compressed uib64)
-  - iUI and iUIlength (SOP Instance UID compressed uib64)
-  - iUI and iUIlength (SOP Instance UID compressed uib64)
-  - iUI and iUIlength (SOP Instance UID compressed uib64)
-  - iUI and iUIlength (SOP Instance UID compressed uib64)
+  - sUI and sUIlength (series Instance UID compressed uib64)
+  - eUI and eUIlength (study Instance UID compressed uib64)
+  - pUI and pUIlength (pyramid UID compressed uib64)
   - isImage (char 0=not image)
   - spp (sample per plane = components)
   - photocode (photometric interpretation)
@@ -42,29 +43,24 @@ Common to all products is the main file which:
    - key and val (delegates parsing at attribute level)
    - trail (called when the trailing padding attribute has been reached)
    
+### second level uapi
+implements input (before reading), key (to get the attribute tag, vr and vm), val to do something with its value, trail
+for each attribute in tag order.
+
 ### Third level capi
 This class is not used by uapi executables.
-capi is exposed by a specific implementation of uapi which delegates append functions depending on attribute category:
+It depends on a specific implementation of uapi which subdivides the function val and delegates
+capi is exposed by a specific implementation of uapi which delegates val() processing to one of four parallel functions, depending on attribute category:
 - eAppend for patient and study attributes
 - sAppend for series attributes
-- xAppend for special series attributes
-- pAppend private attributes
 - iAppend instance attributes
-- fAppend float pixel 7FE00008 (not implemented)
-- dAppend double pixel 7FE00009 (not implemented)
-- bAppend byte pixel 7FE00010
-- wAppend short pixel 7FE00010
-- lAppend long pixel 7FE00010 (not implemented)
-- vAppend very long pixel 7FE00010 (not implemented 64 bits)
+- pAppend private attributes
 
 Note: 
 the DICOM explicit little endian syntax represents pixels in native format, 
 that is, as a succession of pixel lines without any markup between them. 
 This applies also to multiframe images where the first line of the next frame 
 follows immediately the last line of the previous one.
-
-### forth level capi sqlite implementation
-The sqlite default implementation of capi (categorized api) builds up an instance sqlite with the attributes subdivided into categories.
 
 ## Testing environment
 The folder Testing contains canonicalized test files. 
@@ -82,18 +78,10 @@ cmake-build-debug/Testing/Temporary
 
 ### dicm2deck targets:
 
-- uapi: **cdicm2cda** extracts the enclosed CDA from a DICM encapsulatedCDA SOP instance
-- uapi: **dicmstructdump** dumps a textual representation of the DICM file.
-- 
-- uapi: **deepcopy** creates an explicit little endian copy by appending each attribute, one by one
-- uapi: **cdicm2ile** transforms cdicm to explicit little endian
-- uapi: **utf8dump** writes to utf-8 text console a list of contextual attributes
-- uapi: **cdicm2xml**
-- uapi: **cdicm2json**
-
-- capi: **sqlite** keeps the parsing into an in-memory sqlite.
-- capi: **examsqlite**
-
+- uapi: **dicm2cda** extracts the enclosed CDA from a DICM encapsulatedCDA SOP instance
+- uapi: **utf8dump** dumps a textual representation of the DICM file.
+- uapi: **canonical** replace syntactical variants and forms a new monosyntactical bytestream, written to file in one shot.
+- uapi: **KVserialized** serialization of the former written attribute (tag, VR, VM, contents) by attribute to stdout
 ___
 
 We use CMake® and JetBrain CLion® IDE for the development.

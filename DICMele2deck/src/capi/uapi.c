@@ -1018,6 +1018,9 @@ const u32 CSutf8size=10;
 
 static u16 PCSidx;
 
+
+
+
 #pragma mark ---------------------------- SOP instance
 
 void input( int argc, char *argv[])
@@ -1102,15 +1105,13 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
    }
 
    u32  *rootTag = (u32*)(CKEY+1);
-   if (*rootTag & 0x10000) { //group even private
+   if (*rootTag & 0x000003){ //group even private or group 2
       pAttribute(vrcat,attr);
       return;
    }
 
    switch (vrcat) {
-      case kvUN: {
-         pAttribute(vrcat,attr);
-      };break;
+      case kvUN: { pAttribute(vrcat,attr); } break;
 
 #pragma mark - ignore useless sequence and item tags
       case kvIA:
@@ -1122,10 +1123,6 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
       case kvSz:
       case kvIz:
          break;
-      case kvUi://unique ID 00080008
-      case kvUe://unique ID 0020000D
-      case kvUs://unique ID 0020000E
-      case kvUp://unique ID 00080019 PyramidUID
 
       default: {
          //PCSidx: index of next little endian tag in PCStag table (patient, clinical study, series)

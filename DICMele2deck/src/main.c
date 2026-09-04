@@ -79,10 +79,6 @@ int dicmDataset(
          case UI: {
             attr->c=REPERTOIRE_GL;
             switch (attr->e) {
-               case 0x00080016: {
-                  cUIlength=ui2b64( DICM+DICMidx, attr->l, cUI );
-                  val(kvUs,attr);key(attr);
-               } break; //PyramidUID
                case 0x00080018: {
                   iUIlength=ui2b64( DICM+DICMidx, attr->l, iUI );
                   val(kvUi,attr);key(attr);
@@ -126,14 +122,12 @@ int dicmDataset(
                   else keycs=(keycs & 0x8000) | repidxs;
                   key(attr);
                }; break;
+                  /*
                case 0x00080008:{//CS image type itype
-                  val(kvCs,attr);
-                  key(attr);
                }; break;
                case 0x00280004:{//photocode (photometric interpretation)
-                  val(kvCs,attr);
-                  key(attr);
                }; break;
+               */
                default: { val(kvCS,attr); key(attr);} break;
             }
          } break;

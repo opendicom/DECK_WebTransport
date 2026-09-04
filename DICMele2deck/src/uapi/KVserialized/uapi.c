@@ -59,7 +59,7 @@ void input( int argc, char *argv[])
    };
    fclose(inFile);
 
-   KVserializedFILE = fopen("serialized.bin", "w");
+   KVserializedFILE = fopen("KVserialized.bin", "w");
 
    setlocale(LC_ALL, "");//output in UTF-8
    UTF8=malloc(0x4000);

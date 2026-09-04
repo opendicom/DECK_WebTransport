@@ -18,4 +18,3 @@ The list is ended with 1 byte: 1=complete
 
 The list starts at attribute (0002,0002)
 It ignores sequence and item start and end
-Since Keys and Values are binary, KVserialized outputs to file for now (instead of stdout)
