@@ -20,6 +20,20 @@ u32          utf8size=0;
 FILE        *KVserializedFILE;
 const u32    CSutf8size=10;
 
+//for SOP identification
+extern char eDA[4];
+extern u32 eDAlength;
+extern char eUI[44];
+extern u32 eUIlength;
+extern char sUI[44];
+extern u32 sUIlength;
+extern char cUI[44];//class
+extern u32 cUIlength;
+extern char iUI[44];
+extern u32 iUIlength;
+extern char pUI[44];//pyramid
+extern u32 pUIlength;
+
 #pragma mark ---------------------------- SOP instance
 
 void input( int argc, char *argv[])
@@ -154,28 +168,65 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          DICMidx+=attr->l;
       } break;
 
-      case kvUI:
       case kvUi://unique ID 00080008
-      case kvUe://unique ID 0020000D
-      case kvUs://unique ID 0020000E
-      case kvUp://unique ID 00080019 PyramidUID
       {//ui2b64 shrink
-
          //serialize CKEY
          if (fwrite(CKEY, 1, CKEY[0]+1, KVserializedFILE) != CKEY[0]+1) {
             printf("%s", "cannot write KVserializedFILE\n");
             exit(-33);
          };
-         if (attr->l>0) {
-            utf8size=ui2b64( DICM+DICMidx, attr->l, UTF8 );
-            if (fwrite(UTF8, 1, utf8size, KVserializedFILE) != utf8size) {
+         iUIlength=ui2b64serialized( DICM+DICMidx,attr->l, iUI );
+         if (fwrite(iUI, 1, iUIlength, KVserializedFILE) != iUIlength) {
                printf("%s", "cannot write KVserializedFILE\n");
                exit(-33);
-            };
-            DICMidx+=attr->l;
-         }
+         };
+         DICMidx+=attr->l;
+      } break;
+      case kvUe://unique ID 0020000D
+      {//ui2b64 shrink
+         //serialize CKEY
+         if (fwrite(CKEY, 1, CKEY[0]+1, KVserializedFILE) != CKEY[0]+1) {
+            printf("%s", "cannot write KVserializedFILE\n");
+            exit(-33);
+         };
+         eUIlength=ui2b64serialized( DICM+DICMidx,attr->l, eUI );
+         if (fwrite(eUI, 1, eUIlength, KVserializedFILE) != eUIlength) {
+               printf("%s", "cannot write KVserializedFILE\n");
+               exit(-33);
+         };
+         DICMidx+=attr->l;
       } break;
 
+      case kvUs://unique ID 0020000E
+      {//ui2b64 shrink
+         //serialize CKEY
+         if (fwrite(CKEY, 1, CKEY[0]+1, KVserializedFILE) != CKEY[0]+1) {
+            printf("%s", "cannot write KVserializedFILE\n");
+            exit(-33);
+         };
+         sUIlength=ui2b64serialized( DICM+DICMidx,attr->l, sUI );
+         if (fwrite(sUI, 1, sUIlength, KVserializedFILE) != sUIlength) {
+            printf("%s", "cannot write KVserializedFILE\n");
+            exit(-33);
+         };
+         DICMidx+=attr->l;
+      } break;
+      case kvUp://unique ID 00080019 PyramidUID
+      {//ui2b64 shrink
+         //serialize CKEY
+         if (fwrite(CKEY, 1, CKEY[0]+1, KVserializedFILE) != CKEY[0]+1) {
+            printf("%s", "cannot write KVserializedFILE\n");
+            exit(-33);
+         };
+         pUIlength=ui2b64serialized( DICM+DICMidx,attr->l, pUI );
+         if (fwrite(pUI, 1, pUIlength, KVserializedFILE) != pUIlength) {
+            printf("%s", "cannot write KVserializedFILE\n");
+            exit(-33);
+         };
+         DICMidx+=attr->l;
+      } break;
+
+      case kvUI:
       case kvTL:
       case kvTS://LO LT SH ST
       case kvPN:
@@ -186,17 +237,11 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
             exit(-33);
          };
          //convert to utf-8
-         utf8size=utf8(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8);
-         if (fwrite(&utf8size, 1, 4, KVserializedFILE) != 4) {
+         utf8size=utf8serialized(CKEY[CKEYidx+6],DICM+DICMidx,attr->l,UTF8);
+         if (fwrite(UTF8, 1, utf8size, KVserializedFILE) != utf8size) {
             printf("%s", "cannot write KVserializedFILE\n");
             exit(-33);
          };
-         if (attr->l>0) {
-            if (fwrite(UTF8, 1, utf8size, KVserializedFILE) != utf8size) {
-               printf("%s", "cannot write KVserializedFILE\n");
-               exit(-33);
-            };
-         }
          DICMidx+=attr->l;
       };break;
 

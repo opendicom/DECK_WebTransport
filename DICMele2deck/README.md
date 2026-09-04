@@ -20,6 +20,23 @@ dicm2deck is layered.
 
 Common to all products is the main file which:
 - parses the dataset structure
+- instantiates globel variables
+  - iUI and iUIlength (SOP Instance UID compressed uib64)
+  - iUI and iUIlength (SOP Instance UID compressed uib64)
+  - iUI and iUIlength (SOP Instance UID compressed uib64)
+  - iUI and iUIlength (SOP Instance UID compressed uib64)
+  - iUI and iUIlength (SOP Instance UID compressed uib64)
+  - isImage (char 0=not image)
+  - spp (sample per plane = components)
+  - photocode (photometric interpretation)
+  - rows 00280010
+  - cols 00280011
+  - word 00280100 (number of bits allocated per pixel)
+  - bits 00280101
+  - high 00280102
+  - sign 00280103 (pixrep 0028013 0=unsigned 1=signed)
+  - comp 00280106 (planar 0 = RGB del pixel; 1 = componentes RGB samples)
+  - fram 08002800 IS (frame number -1 not available, 0 not an image, number of frames)
 - delegates reading and writing functions to a second layer "uapi" (u meaning uncategorized):
    - input (delegates the opening and reading of the file previous to parsing. Adds a trailing padding attribute with 32 bytes value, usefull for blake3)
    - key and val (delegates parsing at attribute level)

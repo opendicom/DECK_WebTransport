@@ -83,7 +83,6 @@ struct Ercle {
   u16 c;//charset
   u32 l;//length (file size may be larger than u32 !!! little endian keeps u32 in bytes 8-11
   u32 e;//tag little endian
-
 };
 
 enum DICMvr {
@@ -139,6 +138,7 @@ extern char const b64char[64];
 extern char const  base64EncodingTable[65];
 extern char const  base64DecodingTable[128];
 u32 ui2b64( char *ui, u8 uilength, char *b64 );
+u32 ui2b64serialized( char *ui, u8 uilength, char *b64 );
 
 #pragma mark - main & log
 
@@ -188,13 +188,8 @@ enum repertoireenum{
 
 u32 repertoireidx( unsigned char *vbuf, u16 vallength );
 
-u32 utf8
-(
-    u32 repidx,
-    const char *charbytes,
-    size_t      charlength,
-    char       *utf8bytes
-);
+u32 utf8( u32 repidx, const char *charbytes, size_t charlength, char *utf8bytes);
+u32 utf8serialized( u32 repidx, const char *charbytes, size_t charlength, char *utf8bytes);
 
 
 #pragma mark - SopClasses

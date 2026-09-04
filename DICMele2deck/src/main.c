@@ -15,6 +15,37 @@ u64   DICMsize;
 u64   DICMidx;
 char *CKEY;//contextual keys [0]=key chain size
 u32   CKEYidx=1;
+
+// for pixel processing
+u8 isImage=false;
+//needed as input to grok
+u16  spp;//sample per plane = components
+u16  photocode;//photometric interpretation
+u16  rows;
+u16  cols;
+u16  alloc;
+u16  bits;
+u16  high;
+u16  sign;//pixrep 0028013 0=unsigned 1=signed
+u16  comp;//planar 0 = RGB del pixel; 1 = componentes RGB (samples)
+int  fram;//number of frames
+
+
+//for SOP identification
+char eDA[4];
+u32 eDAlength;
+char eUI[48];
+u32 eUIlength;
+char sUI[48];
+u32 sUIlength;
+char cUI[48];
+u32 cUIlength;
+char iUI[48];
+u32 iUIlength;
+char pUI[48];//pyramid
+u32 pUIlength;
+
+
 //recursive
 int dicmDataset(
    struct Ercle *attr,// read attr up to before value
@@ -32,42 +63,88 @@ int dicmDataset(
          case SL: { attr->c=REPERTOIRE_GL; val(kvSL,attr);key(attr);} break;
          case SS: { attr->c=REPERTOIRE_GL; val(kvSS,attr);key(attr);} break;
          case UL: { attr->c=REPERTOIRE_GL; val(kvUL,attr);key(attr);} break;
-         case US: { attr->c=REPERTOIRE_GL; val(kvUS,attr);key(attr);} break;
+         case US: {
+            switch (attr->e) {
+               case 0x280011: cols=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
+               case 0x280010: rows=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
+               case 0x280002: spp= DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
+               case 0x280101: bits=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;//15=16, 13=14, 11=12
+               case 0x280103: sign=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;//?"s":"u"
+               case 0x280106: comp=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
+            }
+            attr->c=REPERTOIRE_GL; val(kvUS,attr);key(attr);
+         } break;
          case AT: { attr->c=REPERTOIRE_GL; val(kvAT,attr);key(attr);} break;
          //ascii
          case UI: {
             attr->c=REPERTOIRE_GL;
             switch (attr->e) {
-               case 0x00080008: {val(kvUi,attr);key(attr);} break; //instance uid
-               case 0x0020000D: {val(kvUe,attr);key(attr);} break; //study uid
-               case 0x0020000E: {val(kvUs,attr);key(attr);} break; //series uid
-               case 0x00080019: {val(kvUs,attr);key(attr);} break; //PyramidUID
+               case 0x00080016: {
+                  cUIlength=ui2b64( DICM+DICMidx, attr->l, cUI );
+                  val(kvUs,attr);key(attr);
+               } break; //PyramidUID
+               case 0x00080018: {
+                  iUIlength=ui2b64( DICM+DICMidx, attr->l, iUI );
+                  val(kvUi,attr);key(attr);
+               } break; //instance uid
+               case 0x00080019: {
+                  pUIlength=ui2b64( DICM+DICMidx, attr->l, pUI );
+                  val(kvUs,attr);key(attr);
+               } break; //PyramidUID
+               case 0x0020000D: {
+                  eUIlength=ui2b64( DICM+DICMidx, attr->l, eUI );
+                  val(kvUe,attr);key(attr);
+               } break; //study uid
+               case 0x0020000E: {
+                  sUIlength=ui2b64( DICM+DICMidx, attr->l, sUI );
+                  val(kvUs,attr);key(attr);
+               } break; //series uid
                default:         {val(kvUI,attr);key(attr);} break;
             }
          } break;
+         case DA: {
+            attr->c=REPERTOIRE_GL;
+            if (attr->e=0x00080020) eDAlength=ui2b64( DICM+DICMidx+2, 6, eDA );//with no milenium nor century
+            val(kvTP,attr);
+            key(attr);
+         } break;
          case AS:
          case DT:
-         case DA:
          case TM: { attr->c=REPERTOIRE_GL; val(kvTP,attr);key(attr);} break;
          //code
          case CS: {
             attr->c=REPERTOIRE_GL;
-            if (attr->e == 0x00080005){
-               val(kvCs,attr);
-               u16 repidxs=repertoireidx(DICM+DICMidx-attr->l,attr->l);
-               if (repidxs==0x09)
-               {
-                  fprintf(stderr,"main CS [%lu] bad repertoire (%d)\n", DICMidx, exitBadRepertoire);
-                  exit(exitBadRepertoire);
-               }
-               else keycs=(keycs & 0x8000) | repidxs;
+            switch (attr->e) {
+               case 0x00080005:{
+                  val(kvCs,attr);
+                  u16 repidxs=repertoireidx(DICM+DICMidx-attr->l,attr->l);
+                  if (repidxs==0x09)
+                  {
+                     fprintf(stderr,"main CS [%lu] bad repertoire (%d)\n", DICMidx, exitBadRepertoire);
+                     exit(exitBadRepertoire);
+                  }
+                  else keycs=(keycs & 0x8000) | repidxs;
+                  key(attr);
+               }; break;
+               case 0x00080008:{//CS image type itype
+                  val(kvCs,attr);
+                  key(attr);
+               }; break;
+               case 0x00280004:{//photocode (photometric interpretation)
+                  val(kvCs,attr);
+                  key(attr);
+               }; break;
+               default: { val(kvCS,attr); key(attr);} break;
             }
-            else val(kvCS,attr);
-            key(attr);
          } break;
          case AE:
-         case DS:
-         case IS: { attr->c=REPERTOIRE_GL; val(kvTA,attr);key(attr);} break;
+         case DS: { attr->c=REPERTOIRE_GL; val(kvTA,attr);key(attr);} break;
+         case IS: {
+            if (attr->e ==0x00280008) fram=atoi(DICM+DICMidx);//IS numberOfFrames
+            attr->c=REPERTOIRE_GL;
+            val(kvTA,attr);
+            key(attr);
+         } break;
          //repertoire
          case LO:
          case LT:
@@ -216,6 +293,7 @@ int main(int argc,  char *argv[]) {
    if (DICMsize < 140) exit(exitNoDataset);
 
    input(argc, argv);
+   isImage=isItImage(*(u64*)(DICM+190),32,16);//zero means no image
 
    //DICM explicit little endian?
    u16 *cVL=(u16*)(DICM+0xA4);//class value offset 0xA6

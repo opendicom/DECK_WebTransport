@@ -97,3 +97,11 @@ add_executable(ESIPbasetags src/capi/ESIPbasetags/capi.c
 target_link_libraries(ESIPbasetags
         dicmlib
 )
+
+add_executable(ESIPFserialized src/capi/ESIPFserialized/capi.c
+        src/capi/ESIPFserialized/capi.c
+        src/capi/uapi.c
+)
+target_link_libraries(ESIPFserialized
+        dicmlib
+)
