@@ -24,7 +24,7 @@ static char *UTF8;
 
 #pragma mark ----------------------------- SOP instance
 
-void input( int argc, char *argv[])
+void uinput( int argc, char *argv[])
 {
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL)
@@ -59,7 +59,7 @@ void input( int argc, char *argv[])
    memcpy(DICM+DICMsize,&tpaBlake3size,4);
 }
 
-void trail(int count, char *vector[]) {
+void utrail(int argc, char *argv[]) {
    /*
    FILE *fileptr = fopen("dicmstructdump.dcm", "w");
    if (fileptr == NULL) return false;

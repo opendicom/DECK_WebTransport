@@ -21,10 +21,10 @@ enum kvVRcategory{
     kvUS,// 5 US unsigned short
     kvAT,// 6 AT attribute tag, 2 u16 hexa
     kvUI,// 7 UI unique ID possibly padded with 0x00
-    kvUe,// 8 UI unique ID possibly padded with 0x00 for tag 0020000D study UID
-    kvUs,// 9 UI unique ID possibly padded with 0x00 for tag 0020000E series UID
-    kvUi,//10 UI unique ID possibly padded with 0x00 for tag 00080008 Instance UID
-    kvUp,//11 UI unique ID possibly padded with 0x00 for tag 00080019 Pyramid UID
+    kvUe,// 8 Ue unique ID possibly padded with 0x00 for tag 0020000D study UID
+    kvUs,// 9 Us unique ID possibly padded with 0x00 for tag 0020000E series UID
+    kvUi,//10 Ui unique ID possibly padded with 0x00 for tag 00080008 Instance UID
+    kvUp,//11 Up unique ID possibly padded with 0x00 for tag 00080019 Pyramid UID
     kvTP,//12 AS DT TM DA text short ascii pair length
     kvTA,//13 AE DS IS 13 text short ascii
     kvCS,//14 CS Code String
@@ -46,8 +46,8 @@ enum kvVRcategory{
     };
 
 
-void input(int argc, char *argv[]);//opening of DICM
-void trail(int argc, char *argv[]);//after dataset read
+void uinput(int argc, char *argv[]);//opening of DICM
+void utrail(int argc, char *argv[]);//after dataset read
 
 void key(struct Ercle* attr);//returns little endian of the key or 0 if error
 void val(enum kvVRcategory vrcat,struct Ercle* attr);

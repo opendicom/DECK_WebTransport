@@ -25,7 +25,7 @@ u32 utf8size=0;
 
 #pragma mark ---------------------------- SOP instance
 
-void input( int argc, char *argv[])
+void uinput( int argc, char *argv[])
 {
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL)
@@ -53,7 +53,7 @@ void input( int argc, char *argv[])
    setlocale(LC_ALL, "");//output in UTF-8
 }
 
-void trail(int count, char *vector[]) {
+void utrail(int argc, char *argv[]) {
    memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset);
    Soffset+=DICMidx-Doffset;
    FILE *fileptr = fopen("dscd.utf8.cdicm", "w");

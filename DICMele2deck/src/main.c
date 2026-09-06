@@ -100,7 +100,9 @@ int dicmDataset(
          } break;
          case DA: {
             attr->c=REPERTOIRE_GL;
-            if (attr->e=0x00080020) eDAlength=ui2b64( DICM+DICMidx+2, 6, eDA );//with no milenium nor century
+            if (attr->l && (attr->e==0x00080020)) {
+               eDAlength=ui2b64( DICM+DICMidx+2, 6, eDA );//with no milenium nor century
+            }
             val(kvTP,attr);
             key(attr);
          } break;
@@ -286,7 +288,7 @@ int main(int argc,  char *argv[]) {
    DICMsize= st.st_size;
    if (DICMsize < 140) exit(exitNoDataset);
 
-   input(argc, argv);
+   uinput(argc, argv);
    isImage=isItImage(*(u64*)(DICM+190),32,16);//zero means no image
 
    //DICM explicit little endian?
@@ -305,7 +307,7 @@ int main(int argc,  char *argv[]) {
    clock_gettime(CLOCK_MONOTONIC, &inputtime);
    dicmDataset(baseattr,0,DICMsize,0xfffcfffc);
    clock_gettime(CLOCK_MONOTONIC, &parsetime);
-   trail(argc, argv);
+   utrail(argc, argv);
    clock_gettime(CLOCK_MONOTONIC, &finishtime);
 
    fprintf(stderr,"total 0.%09ld\n", finishtime.tv_nsec - starttime.tv_nsec);

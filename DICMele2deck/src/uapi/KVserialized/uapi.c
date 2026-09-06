@@ -36,7 +36,7 @@ extern u32 pUIlength;
 
 #pragma mark ---------------------------- SOP instance
 
-void input( int argc, char *argv[])
+void uinput( int argc, char *argv[])
 {
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL)
@@ -68,7 +68,7 @@ void input( int argc, char *argv[])
 }
 
 
-void trail(int count, char *vector[]) {
+void utrail(int argc, char *argv[]) {
    fclose(KVserializedFILE);
 }
 

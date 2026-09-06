@@ -17,13 +17,17 @@ enum categories{
    series, //series generic
    modality, //modality specific
    unknown, //manufacturer private
-   instance //instance
+   instance, //instance
+   frame
 };
 
 void eAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+
+void cinput(int argc, char *argv[]);//opening of DICM
+void ctrail(int argc, char *argv[]);//after dataset read
 
 
 #endif /* capi_h */

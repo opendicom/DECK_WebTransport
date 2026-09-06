@@ -1011,10 +1011,6 @@ extern u64   DICMsize;
 extern u8   *CKEY;
 
 extern u8    CKEYidx;
-static char *UTF8;
-u32 utf8size=0;
-FILE *KVserializedFILE;
-const u32 CSutf8size=10;
 
 static u16 PCSidx;
 
@@ -1023,39 +1019,13 @@ static u16 PCSidx;
 
 #pragma mark ---------------------------- SOP instance
 
-void input( int argc, char *argv[])
+void uinput( int argc, char *argv[])
 {
-   inFile = freopen(argv[1],"rb",stdin);
-   if (inFile==NULL)
-   {
-      if (ferror(stdin)) {
-         fprintf(stderr,"inFile rb %s : %s (%d)\n", argv[1], strerror(errno), errno);
-         exit(errno);
-      }
-      exit(exitErrorFropenDICM);
-   }
-
-   DICM=malloc(DICMsize);
-   if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
-      if (ferror(stdin)) {
-         fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
-         exit(errno);
-      }
-      fprintf(stderr,"uCreate [%lu] read %lu bytes truncated (%d)\n", DICMidx, DICMsize, exitReadTruncated);
-      exit(exitReadTruncated);
-   };
-   fclose(inFile);
-
-   KVserializedFILE = fopen("serialized.bin", "w");
-
-   setlocale(LC_ALL, "");//output in UTF-8
-   UTF8=malloc(0x4000);
-   //LT max 10240,UT max 2^32 !!!
-   //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
+   cinput(argc, argv);
 }
 
-void trail(int count, char *vector[]) {
-   fclose(KVserializedFILE);
+void utrail(int argc, char *argv[]) {
+   ctrail(argc, argv);
 }
 
 
@@ -1105,7 +1075,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
    }
 
    u32  *rootTag = (u32*)(CKEY+1);
-   if (*rootTag & 0x000003){ //group even private or group 2
+   if (((*rootTag)& 0xFFFF)<0x300){ //group even private or group 2
       pAttribute(vrcat,attr);
       return;
    }

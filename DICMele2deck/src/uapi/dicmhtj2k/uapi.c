@@ -16,20 +16,20 @@ extern u64   DICMsize;
 extern char *CKEY;
 extern u8   CKEYidx;
 
+extern u8 isImage;
+//needed as input to grok
+extern u16 *columns;
+extern u16 *rows;
+extern u16 *samples;
+extern u16 *bits;
+extern u16 *sign;
+
 //prepare output in memory
 char *SERIALIZE;//is also buffer for utf-8
 u64 Doffset=0;//where to copy from
 u64 Soffset=0;//where to copy from
 u32 utf8size=0;
 
-
-u8 isImage=false;
-//needed as input to grok
-u16 *columns;
-u16 *rows;
-u16 *samples;
-u16 *bits;
-u16 *sign;
 
 
 //for blake3 of non compressed image
@@ -39,7 +39,7 @@ const u_int32_t tpaBlake3size=32;
 
 #pragma mark ---------------------------- SOP instance
 
-void input( int argc, char *argv[])
+void uinput( int argc, char *argv[])
 {
    inFile = freopen(argv[1],"rb",stdin);
    if (inFile==NULL)
@@ -66,11 +66,9 @@ void input( int argc, char *argv[])
 
    setlocale(LC_ALL, "");//output in UTF-8
 
-   u64 *offset190=(u64*)(DICM+190);
-   isImage=isItImage(*offset190,32,16);//zero means no image
 }
 
-void trail(int count, char *vector[]) {
+void utrail(int argc, char *argv[]) {
    memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset);
    Soffset+=DICMidx-Doffset;
    //memcpy(DICM+DICMsize,&tpaBlake3attr,8);

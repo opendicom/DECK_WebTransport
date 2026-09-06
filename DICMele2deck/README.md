@@ -46,6 +46,12 @@ Common to all products is the main file which:
 ### second level uapi
 implements input (before reading), key (to get the attribute tag, vr and vm), val to do something with its value, trail
 for each attribute in tag order.
+- **utf8dump** dumps a textual representation of the DICM file.
+- **dicm2cda** extracts the enclosed CDA from a DICM encapsulatedCDA SOP instance
+- **canonical** replace syntactical variants and forms a new monosyntactical bytestream, written to file in one shot.
+- **KVserialized** serialization of the former written attribute (tag, VR, VM, contents) by attribute to stdout
+
+
 
 ### Third level capi
 This class is not used by uapi executables.
@@ -76,12 +82,6 @@ cmake-build-debug/Testing/Temporary
 ![see](../doc/CLionProject.png)
 
 
-### dicm2deck targets:
-
-- uapi: **dicm2cda** extracts the enclosed CDA from a DICM encapsulatedCDA SOP instance
-- uapi: **utf8dump** dumps a textual representation of the DICM file.
-- uapi: **canonical** replace syntactical variants and forms a new monosyntactical bytestream, written to file in one shot.
-- uapi: **KVserialized** serialization of the former written attribute (tag, VR, VM, contents) by attribute to stdout
 ___
 
 We use CMake® and JetBrain CLion® IDE for the development.
