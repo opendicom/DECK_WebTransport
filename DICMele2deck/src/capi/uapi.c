@@ -1094,6 +1094,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
       case kvIz:
          break;
 
+      case kv01:  if (attr->e==0x7FE00010) {fAttribute(vrcat,attr); break; }
       default: {
          //PCSidx: index of next little endian tag in PCStag table (patient, clinical study, series)
          //if current tag is lower than PCStag[PCSidx], current tag is instance or frame tag

@@ -19,16 +19,10 @@ add_library(sqlite3lib STATIC EXCLUDE_FROM_ALL
         thirdparty/sqlite3/sqlite3.c
         src/deck_sqlite3.c
 )
-add_library(blake3lib STATIC EXCLUDE_FROM_ALL
-        thirdparty/blake3/blake3.h
-        thirdparty/blake3/blake3.c
-        thirdparty/blake3/blake3_avx2_x86-64_unix.S
-        thirdparty/blake3/blake3_avx512_x86-64_unix.S
-        thirdparty/blake3/blake3_dispatch.c
-        thirdparty/blake3/blake3_impl.h
-        thirdparty/blake3/blake3_portable.c
-        thirdparty/blake3/blake3_sse2_x86-64_unix.S
-        thirdparty/blake3/blake3_sse41_x86-64_unix.S
+
+add_library(libblake3 STATIC IMPORTED)
+set_target_properties(libblake3 PROPERTIES
+        IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/blake3/libblake3.a
 )
 
 ########
@@ -104,4 +98,5 @@ add_executable(ESIPFserialized src/capi/ESIPFserialized/capi.c
 )
 target_link_libraries(ESIPFserialized
         dicmlib
+        libblake3
 )

@@ -21,10 +21,12 @@ enum categories{
    frame
 };
 
-void eAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
-void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
-void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
-void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void eAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//exam
+void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//series
+void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//instance
+void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//private
+void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//frame
+
 
 void cinput(int argc, char *argv[]);//opening of DICM
 void ctrail(int argc, char *argv[]);//after dataset read

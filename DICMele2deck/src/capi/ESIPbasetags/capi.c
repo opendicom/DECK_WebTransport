@@ -80,3 +80,8 @@ void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
     printf("P %08X\n",u32swap(*(u32*)(CKEY+1)));
     DICMidx+=attr->l;
 }
+
+void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("F %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
