@@ -1,7 +1,16 @@
 # ESIPFserialized
 
+https://dicom.nema.org/dicom/2013/output/chtml/part03/chapter_A.html
+
 Based on ESIPbasetags and KVserialized 
-Serializes study, series, instances, private and framepixel attributes
+Serializes study, series, instances, private and framepixel attributes into groups that follow a simplified model of information entities:
+- exam (patient+study)
+- series (+equipment)
+- private (+group 0002)
+- instance (everything else but frames)
+- frames (made of pixels)
+
+00080005 removed. Everyting always in UTF-8
 
 ## groups of attributes
 ESIPFserialized lists groups of KVattributes, corresponding to the categories exam(study), series, instance, private and framepixels.

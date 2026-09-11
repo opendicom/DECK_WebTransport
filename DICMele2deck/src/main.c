@@ -54,6 +54,7 @@ int dicmDataset(
    u32 beforetag     // read up to attr. On return, attr is read and found in CKEY
 )
 {
+   u16 itemkeycs=keycs;
    while ((DICMidx < beforebyte) && (attr->e < beforetag))
    {
       switch (attr->r) {
@@ -100,8 +101,15 @@ int dicmDataset(
          } break;
          case DA: {
             attr->c=REPERTOIRE_GL;
-            if (attr->l && (attr->e==0x00080020)) {
-               eDAlength=ui2b64( DICM+DICMidx+2, 6, eDA );//with no milenium nor century
+            if (attr->e==0x00080020) {
+               if (attr->l==8) eDAlength=ui2b64( DICM+DICMidx+2, 6, eDA );//with no milenium nor century
+               else {//default date 000000 converted into PbPb
+                  eDAlength=4;
+                  eDA[0]='P';
+                  eDA[1]='b';
+                  eDA[2]='P';
+                  eDA[3]='b';
+               }
             }
             val(kvTP,attr);
             key(attr);
@@ -115,13 +123,12 @@ int dicmDataset(
             switch (attr->e) {
                case 0x00080005:{
                   val(kvCs,attr);
-                  u16 repidxs=repertoireidx(DICM+DICMidx-attr->l,attr->l);
-                  if (repidxs==0x09)
+                  itemkeycs=repertoireidx(DICM+DICMidx-attr->l,attr->l);
+                  if (itemkeycs==0x09)
                   {
                      fprintf(stderr,"main CS [%lu] bad repertoire (%d)\n", DICMidx, exitBadRepertoire);
                      exit(exitBadRepertoire);
                   }
-                  else keycs=(keycs & 0x8000) | repidxs;
                   key(attr);
                }; break;
                   /*
@@ -145,8 +152,8 @@ int dicmDataset(
          case LO:
          case LT:
          case SH:
-         case ST: { attr->c=keycs;         val(kvTS,attr);key(attr);} break;
-         case PN: { attr->c=keycs;         val(kvPN,attr);key(attr);} break;
+         case ST: { attr->c=itemkeycs;         val(kvTS,attr);key(attr);} break;
+         case PN: { attr->c=itemkeycs;         val(kvPN,attr);key(attr);} break;
          //large length numbers
          case OF:
          case OD:
@@ -158,7 +165,7 @@ int dicmDataset(
          case UV: { attr->c=REPERTOIRE_GL; val(kv01,attr);key(attr);} break;
          //large length repertoire
          case UC:
-         case UT: { attr->c=keycs;         val(kvTL,attr);key(attr);} break;
+         case UT: { attr->c=itemkeycs;         val(kvTL,attr);key(attr);} break;
          case UR: { attr->c=ISO_IR192;     val(kvTU,attr);key(attr);} break;//RFC3986
 #pragma mark SQ
          case SQ://sequence
@@ -225,7 +232,7 @@ int dicmDataset(
                }
 
                key(itemattr);
-               dicmDataset(itemattr,keycs,(u32)beforebyteIT,0xfffee00d);
+               dicmDataset(itemattr,itemkeycs,(u32)beforebyteIT,0xfffee00d);
 
                //write IZ
                if (itemattr->e==0xfffee00d)

@@ -226,7 +226,6 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          DICMidx+=attr->l;
       } break;
 
-      case kvUI:
       case kvTL:
       case kvTS://LO LT SH ST
       case kvPN:
@@ -245,6 +244,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          DICMidx+=attr->l;
       };break;
 
+      case kvUI:
       default:{
          //serialize CKEY
          if (fwrite(CKEY, 1, CKEY[0]+1, KVserializedFILE) != CKEY[0]+1) {

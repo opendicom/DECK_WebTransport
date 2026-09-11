@@ -13,7 +13,7 @@ In the case of a double code extension, alphabetic+ideographical+phonetical sum 
 This fits into the 16 bits we reserve after value representation in our DECK key syntax.
 
 Repertoires are applied only to DICOM value representations:
-- short value length: LO,LT,SH,ST 
+- short value length: LO,LT,SH,ST,PN
 - long value length: UC y UT
 
 ## list
@@ -100,10 +100,3 @@ http://dicom.nema.org/medical/dicom/current/output/html/part03.html#table_C.12-4
 | 0x1D | ISO 2022 IR 159 | japanese           |
 | 0x1E | ISO 2022 IR 149 | korean             |
 | 0x1F | ISO 2022 IR 58  | simplified chinese |
-
-## bit 16
-Reserved to flag if the original repertoire was transformed into UTF-8, or not (originally UTF-8)
-
-## DECK value syntax
-All the values are coded UTF-8. The original syntax is used only in case 
-DICM original canonicalized DICM needs to be outputted
