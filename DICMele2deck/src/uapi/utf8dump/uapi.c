@@ -123,6 +123,11 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       case kvIz:
       {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
 #pragma mark -long length
+      case kPDF:
+      case kCDA:
+      case kSTL:
+      case kOBJ:
+      case kMTL:
       case kv01://OB OD OF OL OV OW SV UV
       //OB Encapsulated​Document 00420011 xml cda o pdf
       //OF 0x7FE00008

@@ -43,6 +43,11 @@ enum kvVRcategory{
     kvSZ,//27 SQ tail tag of SQ of undefined size
     kvSz,//28 SQ tail added
     kvUN,//29 UN
+    kPDF,//30
+    kCDA,//31
+    kSTL,//32
+    kOBJ,//33
+    kMTL//34
     };
 
 

@@ -29,7 +29,24 @@
 #include <limits.h>
 #include <stdint.h>
 
+//photometric interpretation
 
+typedef enum {
+    MONOCHROME1=1,//minimum white
+    MONOCHROME2=2,//minimum black
+    RGB=3,//red, green, and blue image planes
+    PALETTE=4,//COLOR single sample color (index into each of the Red, Blue, and Green Palette Color Lookup Tables (0028,1101-1103) and (0028,1201-1203)
+    HSV=-1,//retired
+    ARGB=-2,//retired
+    CMYK=-3,//retired
+    YBR_FULL=5,//one luminance (Y) and two chrominance planes (CB and CR). Used in RLE. CCIR Recommendation 601-2 dated 1990
+    YBR_FULL_422=6,//CB and CR values are sampled horizontally at half. Used with JPEG
+    YBR_PARTIAL_422=-4,//retired
+    YBR_PARTIAL_420=7,//CB and CR values are sampled horizontally and vertically at half the Y rate. Used in MPEG
+    YBR_ICT=8,//Irreversible JPEG 2000
+    YBR_RCT=9,//Reversible JPEG 2000 [ISO/IEC 15444-1]. Approximation to the YUV transformation used in PAL and SECAM.
+    XYB=10//long/medium/short wavelength (LMS) based color model inspired by the human visual system, facilitating perceptually uniform quantization. It uses a gamma of 3 for computationally efficient decoding. This is a possible color space used in JPEG XL [ISO/IEC 18181-1].
+} photocodes;
 
 //errno.h (>0) completed by specific error codes (<0)
 typedef enum {
@@ -195,7 +212,10 @@ u32 utf8serialized( u32 repidx, const char *charbytes, size_t charlength, char *
 #pragma mark - SopClasses
 
 //1.2.840.10008.5.1.4.1.1.
-u8 isItImage(u64 u64Code, u8 idx, u8 median);
+u8 isItImage(u64 bytes190);//*(u64*)(DICM+190)
+u8 isItCapsule(u64 bytes1);//*(u64*)(DICM+188)
+u8 isItPs(u64 bytes188);//*(u64*)(DICM+188)
+u8 isItReport(u64 bytes188);//*(u64*)(DICM+188)
 
 #pragma mark - TransfertSyntaxes
 

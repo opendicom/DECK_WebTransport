@@ -16,11 +16,13 @@ u64   DICMidx;
 char *CKEY;//contextual keys [0]=key chain size
 u32   CKEYidx=1;
 
+u8 encapsulated;
+
 // for pixel processing
-u8 isImage=false;
+int  fram=0;//number of frames (0=not n image)
 //needed as input to grok
-u16  spp;//sample per plane = components
-u16  photocode;//photometric interpretation
+const char * const photoCS[]={"","MONOCHROME1 ","MONOCHROME2 ","RGB ","PALETTE COLOR ","YBR_FULL","YBR_FULL_422","YBR_PARTIAL_420 ","YBR_ICT ","YBR_RCT ","XYB "};
+u16  photo=10;//photometric interpretation
 u16  rows;
 u16  cols;
 u16  alloc;
@@ -28,7 +30,6 @@ u16  bits;
 u16  high;
 u16  sign;//pixrep 0028013 0=unsigned 1=signed
 u16  comp;//planar 0 = RGB del pixel; 1 = componentes RGB (samples)
-int  fram;//number of frames
 
 
 //for SOP identification
@@ -68,10 +69,11 @@ int dicmDataset(
             switch (attr->e) {
                case 0x280011: cols=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
                case 0x280010: rows=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
-               case 0x280002: spp= DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
+               case 0x280002: comp= DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
+               case 0x280100: alloc=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
                case 0x280101: bits=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;//15=16, 13=14, 11=12
+               case 0x280102: high=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
                case 0x280103: sign=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;//?"s":"u"
-               case 0x280106: comp=DICM[DICMidx]+(DICM[DICMidx+1]<<8); break;
             }
             attr->c=REPERTOIRE_GL; val(kvUS,attr);key(attr);
          } break;
@@ -131,12 +133,9 @@ int dicmDataset(
                   }
                   key(attr);
                }; break;
-                  /*
-               case 0x00080008:{//CS image type itype
-               }; break;
                case 0x00280004:{//photocode (photometric interpretation)
-               }; break;
-               */
+                  while (photo>0 && strncmp(photoCS[photo],DICM+DICMidx,attr->l)) photo--;
+               }
                default: { val(kvCS,attr); key(attr);} break;
             }
          } break;
@@ -157,13 +156,21 @@ int dicmDataset(
          //large length numbers
          case OF:
          case OD:
-         case OB:
          case OW:
          case OL:
          case OV:
          case SV:
          case UV: { attr->c=REPERTOIRE_GL; val(kv01,attr);key(attr);} break;
-         //large length repertoire
+         case OB: {
+            attr->c=REPERTOIRE_GL;
+            switch (encapsulated) {
+               case 1: {  val(kPDF,attr);key(attr);} break;
+               case 2: {  val(kCDA,attr);key(attr);} break;
+               default: {  val(kv01,attr);key(attr);} break;
+            }
+
+         } break;
+            //large length repertoire
          case UC:
          case UT: { attr->c=itemkeycs;         val(kvTL,attr);key(attr);} break;
          case UR: { attr->c=ISO_IR192;     val(kvTU,attr);key(attr);} break;//RFC3986
@@ -296,13 +303,14 @@ int main(int argc,  char *argv[]) {
    if (DICMsize < 140) exit(exitNoDataset);
 
    uinput(argc, argv);
-   isImage=isItImage(*(u64*)(DICM+190),32,16);//zero means no image
 
    //DICM explicit little endian?
    u16 *cVL=(u16*)(DICM+0xA4);//class value offset 0xA6
    u16 *iVL=(u16*)(DICM+0xA4+*cVL+0x8);//value offset 0xAE+*cVL
    u16 *sVL=(u16*)(DICM+0xA4+*cVL+0x8+*iVL+0x8);//value offset 0xB6+*cVL+*iVL
    if (strncmp(DICM+0xB6+*cVL+*iVL,"1.2.840.10008.1.2.1",*sVL)!=0) exit(exitNotExplicitLittleEndian);
+
+   encapsulated=isItCapsule(*(u64*)(DICM+188));
 
    CKEY=malloc(97);
    CKEY[0]=(u8)8;

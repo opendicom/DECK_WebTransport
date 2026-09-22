@@ -16,13 +16,16 @@ extern u64   DICMsize;
 extern char *CKEY;
 extern u8   CKEYidx;
 
-extern u8 isImage;
 //needed as input to grok
-extern u16 *columns;
-extern u16 *rows;
-extern u16 *samples;
-extern u16 *bits;
-extern u16 *sign;
+extern int  fram;
+extern u16  photo;
+extern u16  rows;
+extern u16  cols;
+extern u16  alloc;
+extern u16  bits;
+extern u16  high;
+extern u16  sign;//pixrep 0028013 0=unsigned 1=signed
+extern u16  comp;
 
 //prepare output in memory
 char *SERIALIZE;//is also buffer for utf-8

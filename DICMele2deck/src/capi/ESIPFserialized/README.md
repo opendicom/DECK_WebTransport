@@ -1,29 +1,28 @@
-# ESIPFserialized
+# ESCIPFserialized
 
 https://dicom.nema.org/dicom/2013/output/chtml/part03/chapter_A.html
 
 Based on ESIPbasetags and KVserialized 
-Serializes study, series, instances, private and framepixel attributes into groups that follow a simplified model of information entities:
+Serializes attributes into groups that follow a simplified model of information entities:
 - exam (patient+study)
 - series (+equipment)
-- private (+group 0002)
+- capsule (encapsulated instance content treated as series, that is, stored in the database when there is one)
 - instance (everything else but frames)
 - frames (made of pixels)
 
-00080005 removed. Everyting always in UTF-8
+00080005 removed. Everything textual is always written using UTF-8 coding
 
 ## groups of attributes
-ESIPFserialized lists groups of KVattributes, corresponding to the categories exam(study), series, instance, private and framepixels.
-The categories are prefixed by one head KV which is not part of the original datataset.
-Categories could be seen as a new and different implementation of the group length attributes in the original DICOM standard.
-With respect to the latter, the difference are:
-- attribute tag + vr are replaced by a key concatenating much information (as seen below)
-- the 4 or 8 bytes of the tag + vr becomes a variable length, always odd and shorter than 256 bytes. 
-One bit of the Key length is enough to know if the key is of a dicom attribute or the head of a group
-- the key uses only url safe chars and / where the separator could be translated as the directory in a file system
+ESCIPFserialized lists groups of KVattributes, belonging to one only information entity.
+They may be more than one group into an information entity. 
+The groups are prefixed by one head KV which is not part of the original datataset.
 
-## KV pattern
-ESIPFserialized respects the KV pattern defined in KVserialize
+DECK groups could be seen as a new and different implementation of the group length attributes in the original DICOM standard.
+With respect to the latter, the differences are:
+- attribute tag and vr (8 bytes) are replaced by a key length (1 byte) and a key (odd size less than 256)
+- the key uses only url safe chars and slash (which repeats the semantics of directory contents in reference to the information entities)
+- the group itself is essentially a macro of specifically related attributes, (instead of the gathering of tags with same first two bytes prefix).
+
 ````
 • 1 byte: length of the key (KL)
 • KL bytes: the key
@@ -32,40 +31,31 @@ ESIPFserialized respects the KV pattern defined in KVserialize
 representation.
 ````
 with the exception the VL refers to the sum of all the KV attributes of the group. 
-This length can be used as a pointer to skip parsing part of the serialization.
-
-For instance, if the attributes of the study or of the series were already processed from the serialization of another instance belonging to the study,
+This length can be used as a pointer to skip parsing part of the serialization. For instance, if the attributes of the study or of the series were already processed from the serialization of another instance belonging to the study,
 there is no need to parse the corresponding group again.
 
 To be sure that the same information was already parsed and can be skipped, the key ends with a blake3 hash of the group. 
 If the hash present in the key head of the group corresponds to the one already registered, there remains no doubt.
-Besides the hash can also be used to control that the following attributes serialized were not altered 
+Besides the hash can also be used to control that the following attributes serialized were not altered.
+
+The encapsulated objects and frames are exceptions with no blake3. Being first class objects of other standards, the inner coherence is secured by the corresponding standard.
+In these cases, the group does contain the encapsulated object (instead of a list of attributes). The object length is exact, with no padding null char in case the length is odd.
 
 ## group key components
-| category       | l  | key                                                                      | key size                    | contents          | comment                                |
-|----------------|---|--------------------------------------------------------------------------|-----------------------------|-------------------|----------------------------------------|
-| Exam           | 1 | dab64[slash]uib64E                                  [space][space]blake3 | 4+ (even up to 44)  +3  +32 | study and patient |                                        |
-| Series         | 1 | dab64[slash]uib64E[slash]uib64S                            [space]blake3 | 4+ (even up to 88)  +3  +32 | series            | both generic and specific              |
-| Instance       | 1 | dab64[slash]uib64E[slash]uib64S[slash]uib64I        [space][space]blake3 | 4+ (even up to 132) +5  +32 | instance          | includes per frame metadata            |
-| Private        | 1 | dab64[slash]uib64E[slash]uib64S[slash]uib64I[minus]        [space]blake3 | 4+ (even up to 132) +3  +32 | private + group2  | [minus]='-' (b64 uses ~, not -)        |
-| Frame          | 1 | dab64[slash]uib64E[slash]uib64S[slash]uib64I[slash]0001.xxx[space]blake3 | 4+ (even up to 132) +13 +32 | frame image       | 0000.xxx=encapsulated object not frame |
+| category             | key prefix         | key name                |  key suffix  | comment                                |
+|----------------------|--------------------|-------------------------|--------------|----------------------------------------|
+| Exam+patient         | date/E/     (even) | fo --               (2) | .blake3 (65) | fovia whatever else                    |
+| PDF                  | date/E/S/   (odd)  | ps                  (2) | .pdf    (4)  | 1.2.840.10008.5.1.4.1.1.104.1          |
+| CDA                  | date/E/S/   (odd)  | uc sc ds ot         (2) | .xml    (4)  | 1.2.840.10008.5.1.4.1.1.104.2          |
+| STL                  | date/E/S/   (odd)  | 3d                  (2) | .stl    (4)  | 1.2.840.10008.5.1.4.1.1.104.3          |
+| OBJ                  | date/E/S/   (odd)  | tx                  (2) | .obj    (4)  | 1.2.840.10008.5.1.4.1.1.104.4          |
+| MTL                  | date/E/S/   (odd)  | tx                  (2) | .mtl    (4)  | 1.2.840.10008.5.1.4.1.1.104.5          |
+| Series               | date/E/S/   (odd)  | fov ---             (3) | .blake3 (65) | fovia cda pdf whatever else            |
+| Instance+sop+private | date/E/S/I/ (even) | fovi priv dicm ---- (4) | .blake3 (65) | fovia private group 2 vwhatever else   |
+| Frame                | date/E/S/I/ (even) | 00001..99999        (5) | .xxx    (4)  | 00000.xxx=encapsulated object not frame|
 
-- uibb64 codes "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~" are url safe
-- they move upwards the ascii scale the following characters present in uids and numeric values:
-  - 5C '\'(multivalue), 
-  - 5E '^'(component), 
-  - 2D '-'(negative),
-  - 2B '+'(positive),
-  - 2E '.'(dot)
-- These are liberated as lower code separators
-- ascii order: space, % - . / 0-9 A-Z _ a-z ~ 
-- '/' can be use within the key to simulate a route to a resource (we use it to group instance by series, series by exams, exams by date)
-- 'space', '-' and '.'  can be used in keys to separate the route and the hash of the value without altering a classification
-
-- dab64 is aammdd written en 4 b64 chars
-- uib64... are uids compressed to an even (lower than 45) number of url safe chars.
-
-- the space (or double space) within the key separates two words: a "path" and an "hash"
+- date, E, S, codified uibb64 ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~") are url safe
+- they are of even length, lower than 45.
 
 ## possible use by the receptor
 - process one group at a time
@@ -76,3 +66,100 @@ Besides the hash can also be used to control that the following attributes seria
       - good
         - write the content of the group in a file at the path written in the first work of the key
         - registers the key path, the hash and some of the attributes of the group into a database 
+
+## FOVIA 
+
+### study
+
+patientBirthDate
+patientID
+patientName
+patientSex
+studyAccessionNumber
+studyDate
+studyDescription
+studyID
+studyInstanceUID
+studyTime
+
+### series
+
+modality
+seriesDate
+seriesDescription
+seriesInstanceUID
+seriesNumber
+seriesTime
+
+### image
+
+acquisitionNumber
+acquisitionTime
+axis	"Z"
+bitsAllocated
+bitsStored
+bluePaletteLUTDescriptor
+cols
+contrastAdministrationRouteSequence	0
+contrastAgent	""
+contrastAgentSequence	0
+contrastRoute	""
+convertedToUnsiged	true
+echoNumbers	""
+echoTime	0
+fieldOfViewDimensions	""
+forceServerRenderToUpdateSignedState	true
+frameIncrementPointer	""
+frameNumber	1
+frameOfReferenceUID	"1.2.840.113619.2.55.3.314599446.5388.1126625110.487.7100.0.11"
+greenPaletteLUTDescriptor	""
+headerPhotometricInterpretation	""
+highBit	15
+imageCreationDate	"20050914"
+imageCreationTime	"132245"
+imageLocation	144.5
+imageNumber	1
+imageOrientationPatient	"1.000\\0.000\\0.000\\0.000\\1.000\\0.000"
+imagePath	"/fovia/data/democases/DICOM2/949580.dcm"
+imagePositionPatient	"-110.000\\-92.400\\144.500"
+imageType	"ORIGINAL\\PRIMARY\\AXIAL"
+imagerPixelSpacing	"0.430\\0.430"
+lossyImageCompression	""
+lossyImageCompressionMethod	""
+lossyImageCompressionRatio	""
+lutExplanation	[]
+manufacturer	"GE MEDICAL SYSTEMS"
+modality	"CT"
+numberOfFrames	1
+numberOfModalityLUTEntries	0
+numberOfOverlayEntries	0
+numberOfVOILUTEntries	0
+patientOrientation	""
+patientPosition	"HFS "
+photometricInterpretation	"MONOCHROME2 "
+pixelPaddingValue	0
+pixelRepresentation	0
+pixelSpacing	"0.430\\0.430"
+pixelSpacingCalibrationDescription	""
+pixelSpacingCalibrationType	""
+plannarConfiguration	0
+redPaletteLUTDescriptor	""
+repetitionTime	0
+rescaleIntercept	-33792
+rescaleSlope	1
+rescaleType	"HU"
+rows	512
+samplesPerPixel	1
+sharedMemoryFileName	"/usr/memory-manager/temp/fs_255f7c2e-4a62-4ef1-a0d5-b9b800750894_1.2.840.113619.2.55.3.314599446.5388.1126625111.914.1"
+sliceLocation	144.5
+sliceThickness	0.625
+sopClassUID	"1.2.840.10008.5.1.4.1.1.2"
+sopInstanceUID	"1.2.840.113619.2.55.3.314599446.5388.1126625111.914.1"
+sourceImageSequence	[]
+spacingBetweenSlices	0
+spatialLocationPreserved	true
+totalFrames	1
+tpiNumber	0
+voiLUTFunction	""
+windowCenter	"40.000000"
+windowWidth

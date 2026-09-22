@@ -936,76 +936,136 @@ u32 utf8serialized ( u32 repidx,  const char *charbytes, size_t charlength, char
  * An 8 bytes code can be made of this
  * 63 elementos
  */
-const u64 imageclass190[]={
-   0x0,//not found
-   0x311E311E311E3737,//77.1.1.1
-   0x311E321E311E3737,//77.1.2.1
-   0x311E341E311E3737,//77.1.4.1
-   0x311E351E311E3737,//77.1.5.1
-   0x321E351E311E3737,//77.1.5.2
-   0x341E351E311E3737,//77.1.5.4
-   0x351E351E311E3737,//77.1.5.5
-   0x361E351E311E3737,//77.1.5.6
-   0x371E351E311E3737,//77.1.5.7
-   0x4955000300020031,//1
-   0x4955000300020032,//2
-   0x4955000300020034,//4
-   0x4955000300020037,//7
-   0x4955000300023032,//20
-   0x4955000300303331,//130
-   0x4955000300311E31,//1.1
-   0x4955000300311E32,//2.1
-   0x4955000300311E33,//3.1
-   0x4955000300311E34,//4.1
-   0x4955000300311E36,//6.1
-   0x4955000300311E37,//7.1
-   0x4955000300321E31,//1.2
-   0x4955000300321E32,//2.2
-   0x4955000300321E36,//6.2
-   0x4955000300321E37,//7.2
-   0x4955000300331E31,//1.3
-   0x4955000300383231,//128
-   0x4955000300331E32,//2.3
-   0x4955000300331E34,//4.3
-   0x4955000300331E36,//6.3
-   0x4955000300331E37,//7.3
-   0x4955000300341E32,//2.4
-   0x4955000300341E34,//4.4
-   0x4955000300341E37,//7.4
-   0x4955000300351E32,//2.5
-   0x49550003311E3231,//12.1
-   0x49550003311E3431,//14.1
-   0x49550003321E3231,//12.2
-   0x49550003321E3431,//14.2
-   0x495500311E311E31,//1.1.1
-   0x495500311E313834,//481.1
-   0x495500311E321E31,//1.2.1
-   0x495500311E331E31,//1.3.1
-   0x495500311E383231,//128.1
-   0x495500331E313036,//601.3
-   0x495500341E313036,//601.4
-   0x4955311E311E3231,//12.1.1
-   0x4955311E321E3231,//12.2.1
-   0x4955311E311E3331,//13.1.1
-   0x4955311E311E3737,//77.1.1
-   0x4955321E311E3331,//13.1.2
-   0x4955321E311E3737,//77.1.2
-   0x4955331E311E3331,//13.1.3
-   0x4955331E311E3737,//77.1.3
-   0x495533321E313834,//481.23
-   0x4955341E311E3331,//13.1.4
-   0x4955341E311E3737,//77.1.4
-   0x495534321E313834,//481.24
-   0x4955351E311E3331,//13.1.5
-   0x4955361E311E3737,//77.1.6
-   0x4955371E311E3737,//77.1.7
-   0x4955381E311E3737,//77.1.8
-   0x4955391E311E3737 //77.1.9
+
+u8 isItImage(u64 bytes190){
+    switch (bytes190) {
+     case 0x311E311E311E3737:  return 1;//77.1.1.1
+     case 0x311E321E311E3737:  return 2;//77.1.2.1
+     case 0x311E341E311E3737:  return 3;//77.1.4.1
+     case 0x311E351E311E3737:  return 4;//77.1.5.1
+     case 0x321E351E311E3737:  return 5;//77.1.5.2
+     case 0x341E351E311E3737:  return 6;//77.1.5.4
+     case 0x351E351E311E3737:  return 7;//77.1.5.5
+     case 0x361E351E311E3737:  return 8;//77.1.5.6
+     case 0x371E351E311E3737:  return 9;//77.1.5.7
+     case 0x4955000300020031:  return 10;//1
+     case 0x4955000300020032:  return 11;//2
+     case 0x4955000300020034:  return 12;//4
+     case 0x4955000300020037:  return 13;//7
+     case 0x4955000300023032:  return 14;//20
+     case 0x4955000300303331:  return 15;//130
+     case 0x4955000300311E31:  return 16;//1.1
+     case 0x4955000300311E32:  return 17;//2.1
+     case 0x4955000300311E33:  return 18;//3.1
+     case 0x4955000300311E34:  return 19;//4.1
+     case 0x4955000300311E36:  return 20;//6.1
+     case 0x4955000300311E37:  return 21;//7.1
+     case 0x4955000300321E31:  return 22;//1.2
+     case 0x4955000300321E32:  return 23;//2.2
+     case 0x4955000300321E36:  return 24;//6.2
+     case 0x4955000300321E37:  return 25;//7.2
+     case 0x4955000300331E31:  return 26;//1.3
+     case 0x4955000300383231:  return 27;//128
+     case 0x4955000300331E32:  return 28;//2.3
+     case 0x4955000300331E34:  return 29;//4.3
+     case 0x4955000300331E36:  return 30;//6.3
+     case 0x4955000300331E37:  return 31;//7.3
+     case 0x4955000300341E32:  return 32;//2.4
+     case 0x4955000300341E34:  return 33;//4.4
+     case 0x4955000300341E37:  return 34;//7.4
+     case 0x4955000300351E32:  return 35;//2.5
+     case 0x49550003311E3231:  return 36;//12.1
+     case 0x49550003311E3431:  return 37;//14.1
+     case 0x49550003321E3231:  return 38;//12.2
+     case 0x49550003321E3431:  return 39;//14.2
+     case 0x495500311E311E31:  return 40;//1.1.1
+     case 0x495500311E313834:  return 41;//481.1
+     case 0x495500311E321E31:  return 42;//1.2.1
+     case 0x495500311E331E31:  return 43;//1.3.1
+     case 0x495500311E383231:  return 44;//128.1
+     case 0x495500331E313036:  return 45;//601.3
+     case 0x495500341E313036:  return 46;//601.4
+     case 0x4955311E311E3231:  return 47;//12.1.1
+     case 0x4955311E321E3231:  return 48;//12.2.1
+     case 0x4955311E311E3331:  return 49;//13.1.1
+     case 0x4955311E311E3737:  return 50;//77.1.1
+     case 0x4955321E311E3331:  return 51;//13.1.2
+     case 0x4955321E311E3737:  return 52;//77.1.2
+     case 0x4955331E311E3331:  return 53;//13.1.3
+     case 0x4955331E311E3737:  return 54;//77.1.3
+     case 0x495533321E313834:  return 55;//481.23
+     case 0x4955341E311E3331:  return 56;//13.1.4
+     case 0x4955341E311E3737:  return 57;//77.1.4
+     case 0x495534321E313834:  return 58;//481.24
+     case 0x4955351E311E3331:  return 59;//13.1.5
+     case 0x4955361E311E3737:  return 60;//77.1.6
+     case 0x4955371E311E3737:  return 61;//77.1.7
+     case 0x4955381E311E3737:  return 62;//77.1.8
+     case 0x4955391E311E3737:  return 63;//77.1.9
+    }
+    return 0;
 };
 
-u8 isItImage(u64 u64Code, u8 idx, u8 median) {
-   if (u64Code==imageclass190[idx]) return idx;
-   if (median==0)return 0;
-   if (u64Code>imageclass190[idx]) return isItImage(u64Code, idx+median, median>>1);
-   return isItImage(u64Code, idx-median, median>>1);
+//22 ignored,             bytes BC a C3 (188-195)
+//1.2.840.10008.5.1.4.1.  1.104.1_ (29 bytes. Las 8 being 1.104.x NULL
+u8 isItCapsule(u64 bytes188){
+    switch (bytes188) {
+        case 0x312E3430312E31ULL:  return 1;//pdf
+        case 0x322E3430312E31ULL:  return 2;//cda
+        case 0x332E3430312E31ULL:  return 3;//stl
+        case 0x342E3430312E31ULL:  return 4;//obj
+        case 0x352E3430312E31ULL:  return 5;//mtl
+    }
+    return 0;
+}
+
+//1.2.840.10008.5.1.4.1.  1.11.1:_ a 9
+//1.2.840.10008.5.1.4.1.  1.11.10_    10 a 12 presentation states
+u8 isItPs(u64 bytes188){
+    switch (bytes188) {
+        case 0x02312E31312E31ULL:  return 1;//GrayscaleSoftcopyPresentationStateStorage
+        case 0x02322E31312E31ULL:  return 2;//ColorSoftcopyPresentationStateStorage
+        case 0x02332E31312E31ULL:  return 3;//PseudoColorSoftcopyPresentationStateStorage
+        case 0x02342E31312E31ULL:  return 4;//BlendingSoftcopyPresentationStateStorage
+        case 0x02352E31312E31ULL:  return 5;//XAXRFGraysalceSoftcopyPresentationStateStorage
+        case 0x02362E31312E31ULL:  return 6;//GrayscalePlanarMPRVolumetricPresentationStateStorage
+        case 0x02372E31312E31ULL:  return 7;//CompositingPlanarMPRVolumetricPresentationStateStorage
+        case 0x02382E31312E31ULL:  return 8;//AdvancedBlendingPresentationStateStorage
+        case 0x02392E31312E31ULL:  return 9;//VolumeRenderingVolumetricPresentationStateStorage
+        case 0x30312E31312E31ULL:  return 10;//SegmentedVolumeRenderingVolumetricPresentationStateStorage
+        case 0x31312E31312E31ULL:  return 11;//MultipleVolumeRenderingVolumetricPresentationStateStorage
+        case 0x32312E31312E31ULL:  return 12;//VariableModalityLUTSoftcopyPresentationStateStorage
+    }
+    return 0;
+}
+
+//22 ignored,             bytes BC a C3 (188-195)
+//1.2.840.10008.5.1.4.1.  1.88.xx_
+//1.2.840.10008.5.1.4.1.  1.88.59_ (key object selction)
+//1.2.840.10008.5.1.4.1.  1.11.1:_ a 9
+//1.2.840.10008.5.1.4.1.  1.11.10_    10 a 12 presentation states
+u8 isItReport(u64 bytes188) {
+    switch (bytes188) {
+        case 0x31312E38382E31ULL:  return 0x11;//BasicTextSRStorage
+        case 0x32322E38382E31ULL:  return 0x22;//EnhancedSRStorage
+        case 0x33332E38382E31ULL:  return 0x33;//ComprehensiveSRStorage
+        case 0x34332E38382E31ULL:  return 0x34;//Comprehensive3DSRStorage
+        case 0x35332E38382E31ULL:  return 0x35;//ExtensibleSRStorage
+        case 0x30342E38382E31ULL:  return 0x40;//ProcedureLogStorage
+        case 0x30352E38382E31ULL:  return 0x50;//MammographyCADSRStorage
+        case 0x39352E38382E31ULL:  return 0x59;//KeyObjectSelectionDocumentStorage
+        case 0x35362E38382E31ULL:  return 0x65;//ChestCADSRStorage
+        case 0x37362E38382E31ULL:  return 0x67;//XRayRadiationDoseSRStorage
+        case 0x38362E38382E31ULL:  return 0x68;//RadiopharmaceuticalRadiationDoseSRStorage
+        case 0x39362E38382E31ULL:  return 0x69;//ColonCADSRStorage
+        case 0x30372E38382E31ULL:  return 0x70;//ImplantationPlanSRStorage
+        case 0x31372E38382E31ULL:  return 0x71;//AcquisitionContextSRStorage
+        case 0x32372E38382E31ULL:  return 0x72;//SimplifiedAdultEchoSRStorage
+        case 0x33372E38382E31ULL:  return 0x73;//PatientRadiationDoseSRStorage
+        case 0x34372E38382E31ULL:  return 0x74;//PlannedImagingAgentAdministrationSRStorage
+        case 0x35372E38382E31ULL:  return 0x75;//PerformedImagingAgentAdministrationSRStorage
+        case 0x36372E38382E31ULL:  return 0x76;//EnhancedXRayRadiationDoseSRStorage
+        case 0x37372E38382E31ULL:  return 0x77;//WaveformAnnotationSRStorage
+    }
+    return 0;
 }

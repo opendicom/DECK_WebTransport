@@ -1096,6 +1096,12 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
 
       case kvCs: DICMidx+=attr->l; break;//removing 00080005
 
+      case kPDF:pdfAttribute(vrcat,attr); break;
+      case kCDA:cdaAttribute(vrcat,attr); break;
+      case kSTL:stlAttribute(vrcat,attr); break;
+      case kOBJ:objAttribute(vrcat,attr); break;
+      case kMTL:mtlAttribute(vrcat,attr); break;
+
       case kv01:  if (attr->e==0x7FE00010) {fAttribute(vrcat,attr); break; }
 
       default: {

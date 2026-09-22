@@ -24,8 +24,8 @@ extern u8    CKEYidx;
 static char *UTF8;
 u32 utf8size=0;
 
-extern u16  frames;
-extern u16  photocode;//photometric interpretation
+extern int  fram;
+extern u16  photo;//photometric interpretation
 extern u16  rows;
 extern u16  cols;
 extern u16  alloc;
@@ -35,17 +35,18 @@ extern u16  sign;//pixrep 0028013 0=unsigned 1=signed
 extern u16  comp;//planar 0 = RGB del pixel; 1 = componentes RGB (samples)
 
 extern char eDA[4];
-extern u32 eDAlength;
+extern u8 eDAlength;
 extern char eUI[48];
-extern u32 eUIlength;
+extern u8 eUIlength;
 extern char sUI[48];
-extern u32 sUIlength;
+extern u8 sUIlength;
+
 extern char cUI[48];
-extern u32 cUIlength;
+extern u8 cUIlength;
 extern char iUI[48];
-extern u32 iUIlength;
+extern u8 iUIlength;
 extern char pUI[48];//pyramid
-extern u32 pUIlength;
+extern u8 pUIlength;
 
 struct KV {
     u8    Kl;
@@ -62,6 +63,12 @@ struct KV eKVs[100];//number of base attributes registered as type P or C
 struct KV sKVs[150];//number of base attributes registered as type S or X
 struct KV iKVs[350];//number of base attributes registered as type S or X
 struct KV pKVs[200];//number of base attributes registered as type S or X
+struct KV pdf;
+struct KV cda;
+struct KV stl;
+struct KV obj;
+struct KV mtl;
+
 u16 elast;
 u16 slast;
 u16 ilast;
@@ -114,7 +121,7 @@ void ctrail(int argc, char *argv[]) {
     printf("iUI %*s\n",iUIlength,iUI);
     printf("pUI %*s\n",pUIlength,pUI);
 
-    printf("photocode %u\n",photocode);
+    printf("photocode %u\n",photo);
     printf("rows %u\n",rows);
     printf("cols %u\n",cols);
     printf("alloc %u\n",alloc);
@@ -132,21 +139,24 @@ void ctrail(int argc, char *argv[]) {
     //blake3 provides merkle-tree, incremental and fast hash (usefull to compare buffer)
     blake3_hasher hasher;
     blake3_hasher_init(&hasher);
+    uint8_t blake32[32];
 
     //largest group
     u32 KVlength=iKVlength>eKVlength?iKVlength:eKVlength;
     if (KVlength<sKVlength) KVlength=sKVlength;
     if (KVlength<pKVlength) KVlength=pKVlength;
     char groupBytes[KVlength];
-    uint8_t *groupKey=malloc(218);
-    groupKey[0]=eUIlength+39;
+    char * groupKey=malloc(256);
+    groupKey[0]=eUIlength+73;
     memcpy(groupKey+1,eDA,4);
     groupKey[5]='/';
     memcpy(groupKey+6,eUI,eUIlength);
+    groupKey[eUIlength+6]='/';
 
     //---------------------------- exam ----------------------------
-    groupKey[eUIlength+6]=' ';
-    groupKey[eUIlength+7]=' ';
+    groupKey[eUIlength+7]='-';
+    groupKey[eUIlength+8]='-';
+    groupKey[eUIlength+9]='.';
     u32 cursor=0;
     for (int idx=0;idx<elast;idx++) {
         memcpy(groupBytes+cursor,&(eKVs[idx].K),eKVs[idx].Kl);
@@ -165,13 +175,16 @@ void ctrail(int argc, char *argv[]) {
     }
 
     blake3_hasher_update(&hasher, groupBytes, cursor);
-    blake3_hasher_finalize(&hasher,(groupKey+eUIlength+8), BLAKE3_OUT_LEN);
+    blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
+    //as string hexa representation
+    char* blake3offset=groupKey+eUIlength+10;
+    for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    memcpy(groupKey+eUIlength+40,&eKVlength,4);
+    memcpy(groupKey+eUIlength+74,&eKVlength,4);
 
-
+    //EXAM fwrite group E + size
     //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
-    if (  (fwrite(groupKey, 1, eUIlength+44, fileptr) != eUIlength+44)
+    if (  (fwrite(groupKey, 1, eUIlength+78, fileptr) != eUIlength+78)
         ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
         ) {
         printf("%s", "cannot write E\n");
@@ -180,10 +193,13 @@ void ctrail(int argc, char *argv[]) {
 
 
     //---------------------------- series ----------------------------
-    groupKey[0]=eUIlength+sUIlength+39;
-    groupKey[eUIlength+6]='/';
+    groupKey[0]=eUIlength+sUIlength+75;
     memcpy(groupKey+eUIlength+7,sUI,sUIlength);
-    groupKey[eUIlength+7+sUIlength]=' ';
+    groupKey[eUIlength+sUIlength+7]='/';
+    groupKey[eUIlength+sUIlength+8]='-';
+    groupKey[eUIlength+sUIlength+9]='-';
+    groupKey[eUIlength+sUIlength+10]='-';
+    groupKey[eUIlength+sUIlength+11]='.';
     cursor=0;
     for (int idx=0;idx<slast;idx++) {
         memcpy(groupBytes+cursor,&(sKVs[idx].K),sKVs[idx].Kl);
@@ -202,26 +218,134 @@ void ctrail(int argc, char *argv[]) {
     }
     blake3_hasher_reset(&hasher);
     blake3_hasher_update(&hasher, groupBytes, sKVlength);
-    blake3_hasher_finalize(&hasher,(groupKey+eUIlength+sUIlength+8), BLAKE3_OUT_LEN);
+    blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
+    //as string hexa representation
+    blake3offset=groupKey+eUIlength+sUIlength+12;
+    for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    memcpy(groupKey+eUIlength+sUIlength+40,&sKVlength,4);
+    memcpy(groupKey+eUIlength+sUIlength+76,&sKVlength,4);
 
+    //SERIES fwrite group ES + size
     //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
-    if (  (fwrite(groupKey, 1, eUIlength+sUIlength+44, fileptr) != eUIlength+sUIlength+44)
+    if (  (fwrite(groupKey, 1, eUIlength+sUIlength+80, fileptr) != eUIlength+sUIlength+80)
         ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
         ) {
         printf("%s", "cannot write E\n");
         exit(-33);
     }
 
+    //----------------------------------pdf-----------------------------
+    if (pdf.Vl > 0) {
+        groupKey[0]=eUIlength+sUIlength+13;
+        groupKey[eUIlength+sUIlength+8]='p';
+        groupKey[eUIlength+sUIlength+9]='s';
+        groupKey[eUIlength+sUIlength+10]='.';
+        groupKey[eUIlength+sUIlength+11]='p';
+        groupKey[eUIlength+sUIlength+12]='d';
+        groupKey[eUIlength+sUIlength+13]='f';
+        memcpy(groupKey+eUIlength+sUIlength+14,&(pdf.Vl),4);
+        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+18, fileptr) != eUIlength+sUIlength+18)
+             ||(fwrite(pdf.Vp, 1, pdf.Vl, fileptr) != pdf.Vl)
+             ) {
+            printf("%s", "cannot write pdf\n");
+            exit(-33);
+             }
+    }
+
+    //----------------------------------cda-----------------------------
+    if (cda.Vl > 0) {
+        // find <d, <C o <s within the first 160 first chars
+        char a='o';
+        char b='t';
+        for (u8 c=0; c < 0xA0; c++) {
+            if (*cda.Vp+c == 'c') {
+                switch (*cda.Vp+c+1) {
+                    case 'd': { a='d';b='s';c=0xA0;} break;
+                    case 's': { a='s';b='c';c=0xA0;} break;
+                    case 'C': { a='u';b='c';c=0xA0;} break;
+                }
+            }
+        }
+        groupKey[0]=eUIlength+sUIlength+13;
+        groupKey[eUIlength+sUIlength+8]=a;
+        groupKey[eUIlength+sUIlength+9]=b;
+        groupKey[eUIlength+sUIlength+10]='.';
+        groupKey[eUIlength+sUIlength+11]='x';
+        groupKey[eUIlength+sUIlength+12]='m';
+        groupKey[eUIlength+sUIlength+13]='l';
+        memcpy(groupKey+eUIlength+sUIlength+14,&(cda.Vl),4);
+        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+18, fileptr) != eUIlength+sUIlength+18)
+             ||(fwrite(cda.Vp, 1, cda.Vl, fileptr) != cda.Vl)
+             ) {
+            printf("%s", "cannot write cda\n");
+            exit(-33);
+             }
+    }
+
+    //----------------------------------stl-----------------------------
+    if (stl.Vl > 0) {
+        groupKey[0]=eUIlength+sUIlength+13;
+        groupKey[eUIlength+sUIlength+8]='3';
+        groupKey[eUIlength+sUIlength+9]='d';
+        groupKey[eUIlength+sUIlength+10]='.';
+        groupKey[eUIlength+sUIlength+11]='s';
+        groupKey[eUIlength+sUIlength+12]='t';
+        groupKey[eUIlength+sUIlength+13]='l';
+        memcpy(groupKey+eUIlength+sUIlength+14,&(stl.Vl),4);
+        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+18, fileptr) != eUIlength+sUIlength+18)
+             ||(fwrite(stl.Vp, 1, stl.Vl, fileptr) != stl.Vl)
+             ) {
+            printf("%s", "cannot write stl\n");
+            exit(-33);
+             }
+    }
+
+    //----------------------------------obj-----------------------------
+    if (obj.Vl > 0) {
+        groupKey[0]=eUIlength+sUIlength+13;
+        groupKey[eUIlength+sUIlength+8]='t';
+        groupKey[eUIlength+sUIlength+9]='x';
+        groupKey[eUIlength+sUIlength+10]='.';
+        groupKey[eUIlength+sUIlength+11]='o';
+        groupKey[eUIlength+sUIlength+12]='b';
+        groupKey[eUIlength+sUIlength+13]='j';
+        memcpy(groupKey+eUIlength+sUIlength+14,&(obj.Vl),4);
+        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+18, fileptr) != eUIlength+sUIlength+18)
+             ||(fwrite(obj.Vp, 1, obj.Vl, fileptr) != obj.Vl)
+             ) {
+            printf("%s", "cannot write obj\n");
+            exit(-33);
+             }
+    }
+
+    //----------------------------------mtl-----------------------------
+    if (mtl.Vl > 0) {
+        groupKey[0]=eUIlength+sUIlength+13;
+        groupKey[eUIlength+sUIlength+8]='t';
+        groupKey[eUIlength+sUIlength+9]='x';
+        groupKey[eUIlength+sUIlength+10]='.';
+        groupKey[eUIlength+sUIlength+11]='m';
+        groupKey[eUIlength+sUIlength+12]='t';
+        groupKey[eUIlength+sUIlength+13]='l';
+        memcpy(groupKey+eUIlength+sUIlength+14,&(mtl.Vl),4);
+        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+18, fileptr) != eUIlength+sUIlength+18)
+             ||(fwrite(mtl.Vp, 1, mtl.Vl, fileptr) != mtl.Vl)
+             ) {
+            printf("%s", "cannot write mtl\n");
+            exit(-33);
+             }
+    }
 
     //---------------------------- instance ----------------------------
-    groupKey[0]=eUIlength+sUIlength+iUIlength+41;
+    groupKey[0]=eUIlength+sUIlength+iUIlength+77;
 
-    groupKey[eUIlength+sUIlength+7]='/';
     memcpy(groupKey+eUIlength+sUIlength+8,iUI,iUIlength);
-    groupKey[eUIlength+sUIlength+iUIlength+8]=' ';
-    groupKey[eUIlength+sUIlength+iUIlength+9]=' ';
+    groupKey[eUIlength+sUIlength+iUIlength+8]='/';
+    groupKey[eUIlength+sUIlength+iUIlength+9]='-';
+    groupKey[eUIlength+sUIlength+iUIlength+10]='-';
+    groupKey[eUIlength+sUIlength+iUIlength+11]='-';
+    groupKey[eUIlength+sUIlength+iUIlength+12]='-';
+    groupKey[eUIlength+sUIlength+iUIlength+13]='.';
     cursor=0;
     for (int idx=0;idx<ilast;idx++) {
         memcpy(groupBytes+cursor,&(iKVs[idx].K),iKVs[idx].Kl);
@@ -240,12 +364,16 @@ void ctrail(int argc, char *argv[]) {
     }
     blake3_hasher_reset(&hasher);
     blake3_hasher_update(&hasher, groupBytes, iKVlength);
-    blake3_hasher_finalize(&hasher,(groupKey+eUIlength+sUIlength+iUIlength+10), BLAKE3_OUT_LEN);
+    blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
+    //as string hexa representation
+    blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
+    for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    memcpy(groupKey+eUIlength+sUIlength+iUIlength+42,&iKVlength,4);
+    memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&iKVlength,4);
 
+    //INSANTACE fwrite group ESI + size
     //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
-    if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+46, fileptr) != eUIlength+sUIlength+iUIlength+46)
+    if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+82, fileptr) != eUIlength+sUIlength+iUIlength+82)
         ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
         ) {
         printf("%s", "cannot write E\n");
@@ -255,7 +383,10 @@ void ctrail(int argc, char *argv[]) {
 
     //---------------------------- private ----------------------------
     if (pKVlength>0) {
-        groupKey[eUIlength+sUIlength+iUIlength+8]='-';
+        groupKey[eUIlength+sUIlength+iUIlength+9]='p';
+        groupKey[eUIlength+sUIlength+iUIlength+10]='r';
+        groupKey[eUIlength+sUIlength+iUIlength+11]='i';
+        groupKey[eUIlength+sUIlength+iUIlength+12]='v';
         cursor=0;
         for (int idx=0;idx<plast;idx++) {
             memcpy(groupBytes+cursor,&(pKVs[idx].K),pKVs[idx].Kl);
@@ -274,12 +405,16 @@ void ctrail(int argc, char *argv[]) {
         }
         blake3_hasher_reset(&hasher);
         blake3_hasher_update(&hasher, groupBytes, pKVlength);
-        blake3_hasher_finalize(&hasher,(groupKey+eUIlength+sUIlength+iUIlength+10), BLAKE3_OUT_LEN);
+        blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
+        //as string hexa representation
+        blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
+        for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-        memcpy(groupKey+eUIlength+sUIlength+iUIlength+42,&pKVlength,4);
+        memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&pKVlength,4);
 
+        //PRIVATE fwrite group ESI + size
         //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
-        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+46, fileptr) != eUIlength+sUIlength+iUIlength+46)
+        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+82, fileptr) != eUIlength+sUIlength+iUIlength+82)
             ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
             ) {
             printf("%s", "cannot write E\n");
@@ -288,102 +423,32 @@ void ctrail(int argc, char *argv[]) {
     }
 
     //--------------------------- frames -----------------------------
-/*
-   if (iframes==0)iframes=1;
-   if (!sqliteESIP()) return false;//create sql for E,S,I,P
+    // https://dicom.nema.org/medical/Dicom/2024c/output/chtml/part03/sect_C.7.6.6.html
+    switch (photo) {
+        case MONOCHROME1:
+        case MONOCHROME2: {
+            int buffersize=cols * rows * comp;//1
+            for (int f=1;f <= fram;f++) {
 
-   for (fnumber=1;fnumber <= iframes;fnumber++)
-   {
-      //standarize pixel representation (per component, unsigned int LE
-      DICMlen=cols * rows * spp;
-      if (!ufread(DICMlen)) return false;
-      cidx=DICMidx;
-      //write 4times bigger normalized data after the read in buffer
-      if (pixrep) //signed
-      {
-         if ((spp==1)||planar)
-         {
-            for (u64 i=DICMidx - DICMlen; i < DICMidx; i++)
-            {
-               DICM[cidx++]=(char)DICM[i];
-               DICM[cidx++]=0;
-               DICM[cidx++]=0;
-               DICM[cidx++]=0;
             }
-         }
-         else //multi comp pixels
-         {
-            u64 j;
-            u64 compsize=cols * rows;
-            for (u64 i=DICMidx - DICMlen; i < DICMidx; i+=spp)
-            {
-               for (j=0; j<spp; j++)
-               {
-                  DICM[cidx+(compsize*j)]=(char)DICM[i];
-                  DICM[cidx+(compsize*j)+1]=0;
-                  DICM[cidx+(compsize*j)+2]=0;
-                  DICM[cidx+(compsize*j)+3]=0;
-               }
-               cidx++;
-            }
-            cidx+=cols * rows * (spp -1);
-         }
-      }
-      else //unsigned
-      {
-         if ((spp==1)||planar)
-         {
-            for (u64 i=DICMidx - DICMlen; i < DICMidx; i++)
-            {
-               DICM[cidx++]=DICM[i];
-               DICM[cidx++]=0;
-               DICM[cidx++]=0;
-               DICM[cidx++]=0;
-            }
-         }
-         else //multi comp pixels
-         {
-            u64 j;
-            u64 compsize=cols * rows;
-            for (u64 i=DICMidx - DICMlen; i < DICMidx; i+=spp)
-            {
-               for (j=0; j<spp; j++)
-               {
-                  DICM[cidx+(compsize*j)]=DICM[i];
-                  DICM[cidx+(compsize*j)+1]=0;
-                  DICM[cidx+(compsize*j)+2]=0;
-                  DICM[cidx+(compsize*j)+3]=0;
-               }
-               cidx++;
-            }
-            cidx+=cols * rows * (spp -1);
-         }
-       }
-*/
-      /*
-      9:syntaxidx
-      11:iframes, (0:no frame objects, 1:native, n:encoded)
-      13:spp
-      14:photocode
-      15:rows
-      16:cols
-      17:alloc
-      18:stored
-      19:high
-      20:pixrep
-      21:planar
-      */
-/*
-      //compression cfho
-      u64 fidx=0;//fast offset
-      u64 hidx=0;//high offset
-      u64 oidx=0;//original offset
-      u64 zidx=0;//first byte after original
-      if (!opj_cfho(photocode ,spp,rows,cols,stored,DICMidx,cidx,&fidx,&hidx,&oidx,&zidx))
-      {
-         E("%s","error");
-      }
-*/
+        } break;
+        //case PALETTE:;
+            /*
+        case RGB: {
+            int buffersize=cols * rows * comp;//3
+        } break;
+            */
+        //case YBR_FULL:;//RLE
+        //case YBR_FULL_422:;//JPEG 1 +1/2 + 1/2
+        //case YBR_PARTIAL_420:;//mpeg 1 + 1/4 + 1/4
+        //case YBR_ICT:; //jpeg2000 lossy
+        //case YBR_RCT:;//jpeg2000 lossless  pal secal
+        //case XYB:;//jpeg-xl
+        default:;
+    }
+
+
+
 
     //----------------------------------------------------------
     fclose(fileptr);
@@ -422,6 +487,57 @@ void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     DICMidx+=attr->l;
 }
 
+
+void pdfAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("PDF %08X\n",u32swap(*(u32*)(CKEY+1)));
+
+    pdf.Kl=CKEYidx+8;
+    pdf.Vl=attr->l- (*(DICM+DICMidx+attr->l-1)== 0x00);
+    pdf.Vp=DICM+DICMidx;
+
+    DICMidx+=attr->l;
+}
+
+void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("CDA %08X\n",u32swap(*(u32*)(CKEY+1)));
+
+    cda.Kl=CKEYidx+8;
+    cda.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
+    cda.Vp=DICM+DICMidx;
+
+    DICMidx+=attr->l;
+}
+
+void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("SLT %08X\n",u32swap(*(u32*)(CKEY+1)));
+
+    stl.Kl=CKEYidx+8;
+    stl.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
+    stl.Vp=DICM+DICMidx;
+
+    DICMidx+=attr->l;
+}
+
+void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("OBJ %08X\n",u32swap(*(u32*)(CKEY+1)));
+
+    obj.Kl=CKEYidx+8;
+    obj.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
+    obj.Vp=DICM+DICMidx;
+
+    DICMidx+=attr->l;
+}
+
+void mtlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("MTL %08X\n",u32swap(*(u32*)(CKEY+1)));
+
+    mtl.Kl=CKEYidx+8;
+    mtl.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
+    mtl.Vp=DICM+DICMidx;
+
+    DICMidx+=attr->l;
+}
+
 void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("I %08X\n",u32swap(*(u32*)(CKEY+1)));
 
@@ -450,5 +566,13 @@ void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
 
 void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
     printf("F %08X\n",u32swap(*(u32*)(CKEY+1)));
+
+    FILE *fileptr = fopen("ESIPF.bin", "w");
+    if (fileptr == NULL) {
+        printf("%s", "cannot write dscd.utf8.cdicm\n");
+        exit(-33);
+    }
+
     DICMidx+=attr->l;
 }
+

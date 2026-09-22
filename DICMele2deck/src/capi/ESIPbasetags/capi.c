@@ -85,3 +85,29 @@ void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("F %08X\n",u32swap(*(u32*)(CKEY+1)));
     DICMidx+=attr->l;
 }
+
+void pdfAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("PDF %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
+
+void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("CDA %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
+
+void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("SLT %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
+
+void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("OBJ %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
+
+void mtlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("MTL %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
+

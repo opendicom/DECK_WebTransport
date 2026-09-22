@@ -27,6 +27,12 @@ void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//instance
 void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//private
 void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//frame
 
+void pdfAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+void mtlAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
+
 
 void cinput(int argc, char *argv[]);//opening of DICM
 void ctrail(int argc, char *argv[]);//after dataset read
