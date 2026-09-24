@@ -1016,7 +1016,6 @@ static u16   PCSidx;
 
 
 
-
 #pragma mark ---------------------------- SOP instance
 
 void uinput( int argc, char *argv[])
@@ -1102,7 +1101,7 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
       case kOBJ:objAttribute(vrcat,attr); break;
       case kMTL:mtlAttribute(vrcat,attr); break;
 
-      case kv01:  if (attr->e==0x7FE00010) {fAttribute(vrcat,attr); break; }
+      case kv01:  if (attr->e==0x7FE00010) { fAttribute(vrcat,attr); break; }
 
       default: {
          //PCSidx: index of next little endian tag in PCStag table (patient, clinical study, series)

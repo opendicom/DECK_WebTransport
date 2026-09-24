@@ -164,8 +164,11 @@ int dicmDataset(
          case OB: {
             attr->c=REPERTOIRE_GL;
             switch (encapsulated) {
-               case 1: {  val(kPDF,attr);key(attr);} break;
-               case 2: {  val(kCDA,attr);key(attr);} break;
+               case 1:  {  val(kPDF,attr);key(attr);} break;
+               case 2:  {  val(kCDA,attr);key(attr);} break;
+               case 3:  {  val(kSTL,attr);key(attr);} break;
+               case 4:  {  val(kOBJ,attr);key(attr);} break;
+               case 5:  {  val(kMTL,attr);key(attr);} break;
                default: {  val(kv01,attr);key(attr);} break;
             }
 

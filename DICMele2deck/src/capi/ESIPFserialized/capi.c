@@ -69,6 +69,9 @@ struct KV stl;
 struct KV obj;
 struct KV mtl;
 
+struct KV pix;
+
+
 u16 elast;
 u16 slast;
 u16 ilast;
@@ -424,12 +427,24 @@ void ctrail(int argc, char *argv[]) {
 
     //--------------------------- frames -----------------------------
     // https://dicom.nema.org/medical/Dicom/2024c/output/chtml/part03/sect_C.7.6.6.html
+    groupKey[0]=eUIlength+sUIlength+iUIlength+17;
+    cursor=cols * rows * comp * alloc / 8;
+    memcpy(groupKey+eUIlength+sUIlength+iUIlength+18,&cursor,4);
+
     switch (photo) {
         case MONOCHROME1:
         case MONOCHROME2: {
-            int buffersize=cols * rows * comp;//1
+            if (fram==0) fram=1;
             for (int f=1;f <= fram;f++) {
-
+                snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",f);
+                if (  fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22) {
+                    printf("%s", "cannot write E\n");
+                    exit(-33);
+                }
+                if ( fwrite(pix.Vp+(cursor * (f-1)), 1, cursor, fileptr) != cursor) {
+                    printf("%s", "cannot write E\n");
+                    exit(-33);
+                }
             }
         } break;
         //case PALETTE:;
@@ -567,11 +582,10 @@ void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
 void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
     printf("F %08X\n",u32swap(*(u32*)(CKEY+1)));
 
-    FILE *fileptr = fopen("ESIPF.bin", "w");
-    if (fileptr == NULL) {
-        printf("%s", "cannot write dscd.utf8.cdicm\n");
-        exit(-33);
-    }
+    pix.Kl=CKEYidx+8;
+    memcpy(&pix.K,CKEY,CKEYidx+8);
+    pix.Vl=attr->l;// - (*(DICM+DICMidx+attr->l-1)== 0x00);
+    pix.Vp=DICM+DICMidx;
 
     DICMidx+=attr->l;
 }
