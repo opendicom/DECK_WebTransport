@@ -430,35 +430,55 @@ void ctrail(int argc, char *argv[]) {
     groupKey[0]=eUIlength+sUIlength+iUIlength+17;
     cursor=cols * rows * comp * alloc / 8;
     memcpy(groupKey+eUIlength+sUIlength+iUIlength+18,&cursor,4);
+    if (fram==0) fram=1;
 
     switch (photo) {
         case MONOCHROME1:
-        case MONOCHROME2: {
-            if (fram==0) fram=1;
-            for (int f=1;f <= fram;f++) {
-                snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",f);
-                if (  fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22) {
-                    printf("%s", "cannot write E\n");
-                    exit(-33);
-                }
-                if ( fwrite(pix.Vp+(cursor * (f-1)), 1, cursor, fileptr) != cursor) {
+        case MONOCHROME2:
+        {
+            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
+            for (int f=1;f <= fram+1;f++) {
+                if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
+                    ||( fwrite(pix.Vp, 1, cursor, fileptr) != cursor))
+                {
                     printf("%s", "cannot write E\n");
                     exit(-33);
                 }
             }
         } break;
-        //case PALETTE:;
-            /*
-        case RGB: {
-            int buffersize=cols * rows * comp;//3
+
+        case PALETTE:
+        {
+            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
+            for (int f=1;f <= fram+1;f++) {
+                if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
+                    ||( fwrite(pix.Vp, 1, cursor, fileptr) != cursor))
+                {
+                    printf("%s", "cannot write E\n");
+                    exit(-33);
+                }
+            }
         } break;
-            */
-        //case YBR_FULL:;//RLE
-        //case YBR_FULL_422:;//JPEG 1 +1/2 + 1/2
-        //case YBR_PARTIAL_420:;//mpeg 1 + 1/4 + 1/4
-        //case YBR_ICT:; //jpeg2000 lossy
-        //case YBR_RCT:;//jpeg2000 lossless  pal secal
-        //case XYB:;//jpeg-xl
+
+        case RGB: {
+            //needs to interleave instead of plane by plane
+            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
+            for (int f=1;f <= fram+1;f++) {
+                if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
+                    ||( fwrite(pix.Vp, 1, cursor, fileptr) != cursor))
+                {
+                    printf("%s", "cannot write E\n");
+                    exit(-33);
+                }
+            }
+        } break;
+
+        case YBR_FULL:printf("%s", "YBR_FULL (RLE) not handled\n");break;//RLE
+        case YBR_FULL_422:printf("%s", "YBR_FULL_422 (jpeg) not handled\n");break;//JPEG 1 +1/2 + 1/2
+        case YBR_PARTIAL_420:printf("%s", "YBR_PARTIAL_420 (mpeg) not handled\n");break;//mpeg 1 + 1/4 + 1/4
+        case YBR_ICT:printf("%s", "YBR_ICT (j2k lossy) not handled\n");break; //jpeg2000 lossy
+        case YBR_RCT:printf("%s", "YBR_RCT (j2k lossless, pal secam) not handled\n");break;//jpeg2000 lossless  pal secam
+        case XYB:printf("%s", "XYB (JPEG-XL) not handled\n");break;//jpeg-xl
         default:;
     }
 
