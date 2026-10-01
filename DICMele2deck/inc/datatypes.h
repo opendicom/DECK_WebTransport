@@ -32,6 +32,15 @@
 //photometric interpretation
 
 typedef enum {
+    isNotEncapsulated=0,
+    isPDF,
+    isCDA,
+    isSTL,
+    isOBJ,
+    isMTL,
+} isEncapsulated;
+
+typedef enum {
     MONOCHROME1=1,//minimum white
     MONOCHROME2=2,//minimum black
     RGB=3,//red, green, and blue image planes
@@ -164,7 +173,6 @@ u32 ui2b64serialized( char *ui, u8 uilength, char *b64 );
 #pragma mark - repertoires
 
 enum repertoireenum{
-   
    REPERTOIRE_GL,
    ISO_IR100,
    ISO_IR101,

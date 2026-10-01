@@ -100,3 +100,12 @@ target_link_libraries(ESIPFserialized
         dicmlib
         libblake3
 )
+add_executable(ESIPFfiled src/capi/ESIPFfiled/capi.c
+        src/capi/ESIPFfiled/capi.c
+        src/capi/uapi.c
+)
+target_link_libraries(ESIPFfiled
+        dicmlib
+        libblake3
+)
+

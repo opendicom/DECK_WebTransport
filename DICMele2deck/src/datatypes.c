@@ -266,7 +266,7 @@ const char *repertoirestr[]={
 
 u32 repertoireidx( unsigned char *vbuf, u16 vallength )
 {
-   u32 idx=0x9;//error
+   u32 idx=0x9;//error (or RFC3986)
    switch (vallength){
       case 0: idx=REPERTOIRE_GL;break;
       case 4: idx=GBK;break;
@@ -1008,15 +1008,16 @@ u8 isItImage(u64 bytes190){
 
 //22 ignored,             bytes BC a C3 (188-195)
 //1.2.840.10008.5.1.4.1.  1.104.1_ (29 bytes. Las 8 being 1.104.x NULL
+
 u8 isItCapsule(u64 bytes188){
     switch (bytes188) {
-        case 0x312E3430312E31ULL:  return 1;//pdf
-        case 0x322E3430312E31ULL:  return 2;//cda
-        case 0x332E3430312E31ULL:  return 3;//stl
-        case 0x342E3430312E31ULL:  return 4;//obj
-        case 0x352E3430312E31ULL:  return 5;//mtl
+        case 0x312E3430312E31ULL:  return isPDF;
+        case 0x322E3430312E31ULL:  return isCDA;
+        case 0x332E3430312E31ULL:  return isSTL;
+        case 0x342E3430312E31ULL:  return isOBJ;
+        case 0x352E3430312E31ULL:  return isMTL;
+        default: return isNotEncapsulated;
     }
-    return 0;
 }
 
 //1.2.840.10008.5.1.4.1.  1.11.1:_ a 9

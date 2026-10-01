@@ -22,7 +22,7 @@ u8 encapsulated;
 int  fram=0;//number of frames (0=not n image)
 //needed as input to grok
 const char * const photoCS[]={"","MONOCHROME1 ","MONOCHROME2 ","RGB ","PALETTE COLOR ","YBR_FULL","YBR_FULL_422","YBR_PARTIAL_420 ","YBR_ICT ","YBR_RCT ","XYB "};
-u16  photo=10;//photometric interpretation
+u16  photo;//photometric interpretation
 u16  rows;
 u16  cols;
 u16  alloc;
@@ -33,7 +33,7 @@ u16  comp;//planar 0 = RGB del pixel; 1 = componentes RGB (samples)
 
 
 //for SOP identification
-char eDA[4];
+char eDA[5];
 u32 eDAlength;
 char eUI[48];
 u32 eUIlength;
@@ -111,6 +111,7 @@ int dicmDataset(
                   eDA[1]='b';
                   eDA[2]='P';
                   eDA[3]='b';
+                  eDA[4]=0x00;
                }
             }
             val(kvTP,attr);
@@ -134,6 +135,7 @@ int dicmDataset(
                   key(attr);
                }; break;
                case 0x00280004:{//photocode (photometric interpretation)
+                  photo=10;
                   while (photo>0 && strncmp(photoCS[photo],DICM+DICMidx,attr->l)) photo--;
                }
                default: { val(kvCS,attr); key(attr);} break;
@@ -285,7 +287,7 @@ int dicmDataset(
             //unknown
             // https://dicom.nema.org/medical/dicom/current/output/html/part05.html#sect_6.2.2
             //5. The Value Length Field of VR UN may contain Undefined Length (FFFFFFFFH), in which case the contents can be assumed to be encoded with Implicit VR. See Section 7.5.1 to determine how to parse Data Elements with an Undefined Length.
-         case UN: { attr->l=REPERTOIRE_GL; val(kvUN,attr);key(attr);} break;
+         case UN: { attr->c=REPERTOIRE_GL; val(kvUN,attr);key(attr);} break;
          default: {exit(-10);} break;
       }//end switch
    }//end while (*index < beforebyte)

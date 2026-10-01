@@ -90,6 +90,7 @@ void key(struct Ercle* attr)
       case OV://other 64-bit very long
       case UV://unsigned 64-bit very long
       case UC://unlimited characters
+      case UN:
       case UT://unlimited text
       case UR://universal resource url identifier/locator
       case SQ://sequence

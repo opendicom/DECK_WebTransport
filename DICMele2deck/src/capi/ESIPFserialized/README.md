@@ -31,31 +31,35 @@ With respect to the latter, the differences are:
 representation.
 ````
 with the exception the VL refers to the sum of all the KV attributes of the group. 
-This length can be used as a pointer to skip parsing part of the serialization. For instance, if the attributes of the study or of the series were already processed from the serialization of another instance belonging to the study,
-there is no need to parse the corresponding group again.
+This length can be used as a pointer to skip parsing part of the serialization. 
 
 To be sure that the same information was already parsed and can be skipped, the key ends with a blake3 hash of the group. 
 If the hash present in the key head of the group corresponds to the one already registered, there remains no doubt.
 Besides the hash can also be used to control that the following attributes serialized were not altered.
 
-The encapsulated objects and frames are exceptions with no blake3. Being first class objects of other standards, the inner coherence is secured by the corresponding standard.
-In these cases, the group does contain the encapsulated object (instead of a list of attributes). The object length is exact, with no padding null char in case the length is odd.
+The encapsulated objects and frames are exceptions with no blake3. Being first class objects of other standards, 
+the inner coherence is secured by the corresponding standard.
+In these cases, the group does contain the encapsulated object (instead of a list of attributes). 
+The object length is exact, with no padding null char in case the length is odd.
 
 ## group key components
-| category             | key prefix         | key name                |  key suffix  | comment                                |
-|----------------------|--------------------|-------------------------|--------------|----------------------------------------|
-| Exam+patient         | date/E/     (even) | fo --               (2) | .blake3 (65) | fovia whatever else                    |
-| PDF                  | date/E/S/   (odd)  | ps                  (2) | .pdf    (4)  | 1.2.840.10008.5.1.4.1.1.104.1          |
-| CDA                  | date/E/S/   (odd)  | uc sc ds ot         (2) | .xml    (4)  | 1.2.840.10008.5.1.4.1.1.104.2          |
-| STL                  | date/E/S/   (odd)  | 3d                  (2) | .stl    (4)  | 1.2.840.10008.5.1.4.1.1.104.3          |
-| OBJ                  | date/E/S/   (odd)  | tx                  (2) | .obj    (4)  | 1.2.840.10008.5.1.4.1.1.104.4          |
-| MTL                  | date/E/S/   (odd)  | tx                  (2) | .mtl    (4)  | 1.2.840.10008.5.1.4.1.1.104.5          |
-| Series               | date/E/S/   (odd)  | fov ---             (3) | .blake3 (65) | fovia cda pdf whatever else            |
-| Instance+sop+private | date/E/S/I/ (even) | fovi priv dicm ---- (4) | .blake3 (65) | fovia private group 2 vwhatever else   |
-| Frame                | date/E/S/I/ (even) | 00001..99999        (5) | .xxx    (4)  | 00000.xxx=encapsulated object not frame|
+| category             | key prefix         | key name         |  key suffix  | comment                       |
+|----------------------|--------------------|------------------|--------------|-------------------------------|
+| Exam+patient         | date/E/     (even) | --           (2) | .blake3 (65) |                               |
+| Series               | date/E/S/    (odd) | ---          (3) | .blake3 (65) |                               |
+| PDF                  | date/E/S/    (odd) | ps           (2) | .pdf    (4)  | 1.2.840.10008.5.1.4.1.1.104.1 |
+| CDA                  | date/E/S/    (odd) | uc sc ds ot  (2) | .xml    (4)  | 1.2.840.10008.5.1.4.1.1.104.2 |
+| STL                  | date/E/S/    (odd) | 3d           (2) | .stl    (4)  | 1.2.840.10008.5.1.4.1.1.104.3 |
+| OBJ                  | date/E/S/    (odd) | tx           (2) | .obj    (4)  | 1.2.840.10008.5.1.4.1.1.104.4 |
+| MTL                  | date/E/S/    (odd) | tx           (2) | .mtl    (4)  | 1.2.840.10008.5.1.4.1.1.104.5 |
+| AV1                  | date/E/S/    (odd) | sp tm        (2) | .av1    (4)  | spatial or temporal           |
+| Instance+sop+private | date/E/S/I/ (even) | priv ----    (4) | .blake3 (65) | private + 0002                |
+| Frame                | date/E/S/I/ (even) | 00001..99999 (5) | .xxx    (4)  | one frame one file            |
+
 
 - date, E, S, codified uibb64 ("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~") are url safe
 - they are of even length, lower than 45.
+- av1 concatenates uncompressed frames (both concatenation and discrete frames are available)
 
 ## possible use by the receptor
 - process one group at a time

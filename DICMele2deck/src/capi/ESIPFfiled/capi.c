@@ -68,7 +68,7 @@ struct KV sKVs[150];//number of base attributes registered as type S or X
 struct KV iKVs[350];//number of base attributes registered as type S or X
 struct KV pKVs[200];//number of base attributes registered as type S or X
 struct KV data;//pdf,cda,stl,obj,mtl,pix(raw frames)
-char *dataName;
+char *dataFilename;
 
 
 u16 elast;
@@ -249,8 +249,8 @@ void ctrail(int argc, char *argv[]) {
     fclose(seriesptr);
 
     //enclosed (level series: one instance per series)
-    if (dataName != NULL) {
-        memcpy(groupKey+eUIlength+sUIlength+8,dataName,7);
+    if (dataFilename != NULL) {
+        memcpy(groupKey+eUIlength+sUIlength+8,dataFilename,7);
         FILE *dataptr = fopen(groupKey+1, "w");
         if (dataptr == NULL) {
             printf("cannot touch %s\n",groupKey+1);
@@ -266,6 +266,10 @@ void ctrail(int argc, char *argv[]) {
 
     //---------------------------- instance ----------------------------
     groupKey[0]=eUIlength+sUIlength+iUIlength+77;
+    memcpy(groupKey+eUIlength+sUIlength+8,iUI,iUIlength);
+    groupKey[eUIlength+sUIlength+iUIlength+8]=0x00;
+
+    printf("iUI:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
 
     memcpy(groupKey+eUIlength+sUIlength+8,iUI,iUIlength);
     groupKey[eUIlength+sUIlength+iUIlength+8]='/';
@@ -297,17 +301,18 @@ void ctrail(int argc, char *argv[]) {
     blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
     for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&iKVlength,4);
-
-    //INSTANCE fwrite group ESI + size
-    //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
-    if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+82, fileptr) != eUIlength+sUIlength+iUIlength+82)
-        ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
-        ) {
-        printf("%s", "cannot write E\n");
+    //write I attributes
+    FILE *instanceptr = fopen(groupKey+1, "w");
+    if (instanceptr == NULL) {
+        printf("cannot touch %s\n",groupKey+1);
         exit(-33);
-        }
-
+    }
+    if (fwrite(&groupBytes, 1, cursor, instanceptr) != cursor)
+    {
+        printf("cannot write I to %s\n",groupKey+1);
+        exit(-33);
+    }
+    fclose(instanceptr);
 
     //---------------------------- private ----------------------------
     if (pKVlength>0) {
@@ -338,16 +343,18 @@ void ctrail(int argc, char *argv[]) {
         blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
         for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-        memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&pKVlength,4);
-
-        //PRIVATE fwrite group ESI + size
-        //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
-        if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+82, fileptr) != eUIlength+sUIlength+iUIlength+82)
-            ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
-            ) {
-            printf("%s", "cannot write E\n");
+        //write P attributes
+        FILE *privateptr = fopen(groupKey+1, "w");
+        if (privateptr == NULL) {
+            printf("cannot touch %s\n",groupKey+1);
             exit(-33);
-            }
+        }
+        if (fwrite(&groupBytes, 1, cursor, privateptr) != cursor)
+        {
+            printf("cannot write I to %s\n",groupKey+1);
+            exit(-33);
+        }
+        fclose(privateptr);
     }
 
     //--------------------------- frames -----------------------------
@@ -356,12 +363,31 @@ void ctrail(int argc, char *argv[]) {
     cursor=cols * rows * comp * alloc / 8;
     memcpy(groupKey+eUIlength+sUIlength+iUIlength+18,&cursor,4);
     if (fram==0) fram=1;
-
+    char *ffilename=groupKey+eUIlength+sUIlength+iUIlength+9;
+    ffilename[9]=0;
     switch (photo) {
         case MONOCHROME1:
-        case MONOCHROME2:
+        case MONOCHROME2://ONE
         {
-            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
+            for (int f=0; f<fram; f++) {
+                snprintf(ffilename,10,"%05d.ONE",f+1);
+                FILE *frameptr = fopen(groupKey+1, "w");
+                if (frameptr == NULL) {
+                    printf("cannot touch %s\n",groupKey+1);
+                    exit(-33);
+                }
+                if (fwrite(data.Vp+(f*cursor),1, cursor, frameptr) != cursor)
+                {
+                    printf("cannot write frame %s%05d.ONE",f+1);
+                    exit(-33);
+                }
+                fclose(frameptr);
+            }
+        } break;
+
+        case PALETTE://PLT
+        {
+            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.PLT",fram);
             for (int f=1;f <= fram+1;f++) {
                 if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
                     ||( fwrite(data.Vp, 1, cursor, fileptr) != cursor))
@@ -372,20 +398,7 @@ void ctrail(int argc, char *argv[]) {
             }
         } break;
 
-        case PALETTE:
-        {
-            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
-            for (int f=1;f <= fram+1;f++) {
-                if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
-                    ||( fwrite(data.Vp, 1, cursor, fileptr) != cursor))
-                {
-                    printf("%s", "cannot write E\n");
-                    exit(-33);
-                }
-            }
-        } break;
-
-        case RGB: {
+        case RGB: { //RGB
             //needs to interleave instead of plane by plane
             snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
             for (int f=1;f <= fram+1;f++) {
@@ -399,11 +412,11 @@ void ctrail(int argc, char *argv[]) {
         } break;
 
         case YBR_FULL:printf("%s", "YBR_FULL (RLE) not handled\n");break;//RLE
-        case YBR_FULL_422:printf("%s", "YBR_FULL_422 (jpeg) not handled\n");break;//JPEG 1 +1/2 + 1/2
-        case YBR_PARTIAL_420:printf("%s", "YBR_PARTIAL_420 (mpeg) not handled\n");break;//mpeg 1 + 1/4 + 1/4
-        case YBR_ICT:printf("%s", "YBR_ICT (j2k lossy) not handled\n");break; //jpeg2000 lossy
-        case YBR_RCT:printf("%s", "YBR_RCT (j2k lossless, pal secam) not handled\n");break;//jpeg2000 lossless  pal secam
-        case XYB:printf("%s", "XYB (JPEG-XL) not handled\n");break;//jpeg-xl
+        case YBR_FULL_422:printf("%s", "YBR_FULL_422 (jpeg) not handled\n");break;//JPG 1 +1/2 + 1/2
+        case YBR_PARTIAL_420:printf("%s", "YBR_PARTIAL_420 (mpeg) not handled\n");break;//MPG 1 + 1/4 + 1/4
+        case YBR_ICT:printf("%s", "YBR_ICT (j2k lossy) not handled\n");break; //J2I jpeg2000 lossy
+        case YBR_RCT:printf("%s", "YBR_RCT (j2k lossless, pal secam) not handled\n");break;//J2R jpeg2000 lossless  pal secam
+        case XYB:printf("%s", "XYB (JPEG-XL) not handled\n");break;//JXL jpeg-xl
         default:;
     }
 
@@ -447,7 +460,7 @@ void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 
 void pdfAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("PDF %08X\n",u32swap(*(u32*)(CKEY+1)));
-    dataName="ps.pdf";
+    dataFilename="ps.pdf";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l- (*(DICM+DICMidx+attr->l-1)== 0x00);
     data.Vp=DICM+DICMidx;
@@ -466,10 +479,10 @@ void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     for (u8 c=0; c < 0xA0; c++) {
         if (*data.Vp+c == 'c') {
             switch (*data.Vp+c+1) {
-                case 'd': dataName="dc.xml"; break;
-                case 's': dataName="sc.xml"; break;
-                case 'C': dataName="uc.xml"; break;
-                default:  dataName="ot.xml"; break;
+                case 'd': dataFilename="dc.xml"; break;
+                case 's': dataFilename="sc.xml"; break;
+                case 'C': dataFilename="uc.xml"; break;
+                default:  dataFilename="ot.xml"; break;
             }
         }
     }
@@ -479,7 +492,7 @@ void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 
 void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("SLT %08X\n",u32swap(*(u32*)(CKEY+1)));
-    dataName="3d.stl";
+    dataFilename="3d.stl";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
     data.Vp=DICM+DICMidx;
@@ -489,7 +502,7 @@ void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 
 void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("OBJ %08X\n",u32swap(*(u32*)(CKEY+1)));
-    dataName="tx.obj";
+    dataFilename="tx.obj";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
     data.Vp=DICM+DICMidx;
@@ -499,7 +512,7 @@ void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 
 void mtlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("MTL %08X\n",u32swap(*(u32*)(CKEY+1)));
-    dataName="tx.mtl";
+    dataFilename="tx.mtl";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
     data.Vp=DICM+DICMidx;
