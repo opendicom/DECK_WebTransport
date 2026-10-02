@@ -119,10 +119,10 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       {printf("%8lu%*s%08X~\n",DICMidx,CKEYidx+CKEYidx,space, u32swap(attr->E));}break;
       case kvIA:
       case kvIa:
-      {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,CKEYidx,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
+      {printf("%8lu %*s%02X%02X%02X%02X+\n",DICMidx,CKEYidx+CKEYidx-9,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
       case kvIZ:
       case kvIz:
-      {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
+      {printf("%8lu %*s%02X%02X%02X%02X~\n",DICMidx,CKEYidx+CKEYidx-9,space,CKEY[CKEYidx-4],CKEY[CKEYidx-3],CKEY[CKEYidx-2],CKEY[CKEYidx-1]);}break;
 #pragma mark -long length
       case kPDF:
       case kCDA:
