@@ -13,7 +13,7 @@ FILE *inFile;
 char *DICM;//CDICM in memory
 u64   DICMsize;
 u64   DICMidx;
-char *CKEY;//contextual keys [0]=key chain size
+u8 *CKEY;//contextual keys [0]=key chain size
 u32   CKEYidx=1;
 
 u8 encapsulated;
@@ -219,13 +219,15 @@ int dicmDataset(
                CKEY[0]-=8;
                CKEYidx-=8;
                *itemnumber=0xFFFFFFFF;
+               attr->e=u32swap(attr->E);//tag in little endian;
                val(kvSZ, attr);
+
                key(attr);//read attr post SQ
                continue;
             }
 
             u64 beforebyteIT;
-            *itemnumber=u32swap(1);
+            *itemnumber=0x01000000;
             //for each item
             while ((DICMidx < beforebyteSQ) && (itemattr->e==0xfffee000)) {
 

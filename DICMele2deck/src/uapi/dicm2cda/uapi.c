@@ -12,7 +12,7 @@ extern FILE *inFile;
 extern char *DICM;
 extern u64   DICMsize;
 extern u64   DICMidx;
-extern char *CKEY;
+extern u8 *CKEY;
 extern u32   CKEYidx;
 
 #pragma mark ---------------------------- attributes
