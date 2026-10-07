@@ -26,6 +26,7 @@ void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//series
 void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//instance
 void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//private
 void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//frame
+void iconAttribute(enum kvVRcategory vrcat,struct Ercle* attr);//logo - icon
 
 void pdfAttribute(enum kvVRcategory vrcat,struct Ercle* attr);
 void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr);

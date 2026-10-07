@@ -158,7 +158,6 @@ int dicmDataset(
          //large length numbers
          case OF:
          case OD:
-         case OW:
          case OL:
          case OV:
          case SV:
@@ -171,14 +170,24 @@ int dicmDataset(
                case 3:  {  val(kSTL,attr);key(attr);} break;
                case 4:  {  val(kOBJ,attr);key(attr);} break;
                case 5:  {  val(kMTL,attr);key(attr);} break;
-               default: {  val(kv01,attr);key(attr);} break;
+               default: {
+                  if (attr->e == 0x7FE00010) val(kPIX,attr);
+                  else                       val(kv01,attr);
+                  key(attr);
+               } break;
             }
-
          } break;
+         case OW: {
+            attr->c=REPERTOIRE_GL;
+            if (attr->e == 0x7FE00010) val(kPIX,attr);
+            else                       val(kv01,attr);
+            key(attr);
+         } break;
+
             //large length repertoire
          case UC:
-         case UT: { attr->c=itemkeycs;         val(kvTL,attr);key(attr);} break;
-         case UR: { attr->c=ISO_IR192;     val(kvTU,attr);key(attr);} break;//RFC3986
+         case UT: { attr->c=itemkeycs; val(kvTL,attr);key(attr);} break;
+         case UR: { attr->c=ISO_IR192; val(kvTU,attr);key(attr);} break;//RFC3986
 #pragma mark SQ
          case SQ://sequence
          {

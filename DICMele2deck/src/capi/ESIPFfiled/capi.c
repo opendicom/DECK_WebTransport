@@ -66,7 +66,7 @@ struct KV {
 struct KV eKVs[100];//number of base attributes registered as type P or C
 struct KV sKVs[150];//number of base attributes registered as type S or X
 struct KV iKVs[350];//number of base attributes registered as type S or X
-struct KV pKVs[200];//number of base attributes registered as type S or X
+struct KV pKVs[20000];//number of base attributes registered as type S or X
 struct KV data;//pdf,cda,stl,obj,mtl,pix(raw frames)
 char *dataFilename;
 
@@ -132,12 +132,6 @@ void ctrail(int argc, char *argv[]) {
     printf("sign %u\n",sign);
     printf("comp %u\n",comp);
 
-    FILE *fileptr = fopen("ESIPF.bin", "w");
-    if (fileptr == NULL) {
-        printf("%s", "cannot write dscd.utf8.cdicm\n");
-        exit(-33);
-    }
-
     //blake3 provides merkle-tree, incremental and fast hash (usefull to compare buffer)
     blake3_hasher hasher;
     blake3_hasher_init(&hasher);
@@ -150,12 +144,13 @@ void ctrail(int argc, char *argv[]) {
     char groupBytes[KVlength];
     char * groupKey=malloc(256);
     groupKey[0]=eUIlength+73;
-    //create date and exam dir
+    // date dir
     memcpy(groupKey+1,eDA,4);
     printf("eDA:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
     //printf("Failed to create directory: %s\n", strerror(errno));
     groupKey[5]='/';
     memcpy(groupKey+6,eUI,eUIlength);
+    //exam dir
     printf("eUI:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
     groupKey[eUIlength+6]='/';
 
@@ -204,7 +199,7 @@ void ctrail(int argc, char *argv[]) {
     groupKey[0]=eUIlength+sUIlength+75;
     memcpy(groupKey+eUIlength+7,sUI,sUIlength);
     groupKey[eUIlength+sUIlength+7]=0x00;
-
+    //series dir
     printf("sUI:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
 
     groupKey[eUIlength+sUIlength+7]='/';
@@ -269,6 +264,7 @@ void ctrail(int argc, char *argv[]) {
     memcpy(groupKey+eUIlength+sUIlength+8,iUI,iUIlength);
     groupKey[eUIlength+sUIlength+iUIlength+8]=0x00;
 
+    //instance dir
     printf("iUI:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
 
     memcpy(groupKey+eUIlength+sUIlength+8,iUI,iUIlength);
@@ -324,7 +320,7 @@ void ctrail(int argc, char *argv[]) {
         for (int idx=0;idx<plast;idx++) {
             memcpy(groupBytes+cursor,&(pKVs[idx].K),pKVs[idx].Kl);
             cursor+=pKVs[idx].Kl;
-            if (groupBytes[cursor-2]!=0) { //UTF-8
+            if (groupBytes[cursor-2]!=0) { //charset to be transformed to UTF-8
                 utf8size=utf8serialized(groupBytes[cursor-2],pKVs[idx].Vp,pKVs[idx].Vl,UTF8);
                 memcpy(groupBytes+cursor,UTF8,utf8size);
                 cursor+=utf8size;
@@ -367,10 +363,10 @@ void ctrail(int argc, char *argv[]) {
     ffilename[9]=0;
     switch (photo) {
         case MONOCHROME1:
-        case MONOCHROME2://ONE
+        case MONOCHROME2://OPC (opacity)
         {
             for (int f=0; f<fram; f++) {
-                snprintf(ffilename,10,"%05d.ONE",f+1);
+                snprintf(ffilename,10,"%05d.OPC",f+1);
                 FILE *frameptr = fopen(groupKey+1, "w");
                 if (frameptr == NULL) {
                     printf("cannot touch %s\n",groupKey+1);
@@ -378,7 +374,7 @@ void ctrail(int argc, char *argv[]) {
                 }
                 if (fwrite(data.Vp+(f*cursor),1, cursor, frameptr) != cursor)
                 {
-                    printf("cannot write frame %s%05d.ONE",f+1);
+                    printf("cannot write frame %05d.OPC",f+1);
                     exit(-33);
                 }
                 fclose(frameptr);
@@ -387,27 +383,37 @@ void ctrail(int argc, char *argv[]) {
 
         case PALETTE://PLT
         {
-            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.PLT",fram);
-            for (int f=1;f <= fram+1;f++) {
-                if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
-                    ||( fwrite(data.Vp, 1, cursor, fileptr) != cursor))
-                {
-                    printf("%s", "cannot write E\n");
+            for (int f=0; f<fram; f++) {
+                snprintf(ffilename,10,"%05d.PLT",f+1);
+                FILE *frameptr = fopen(groupKey+1, "w");
+                if (frameptr == NULL) {
+                    printf("cannot touch %s\n",groupKey+1);
                     exit(-33);
                 }
+                if (fwrite(data.Vp+(f*cursor),1, cursor, frameptr) != cursor)
+                {
+                    printf("cannot write frame %05d.PLT",f+1);
+                    exit(-33);
+                }
+                fclose(frameptr);
             }
         } break;
 
         case RGB: { //RGB
             //needs to interleave instead of plane by plane
-            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
-            for (int f=1;f <= fram+1;f++) {
-                if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
-                    ||( fwrite(data.Vp, 1, cursor, fileptr) != cursor))
-                {
-                    printf("%s", "cannot write E\n");
+            for (int f=0; f<fram; f++) {
+                snprintf(ffilename,10,"%05d.RGB",f+1);
+                FILE *frameptr = fopen(groupKey+1, "w");
+                if (frameptr == NULL) {
+                    printf("cannot touch %s\n",groupKey+1);
                     exit(-33);
                 }
+                if (fwrite(data.Vp+(f*cursor),1, cursor, frameptr) != cursor)
+                {
+                    printf("cannot write frame %05d.RGB",f+1);
+                    exit(-33);
+                }
+                fclose(frameptr);
             }
         } break;
 
@@ -422,7 +428,6 @@ void ctrail(int argc, char *argv[]) {
 
 
     //----------------------------------------------------------
-    fclose(fileptr);
     fclose(KVserializedFILE);
 
     cursor=0;
@@ -433,7 +438,7 @@ void ctrail(int argc, char *argv[]) {
 #pragma mark ---------------------------- attributes
 
 void eAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("E %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu E %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
 
     eKVs[elast].Kl=CKEYidx+8;
     memcpy(&eKVs[elast].K,CKEY,CKEYidx+8);
@@ -446,7 +451,7 @@ void eAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("S %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu S %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
 
     sKVs[slast].Kl=CKEYidx+8;
     memcpy(&sKVs[slast].K,CKEY,CKEYidx+8);
@@ -459,7 +464,7 @@ void sAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void pdfAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("PDF %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu PDF %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
     dataFilename="ps.pdf";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l- (*(DICM+DICMidx+attr->l-1)== 0x00);
@@ -469,7 +474,7 @@ void pdfAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("CDA %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu CDA %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
 
     data.Kl=CKEYidx+8;
     data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
@@ -491,7 +496,7 @@ void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("SLT %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu SLT %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
     dataFilename="3d.stl";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
@@ -501,7 +506,7 @@ void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("OBJ %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu OBJ %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
     dataFilename="tx.obj";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
@@ -511,7 +516,7 @@ void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void mtlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("MTL %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu MTL %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
     dataFilename="tx.mtl";
     data.Kl=CKEYidx+8;
     data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
@@ -521,7 +526,7 @@ void mtlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("I %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("%8lu I %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
 
     iKVs[ilast].Kl=CKEYidx+8;
     memcpy(&iKVs[ilast].K,CKEY,CKEYidx+8);
@@ -534,8 +539,7 @@ void iAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
-    printf("P %08X\n",u32swap(*(u32*)(CKEY+1)));
-
+    printf("%8lu P %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
     pKVs[plast].Kl=CKEYidx+8;
     memcpy(&pKVs[plast].K,CKEY,CKEYidx+8);
     pKVs[plast].Vl=attr->l;
@@ -546,12 +550,25 @@ void pAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
     DICMidx+=attr->l;
 }
 
-void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
-    printf("F %08X\n",u32swap(*(u32*)(CKEY+1)));
+void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr){//frame
+    printf("%8lu F %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
 
     data.Kl=CKEYidx+8;
     memcpy(&data.K,CKEY,CKEYidx+8);
-    data.Vl=attr->l;// - (*(DICM+DICMidx+attr->l-1)== 0x00);
+    data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
+    data.Vp=DICM+DICMidx;
+
+    DICMidx+=attr->l;
+}
+
+//https://dicom.nema.org/medical/dicom/2023e/output/chtml/part03/sect_F.7.html
+void iconAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    //logo icon
+    printf("%8lu logo %08X %c%c\n",DICMidx,u32swap(*(u32*)(CKEY+1)),CKEY[CKEYidx+4],CKEY[CKEYidx+5]);
+
+    data.Kl=CKEYidx+8;
+    memcpy(&data.K,CKEY,CKEYidx+8);
+    data.Vl=attr->l - (*(DICM+DICMidx+attr->l-1)== 0x00);
     data.Vp=DICM+DICMidx;
 
     DICMidx+=attr->l;

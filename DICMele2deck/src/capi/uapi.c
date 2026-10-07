@@ -1055,10 +1055,14 @@ void key(struct Ercle* attr)
       case OV://other 64-bit very long
       case UV://unsigned 64-bit very long
       case UC://unlimited characters
-      case UN:
       case UT://unlimited text
       case UR://universal resource url identifier/locator
       case SQ://sequence
+      {
+         memcpy(&attr->l,DICM+DICMidx,4);
+         DICMidx+=4;
+      }break;
+      case UN:
       {
          memcpy(&attr->l,DICM+DICMidx,4);
          DICMidx+=4;
@@ -1071,12 +1075,6 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
 
    if ((attr->e & 0xFFFF)==0) { //remove group length
       DICMidx+=attr->l;
-      return;
-   }
-
-   u32  *rootTag = (u32*)(CKEY+1);
-   if (((*rootTag)& 0xFFFF)<0x300){ //group even private or group 2
-      pAttribute(vrcat,attr);
       return;
    }
 
@@ -1101,29 +1099,30 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
       case kSTL:stlAttribute(vrcat,attr); break;
       case kOBJ:objAttribute(vrcat,attr); break;
       case kMTL:mtlAttribute(vrcat,attr); break;
-
-      case kv01:  if (attr->e==0x7FE00010) { fAttribute(vrcat,attr); break; }
+      case kPIX: {
+         if (u32swap(*(u32*)(CKEY+1))==0x00880200) iconAttribute(vrcat,attr);
+         else                                      fAttribute(vrcat,attr);
+      } break;
 
       default: {
-         //PCSidx: index of next little endian tag in PCStag table (patient, clinical study, series)
-         //if current tag is lower than PCStag[PCSidx], current tag is instance or frame tag
+         u32  *rootTag = (u32*)(CKEY+1);//uuUUggGG
 
-         if (memcmp(rootTag, &PCStag[PCSidx], 4) < 0) //rootTag smaller than index
-         {
-            iAttribute(vrcat,attr);
-         }
-         else
-         {
-            while ((memcmp(rootTag, &PCStag[PCSidx], 4) > 0) && (PCSidx < 234)) (PCSidx)++;
-            if (memcmp(rootTag, &PCStag[PCSidx], 4)==0)
-            {
-               if (PCStype[PCSidx]==0) eAttribute(vrcat,attr);
-               else                    sAttribute(vrcat,attr);
-               PCSidx++;
+         if (((*rootTag)== 0x200) || ((*rootTag)& 0x100)) pAttribute(vrcat,attr); //group 2 || odd private
+         else {
+            //PCSidx: index of next little endian tag in PCStag table (patient, clinical study, series)
+            //if current tag is lower than PCStag[PCSidx], current tag is instance or frame tag
+
+            if (memcmp(rootTag, &PCStag[PCSidx], 4) < 0) iAttribute(vrcat,attr); //rootTag smaller than index
+            else {
+               while ((memcmp(rootTag, &PCStag[PCSidx], 4) > 0) && (PCSidx < 234)) (PCSidx)++;
+               if (memcmp(rootTag, &PCStag[PCSidx], 4)==0){
+                  if (PCStype[PCSidx]==0) eAttribute(vrcat,attr);
+                  else                    sAttribute(vrcat,attr);
+                  PCSidx++;
+               } else iAttribute(vrcat,attr);
             }
-            else iAttribute(vrcat,attr);
          }
-      }
+      } break;
    }
 }
 

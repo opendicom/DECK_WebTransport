@@ -31,7 +31,7 @@ enum kvVRcategory{
     kvCs,//15 Cs Code String 00080005 read in main to enable charset control
     kvTS,//16 LO LT SH ST text short charset
     kvPN,//17 PN person name has a special treatment in json and xml
-    kv01,//18 other OB OD OF OL OV OW SV UV binary
+    kv01,//18 other OB OD OF OL OV OW SV UV binary except pixel
     kvTL,//19 UC UT text long charset
     kvTU,//20 UR text long url-encoded
     kvSA,//21 SQ head with length 0xffffffff terminated by end tag
@@ -47,7 +47,8 @@ enum kvVRcategory{
     kCDA,//31
     kSTL,//32
     kOBJ,//33
-    kMTL//34
+    kMTL,//34
+    kPIX//35 0x7FE00010 OB / OW
     };
 
 

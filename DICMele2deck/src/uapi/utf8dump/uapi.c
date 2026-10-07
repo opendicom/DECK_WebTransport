@@ -133,10 +133,8 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       //OB Encapsulated​Document 00420011 xml cda o pdf
       //OF 0x7FE00008
       //OD 0x7FE00009
-      //OB 0x7FE00010
-      //OW 0x7FE00010
-      //OB 0x7E000010
-      //OB 0x7E000010
+      case kPIX://OB 0x7FE00010
+                //OW 0x7FE00010
       //OV Extended​Offset​Table fragments offset 7FE00001
       //OV Extended​Offset​TableLengths fragments offset 7FE00002
       //UV Encapsulated​Pixel​Data​Value​Total​Length 7FE00003
