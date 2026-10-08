@@ -81,9 +81,10 @@ typedef enum {
   exitNoDataset,//13
   exitNotEncapsulatedCDA,//15
   exitErrorFwrite,//16
- exitErrorSqliteOpen,//17
- exitErrorGroupLength,//18
-  exitBadtrailingPadding//19
+  exitErrorSqliteOpen,//17
+  exitErrorGroupLength,//18
+  exitBadtrailingPadding,//19
+  exitMkdirFailure //20
 } exitcode;
 
 

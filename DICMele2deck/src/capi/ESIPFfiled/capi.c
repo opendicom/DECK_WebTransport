@@ -144,18 +144,31 @@ void ctrail(int argc, char *argv[]) {
     char groupBytes[KVlength];
     char * groupKey=malloc(256);
     groupKey[0]=eUIlength+73;
-    // date dir
+
+    //---------------------------- date dir
     memcpy(groupKey+1,eDA,4);
-    printf("eDA:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
-    //printf("Failed to create directory: %s\n", strerror(errno));
+    if ((mkdir(groupKey+1, 0777)==-1) && (errno!=17)) //0=created -1=failed 17=already existing
+    {
+        printf("Failed to create directory %s: %d %s\n", groupKey+1, errno, strerror(errno));
+        exit(exitMkdirFailure);
+    }
+
+
     groupKey[5]='/';
+    bool newDir=true;
+    //---------------------------- E dir
     memcpy(groupKey+6,eUI,eUIlength);
-    //exam dir
-    printf("eUI:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
+    if (mkdir(groupKey+1, 0777)==-1) {//0=created -1=failed
+        if (errno!=17) //17=already existing
+        {
+            printf("Failed to create directory %s: %d %s\n", groupKey+1, errno, strerror(errno));
+            exit(exitMkdirFailure);
+        }
+        newDir=false;
+    }
+
+    //---------------------------- E
     groupKey[eUIlength+6]='/';
-
-
-    //---------------------------- exam ----------------------------
     groupKey[eUIlength+7]='-';
     groupKey[eUIlength+8]='-';
     groupKey[eUIlength+9]='.';
@@ -182,26 +195,36 @@ void ctrail(int argc, char *argv[]) {
     char* blake3offset=groupKey+eUIlength+10;
     for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    //write E attributes
-    FILE *examptr = fopen(groupKey+1, "w");
-    if (examptr == NULL) {
-        printf( "cannot touch %s\n",groupKey+1);
-        exit(-33);
+    if (newDir || (access(groupKey+1, F_OK) != 0)) {
+        //write E attributes
+        FILE *Eptr = fopen(groupKey+1, "w");
+        if (Eptr == NULL) {
+            printf( "cannot touch %s\n",groupKey+1);
+            exit(-33);
+        }
+        if (fwrite(&groupBytes, 1, cursor, Eptr) != cursor)
+        {
+            printf("cannot write E to %s\n",groupKey+1);
+            exit(-33);
+        }
+        fclose(Eptr);
     }
-    if (fwrite(&groupBytes, 1, cursor, examptr) != cursor)
-    {
-        printf("cannot write E to %s\n",groupKey+1);
-        exit(-33);
-    }
-    fclose(examptr);
 
-    //---------------------------- series ----------------------------
+    //---------------------------- S dir
     groupKey[0]=eUIlength+sUIlength+75;
     memcpy(groupKey+eUIlength+7,sUI,sUIlength);
     groupKey[eUIlength+sUIlength+7]=0x00;
-    //series dir
-    printf("sUI:%d\n",mkdir(groupKey+1, 0777));//0 created -1 failed
 
+    if (mkdir(groupKey+1, 0777)==-1) {//0=created -1=failed
+        if (errno!=17) //17=already existing
+        {
+            printf("Failed to create directory %s: %d %s\n", groupKey+1, errno, strerror(errno));
+            exit(exitMkdirFailure);
+        }
+        newDir=false;
+    }
+
+    //---------------------------- S
     groupKey[eUIlength+sUIlength+7]='/';
     groupKey[eUIlength+sUIlength+8]='-';
     groupKey[eUIlength+sUIlength+9]='-';
@@ -230,18 +253,22 @@ void ctrail(int argc, char *argv[]) {
     blake3offset=groupKey+eUIlength+sUIlength+12;
     for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    //write S attributes
-    FILE *seriesptr = fopen(groupKey+1, "w");
-    if (seriesptr == NULL) {
-        printf("cannot touch %s\n",groupKey+1);
-        exit(-33);
+
+    if (newDir || (access(groupKey+1, F_OK) != 0)) {
+        //write S attributes
+        FILE *Sptr = fopen(groupKey+1, "w");
+        if (Sptr == NULL) {
+            printf( "cannot touch %s\n",groupKey+1);
+            exit(-33);
+        }
+        if (fwrite(&groupBytes, 1, cursor, Sptr) != cursor)
+        {
+            printf("cannot write S to %s\n",groupKey+1);
+            exit(-33);
+        }
+        fclose(Sptr);
     }
-    if (fwrite(&groupBytes, 1, cursor, seriesptr) != cursor)
-    {
-        printf("cannot write S to %s\n",groupKey+1);
-        exit(-33);
-    }
-    fclose(seriesptr);
+
 
     //enclosed (level series: one instance per series)
     if (dataFilename != NULL) {
