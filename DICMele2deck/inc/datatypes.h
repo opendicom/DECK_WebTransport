@@ -157,6 +157,7 @@ enum DICMvr {
 u64 u64swap(u64 x);
 u32 u32swap(u32 x);
 u16 u16swap(u16 x);
+u32 DICMtagLE2BEswap(u32 x);//swaps the two bytes of group and of element: file order to big endian tag
 
 
 #pragma mark - uid shrink

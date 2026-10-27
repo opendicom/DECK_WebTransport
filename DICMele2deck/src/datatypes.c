@@ -88,14 +88,14 @@ u8 intdecsize(int i)
 }
 u64 u64swap(u64 x)
 {
-   return ((x &               0xffLL)>>56)
-         |((x &             0xff00LL)>>40)
-         |((x &           0xff0000LL)>>24)
-         |((x &         0xff000000LL)>> 8)
-         |((x &       0xff00000000LL)<< 8)
-         |((x &     0xff0000000000LL)<<24)
-         |((x &   0xff000000000000LL)<<40)
-         |((x & 0xff00000000000000LL)<<56);
+   return ((x &               0xffLL)<<56)
+         |((x &             0xff00LL)<<40)
+         |((x &           0xff0000LL)<<24)
+         |((x &         0xff000000LL)<< 8)
+         |((x &       0xff00000000LL)>> 8)
+         |((x &     0xff0000000000LL)>>24)
+         |((x &   0xff000000000000LL)>>40)
+         |((x & 0xff00000000000000LL)>>56);
 }
 
 u32 u32swap(u32 x)
@@ -108,16 +108,13 @@ u32 u32swap(u32 x)
 
 u16 u16swap(u16 x)
 {
-   return ((x &   0xff)>>8)
-         |((x & 0xff00)<<8);
+   return ((x &   0xff)<<8)
+         |((x & 0xff00)>>8);
 }
 
-u32 tagswap(u32 x)
+u32 DICMtagLE2BEswap(u32 x)
 {
-   return ((x & 0xff       <<16))
-         |((x & 0xff00    << 8))
-         |((x & 0xff0000  >>16))
-         |((x & 0xff000000 >>24));
+   return ((x & 0xFF00FF00) >> 8) | ((x & 0x00FF00FF) << 8);
 }
 
 #pragma mark - uid shrink

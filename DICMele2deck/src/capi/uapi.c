@@ -1014,6 +1014,7 @@ extern u8    CKEYidx;
 
 static u16   PCSidx;
 
+#define PCSLast (sizeof(PCStype) - 1) // index of the last entry; PCStype is u8, so sizeof is the entry count
 
 
 #pragma mark ---------------------------- SOP instance
@@ -1039,7 +1040,7 @@ void key(struct Ercle* attr)
    // eventually reads the four additional bytes of long length at CKEYidx+8
    memcpy(attr,DICM+DICMidx,8);
    DICMidx+=8;
-   attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
+   attr->E=DICMtagLE2BEswap(attr->E); //transform to pure big endian
    attr->e=u32swap(attr->E);//tag in little endian
 
    //attr->r is ascii (left to right)
@@ -1114,11 +1115,10 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr) {
 
             if (memcmp(rootTag, &PCStag[PCSidx], 4) < 0) iAttribute(vrcat,attr); //rootTag smaller than index
             else {
-               while ((memcmp(rootTag, &PCStag[PCSidx], 4) > 0) && (PCSidx < 234)) (PCSidx)++;
+               while ((PCSidx < PCSLast) && (memcmp(rootTag, &PCStag[PCSidx], 4) > 0)) (PCSidx)++;
                if (memcmp(rootTag, &PCStag[PCSidx], 4)==0){
                   if (PCStype[PCSidx]==0) eAttribute(vrcat,attr);
                   else                    sAttribute(vrcat,attr);
-                  PCSidx++;
                } else iAttribute(vrcat,attr);
             }
          }

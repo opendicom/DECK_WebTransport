@@ -96,7 +96,7 @@ void key(struct Ercle* attr)
    // eventually reads the four additional bytes of long length at CKEYidx+8
    memcpy(attr,DICM+DICMidx,8);
    DICMidx+=8;
-   attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
+   attr->E=DICMtagLE2BEswap(attr->E); //transform to pure big endian
    attr->e=u32swap(attr->E);//tag in little endian
 
    //attr->r is ascii (left to right)

@@ -87,14 +87,14 @@ int dicmDataset(
                case 0x00080016: {
                   cUIlength=ui2b64( DICM+DICMidx, attr->l, cUI );
                   val(kvUc,attr);key(attr);
-               } break; //instance uid
+               } break; //class uid
                case 0x00080018: {
                   iUIlength=ui2b64( DICM+DICMidx, attr->l, iUI );
                   val(kvUi,attr);key(attr);
                } break; //instance uid
                case 0x00080019: {
                   pUIlength=ui2b64( DICM+DICMidx, attr->l, pUI );
-                  val(kvUs,attr);key(attr);
+                  val(kvUp,attr);key(attr);
                } break; //PyramidUID
                case 0x0020000D: {
                   eUIlength=ui2b64( DICM+DICMidx, attr->l, eUI );
@@ -142,7 +142,7 @@ int dicmDataset(
                }; break;
                case 0x00280004:{//photocode (photometric interpretation)
                   photo=10;
-                  while (photo>0 && strncmp(photoCS[photo],DICM+DICMidx,attr->l)) photo--;
+                  while (photo>0 && (strncmp(photoCS[photo],DICM+DICMidx,attr->l) || strlen(photoCS[photo]) != attr->l )) photo--;
                }
                default: { val(kvCS,attr); key(attr);} break;
             }

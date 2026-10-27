@@ -74,7 +74,7 @@ void key(struct Ercle* attr)
    // eventually reads the four additional bytes of long length at CKEYidx+8
    memcpy(attr,DICM+DICMidx,8);
    DICMidx+=8;
-   attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
+   attr->E=DICMtagLE2BEswap(attr->E); //transform to pure big endian
    attr->e=u32swap(attr->E);//tag in little endian
 
    //attr->r is ascii (left to right)
@@ -109,12 +109,14 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
       case kvUL: {
          if (attr->E < 0x10000) {//ignore group length
             //copy everything before key
-            memcpy(SERIALIZE+Soffset,DICM+Doffset-8,DICMidx-Doffset-8);
+            memcpy(SERIALIZE+Soffset,DICM+Doffset,DICMidx-Doffset-8);
             Soffset+=DICMidx-Doffset-8;
-
+            DICMidx+=attr->l;
+            Doffset=DICMidx;
+         } else {
+            DICMidx+=attr->l;
          }
-         DICMidx+=attr->l;
-         Doffset=DICMidx;
+
       } break;
 
 #pragma mark - sequence and item with end tag

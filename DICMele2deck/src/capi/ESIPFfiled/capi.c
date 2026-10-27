@@ -55,8 +55,7 @@ extern u8 pUIlength;
 
 struct KV {
     u8    Kl;
-    char *K ;//key length (1 byte) followed by key
-    char Kpadding;//when charset ends with zero byte, the struct may overwrite it. Kpadding avoids it
+    u8    K[97] ;//key length same than CKEY so SEQUENCE doesn't overflow and overwrite the next data, no padding needed now
     u32   Vl;//value length written LE
     char *Vp;//value pointer
 };
@@ -97,7 +96,7 @@ void cinput( int argc, char *argv[])
         exit(exitErrorFropenDICM);
     }
 
-    DICM=malloc(DICMsize);
+    DICM=malloc(DICMsize + 8);
     if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
         if (ferror(stdin)) {
             fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -119,7 +118,7 @@ void cinput( int argc, char *argv[])
 void ctrail(int argc, char *argv[]) {
 
     printf("eDA %*s\n",eDAlength,eDA);
-    printf("eUI %*s\n",sUIlength,sUI);
+    printf("eUI %*s\n",eUIlength,eUI);
     printf("sUI %*s\n",sUIlength,sUI);
     printf("iUI %*s\n",iUIlength,iUI);
     printf("pUI %*s\n",pUIlength,pUI);//pyramid
@@ -150,6 +149,7 @@ void ctrail(int argc, char *argv[]) {
 
     //---------------------------- date dir
     memcpy(groupKey+1,eDA,4);
+    groupKey[5]=0x00;
     if ((mkdir(groupKey+1, 0777)==-1) && (errno!=17)) //0=created -1=failed 17=already existing
     {
         printf("Failed to create directory %s: %d %s\n", groupKey+1, errno, strerror(errno));
@@ -161,6 +161,7 @@ void ctrail(int argc, char *argv[]) {
     bool newDir=true;
     //---------------------------- E dir
     memcpy(groupKey+6,eUI,eUIlength);
+    groupKey[eUIlength+6]=0x00;
     if (mkdir(groupKey+1, 0777)==-1) {//0=created -1=failed
         if (errno!=17) //17=already existing
         {
@@ -250,7 +251,7 @@ void ctrail(int argc, char *argv[]) {
         }
     }
     blake3_hasher_reset(&hasher);
-    blake3_hasher_update(&hasher, groupBytes, sKVlength);
+    blake3_hasher_update(&hasher, groupBytes, cursor);
     blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
     //as string hexa representation
     blake3offset=groupKey+eUIlength+sUIlength+12;
@@ -330,7 +331,7 @@ void ctrail(int argc, char *argv[]) {
         }
     }
     blake3_hasher_reset(&hasher);
-    blake3_hasher_update(&hasher, groupBytes, iKVlength);
+    blake3_hasher_update(&hasher, groupBytes, cursor);
     blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
     //as string hexa representation
     blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
@@ -374,7 +375,7 @@ void ctrail(int argc, char *argv[]) {
             }
         }
         blake3_hasher_reset(&hasher);
-        blake3_hasher_update(&hasher, groupBytes, pKVlength);
+        blake3_hasher_update(&hasher, groupBytes, cursor);
         blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
         //as string hexa representation
         blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
@@ -389,7 +390,7 @@ void ctrail(int argc, char *argv[]) {
             }
             if (fwrite(&groupBytes, 1, cursor, privateptr) != cursor)
             {
-                printf("cannot write I to %s\n",groupKey+1);
+                printf("cannot write P to %s\n",groupKey+1);
                 exit(-33);
             }
             fclose(privateptr);
@@ -567,8 +568,8 @@ void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 
     // find <d, <C o <s within the first 160 first chars
     for (u8 c=0; c < 0xA0; c++) {
-        if (*data.Vp+c == 'c') {
-            switch (*data.Vp+c+1) {
+        if (*(data.Vp+c) == 'c') {
+            switch (*(data.Vp+c+1)) {
                 case 'd': dataFilename="dc.xml"; break;
                 case 's': dataFilename="sc.xml"; break;
                 case 'C': dataFilename="uc.xml"; break;

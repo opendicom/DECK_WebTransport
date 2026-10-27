@@ -7,7 +7,6 @@
 #include <locale.h>
 
 extern FILE * inFile;
-FILE *KVserializedFILE;
 
 extern char *DICM;
 extern u64   DICMidx;
@@ -34,7 +33,7 @@ void cinput( int argc, char *argv[])
         exit(exitErrorFropenDICM);
     }
 
-    DICM=malloc(DICMsize);
+    DICM=malloc(DICMsize + 8);
     if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
         if (ferror(stdin)) {
             fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -45,17 +44,10 @@ void cinput( int argc, char *argv[])
     };
     fclose(inFile);
 
-    KVserializedFILE = fopen("serialized.bin", "w");
-
     setlocale(LC_ALL, "");//output in UTF-8
-    UTF8=malloc(0x4000);
-    //LT max 10240,UT max 2^32 !!!
-    //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
 }
 
-void ctrail(int argc, char *argv[]) {
-    fclose(KVserializedFILE);
-}
+void ctrail(int argc, char *argv[]) {}
 
 
 #pragma mark ---------------------------- attributes
@@ -97,7 +89,7 @@ void cdaAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 }
 
 void stlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
-    printf("SLT %08X\n",u32swap(*(u32*)(CKEY+1)));
+    printf("STL %08X\n",u32swap(*(u32*)(CKEY+1)));
     DICMidx+=attr->l;
 }
 
@@ -108,6 +100,11 @@ void objAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
 
 void mtlAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
     printf("MTL %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
+
+void iconAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    printf("ICON %08X\n",u32swap(*(u32*)(CKEY+1)));
     DICMidx+=attr->l;
 }
 

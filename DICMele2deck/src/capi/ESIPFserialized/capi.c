@@ -51,8 +51,7 @@ extern u8 pUIlength;
 
 struct KV {
     u8    Kl;
-    char *K ;//key length (1 byte) followed by key
-    char Kpadding;//when charset ends with zero byte, the struct may overwrite it. Kpadding avoids it
+    u8    K[97] ;//key length same than CKEY so SEQUENCE doesn't overflow and overwrite the next data, no padding needed now
     u32   Vl;//value length written LE
     char *Vp;//value pointer
 };
@@ -98,7 +97,7 @@ void cinput( int argc, char *argv[])
         exit(exitErrorFropenDICM);
     }
 
-    DICM=malloc(DICMsize);
+    DICM=malloc(DICMsize + 8);
     if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
         if (ferror(stdin)) {
             fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -120,7 +119,7 @@ void cinput( int argc, char *argv[])
 void ctrail(int argc, char *argv[]) {
 
     printf("eDA %*s\n",eDAlength,eDA);
-    printf("eUI %*s\n",sUIlength,sUI);
+    printf("eUI %*s\n",eUIlength,eUI);
     printf("sUI %*s\n",sUIlength,sUI);
     printf("iUI %*s\n",iUIlength,iUI);
     printf("pUI %*s\n",pUIlength,pUI);
@@ -184,7 +183,7 @@ void ctrail(int argc, char *argv[]) {
     char* blake3offset=groupKey+eUIlength+10;
     for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    memcpy(groupKey+eUIlength+74,&eKVlength,4);
+    memcpy(groupKey+eUIlength+74,&cursor,4);
 
     //EXAM fwrite group E + size
     //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
@@ -221,20 +220,20 @@ void ctrail(int argc, char *argv[]) {
         }
     }
     blake3_hasher_reset(&hasher);
-    blake3_hasher_update(&hasher, groupBytes, sKVlength);
+    blake3_hasher_update(&hasher, groupBytes, cursor);
     blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
     //as string hexa representation
     blake3offset=groupKey+eUIlength+sUIlength+12;
     for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    memcpy(groupKey+eUIlength+sUIlength+76,&sKVlength,4);
+    memcpy(groupKey+eUIlength+sUIlength+76,&cursor,4);
 
     //SERIES fwrite group ES + size
     //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
     if (  (fwrite(groupKey, 1, eUIlength+sUIlength+80, fileptr) != eUIlength+sUIlength+80)
         ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
         ) {
-        printf("%s", "cannot write E\n");
+        printf("%s", "cannot write S\n");
         exit(-33);
     }
 
@@ -262,8 +261,8 @@ void ctrail(int argc, char *argv[]) {
         char a='o';
         char b='t';
         for (u8 c=0; c < 0xA0; c++) {
-            if (*cda.Vp+c == 'c') {
-                switch (*cda.Vp+c+1) {
+            if (*(cda.Vp+c) == 'c') {
+                switch (*(cda.Vp+c+1)) {
                     case 'd': { a='d';b='s';c=0xA0;} break;
                     case 's': { a='s';b='c';c=0xA0;} break;
                     case 'C': { a='u';b='c';c=0xA0;} break;
@@ -367,20 +366,20 @@ void ctrail(int argc, char *argv[]) {
         }
     }
     blake3_hasher_reset(&hasher);
-    blake3_hasher_update(&hasher, groupBytes, iKVlength);
+    blake3_hasher_update(&hasher, groupBytes, cursor);
     blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
     //as string hexa representation
     blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
     for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-    memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&iKVlength,4);
+    memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&cursor,4);
 
     //INSANTACE fwrite group ESI + size
     //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
     if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+82, fileptr) != eUIlength+sUIlength+iUIlength+82)
         ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
         ) {
-        printf("%s", "cannot write E\n");
+        printf("%s", "cannot write I\n");
         exit(-33);
         }
 
@@ -408,20 +407,20 @@ void ctrail(int argc, char *argv[]) {
             }
         }
         blake3_hasher_reset(&hasher);
-        blake3_hasher_update(&hasher, groupBytes, pKVlength);
+        blake3_hasher_update(&hasher, groupBytes, cursor);
         blake3_hasher_finalize(&hasher,blake32, BLAKE3_OUT_LEN);
         //as string hexa representation
         blake3offset=groupKey+eUIlength+sUIlength+iUIlength+14;
         for (u32 hexa=0;hexa<32;hexa++) { sprintf(blake3offset+hexa+hexa, "%02x", blake32[hexa]);}
 
-        memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&pKVlength,4);
+        memcpy(groupKey+eUIlength+sUIlength+iUIlength+78,&cursor,4);
 
         //PRIVATE fwrite group ESI + size
         //groupkey malloc makes it a pointer, char groupbyte[x] makes it a char
         if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+82, fileptr) != eUIlength+sUIlength+iUIlength+82)
             ||(fwrite(&groupBytes, 1, cursor, fileptr) != cursor)
             ) {
-            printf("%s", "cannot write E\n");
+            printf("%s", "cannot write P\n");
             exit(-33);
             }
     }
@@ -437,12 +436,12 @@ void ctrail(int argc, char *argv[]) {
         case MONOCHROME1:
         case MONOCHROME2:
         {
-            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
-            for (int f=1;f <= fram+1;f++) {
+            for (int f=0; f<fram; f++) {
+                snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",f+1);
                 if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
-                    ||( fwrite(pix.Vp, 1, cursor, fileptr) != cursor))
+                    ||( fwrite(pix.Vp+(f*cursor), 1, cursor, fileptr) != cursor))
                 {
-                    printf("%s", "cannot write E\n");
+                    printf("%s", "cannot write frame\n");
                     exit(-33);
                 }
             }
@@ -450,12 +449,12 @@ void ctrail(int argc, char *argv[]) {
 
         case PALETTE:
         {
-            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
-            for (int f=1;f <= fram+1;f++) {
+            for (int f=0; f<fram; f++) {
+                snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",f+1);
                 if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
-                    ||( fwrite(pix.Vp, 1, cursor, fileptr) != cursor))
+                    ||( fwrite(pix.Vp+(f*cursor), 1, cursor, fileptr) != cursor))
                 {
-                    printf("%s", "cannot write E\n");
+                    printf("%s", "cannot write frame\n");
                     exit(-33);
                 }
             }
@@ -463,12 +462,12 @@ void ctrail(int argc, char *argv[]) {
 
         case RGB: {
             //needs to interleave instead of plane by plane
-            snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",fram);
-            for (int f=1;f <= fram+1;f++) {
+            for (int f=0; f<fram; f++) {
+                snprintf(groupKey+eUIlength+sUIlength+iUIlength+9,10,"%05d.pix",f+1);
                 if (  (fwrite(groupKey, 1, eUIlength+sUIlength+iUIlength+22, fileptr) != eUIlength+sUIlength+iUIlength+22)
-                    ||( fwrite(pix.Vp, 1, cursor, fileptr) != cursor))
+                    ||( fwrite(pix.Vp+(f*cursor), 1, cursor, fileptr) != cursor))
                 {
-                    printf("%s", "cannot write E\n");
+                    printf("%s", "cannot write frame\n");
                     exit(-33);
                 }
             }
@@ -610,4 +609,12 @@ void fAttribute(enum kvVRcategory vrcat,struct Ercle* attr){
 
     DICMidx+=attr->l;
 }
+
+//https://dicom.nema.org/medical/dicom/2023e/output/chtml/part03/sect_F.7.html
+void iconAttribute(enum kvVRcategory vrcat,struct Ercle* attr) {
+    //logo icon: not serialized
+    printf("logo %08X\n",u32swap(*(u32*)(CKEY+1)));
+    DICMidx+=attr->l;
+}
+
 

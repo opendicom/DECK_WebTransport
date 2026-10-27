@@ -48,7 +48,7 @@ void uinput( int argc, char *argv[])
       exit(exitErrorFropenDICM);
    }
 
-   DICM=malloc(DICMsize);
+   DICM=malloc(DICMsize+8);//8=preread tag vr sh of inexistent attribute after last one
    if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
       if (ferror(stdin)) {
          fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -82,7 +82,7 @@ void key(struct Ercle* attr)
    // eventually reads the four additional bytes of long length at CKEYidx+8
    memcpy(attr,DICM+DICMidx,8);
    DICMidx+=8;
-   attr->E=((attr->E & 0xFF00FF00) >> 8)|((attr->E & 0xFF00FF) << 8); //transform to pure big endian
+   attr->E=DICMtagLE2BEswap(attr->E); //transform to pure big endian
    attr->e=u32swap(attr->E);//tag in little endian
 
    //attr->r is ascii (left to right)
@@ -101,6 +101,7 @@ void key(struct Ercle* attr)
       case UT://unlimited text
       case UR://universal resource url identifier/locator
       case SQ://sequence
+      case UN:
       {
          memcpy(&attr->l,DICM+DICMidx,4);
          DICMidx+=4;
