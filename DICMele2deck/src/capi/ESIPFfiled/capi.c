@@ -16,7 +16,6 @@
 #include <sys/types.h>
 
 extern FILE * inFile;
-FILE *KVserializedFILE;
 
 extern char *DICM;
 extern u64   DICMidx;
@@ -106,8 +105,6 @@ void cinput( int argc, char *argv[])
         exit(exitReadTruncated);
     };
     fclose(inFile);
-
-    KVserializedFILE = fopen("serialized.bin", "w");
 
     setlocale(LC_ALL, "");//output in UTF-8
     UTF8=malloc(0x4000);
@@ -514,8 +511,6 @@ void ctrail(int argc, char *argv[]) {
 
 
     //----------------------------------------------------------
-    fclose(KVserializedFILE);
-
     cursor=0;
 
 }
