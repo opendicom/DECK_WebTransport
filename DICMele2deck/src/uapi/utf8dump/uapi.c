@@ -254,14 +254,14 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          if (attr->l > 0)
          {
             printf("(");
-            for (u64 idx=DICMidx-attr->l; idx<(DICMidx+attr->l); idx+=4)
+            DICMidx+=attr->l;
+            for (u64 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
             {
                printf(" %02x%02x%02x%02x",DICM[idx+1],DICM[idx],DICM[idx+3],DICM[idx+2]);
             }
             printf(" )");
          }
          printf("\n");
-         DICMidx+=attr->l;
 
       }break;
 #pragma mark -ascii
