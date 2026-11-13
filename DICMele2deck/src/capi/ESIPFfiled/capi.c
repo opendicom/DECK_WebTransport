@@ -115,7 +115,7 @@ void cinput( int argc, char *argv[])
 void ctrail(int argc, char *argv[]) {
 
     printf("eDA %*s\n",eDAlength,eDA);
-    printf("eUI %*s\n",eUIlength,eUI);
+    printf("eUI %.*s\n",eUIlength,eUI);
     printf("sUI %*s\n",sUIlength,sUI);
     printf("iUI %*s\n",iUIlength,iUI);
     printf("pUI %*s\n",pUIlength,pUI);//pyramid
