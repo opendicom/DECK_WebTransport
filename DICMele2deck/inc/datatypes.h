@@ -64,27 +64,27 @@ typedef enum {
   exitErrorFropenDICM=-2,
   exitProgramError=-3,
   exitErrorSQtruncated=-4,
-  exitErrorITtruncated=-5,
   exitNotExplicitLittleEndian=-5,
   exitNoArg1FilePath=-6,
-  exitErrorOutPath,//2
-  exitErrorWrite,//3
-  exitErrorCreateKV,//4
-  exitSOPinstanceRejected,//5
-  exitErrorParsing,//6
-  exitNotDICM,//7
-  exitErrorCommit,//8
-  exitErrorClose,//9
-  exitBadRepertoire,//10
-  exitErrorDataset,//11
-  exitErrorRead,//12
-  exitNoDataset,//13
-  exitNotEncapsulatedCDA,//15
-  exitErrorFwrite,//16
-  exitErrorSqliteOpen,//17
-  exitErrorGroupLength,//18
-  exitBadtrailingPadding,//19
-  exitMkdirFailure //20
+  exitErrorITtruncated=-7,
+  exitErrorOutPath=2,
+  exitErrorWrite=3,
+  exitErrorCreateKV=4,
+  exitSOPinstanceRejected=5,
+  exitErrorParsing=6,
+  exitNotDICM=7,
+  exitErrorCommit=8,
+  exitErrorClose=9,
+  exitBadRepertoire=10,
+  exitErrorDataset=11,
+  exitErrorRead=12,
+  exitNoDataset=13,
+  exitNotEncapsulatedCDA=15,
+  exitErrorFwrite=16,
+  exitErrorSqliteOpen=17,
+  exitErrorGroupLength=18,
+  exitBadtrailingPadding=19,
+  exitMkdirFailure=20
 } exitcode;
 
 
