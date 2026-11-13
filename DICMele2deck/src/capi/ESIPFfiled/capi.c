@@ -16,7 +16,6 @@
 #include <sys/types.h>
 
 extern FILE * inFile;
-FILE *KVserializedFILE;
 
 extern char *DICM;
 extern u64   DICMidx;
@@ -107,8 +106,6 @@ void cinput( int argc, char *argv[])
     };
     fclose(inFile);
 
-    KVserializedFILE = fopen("serialized.bin", "w");
-
     setlocale(LC_ALL, "");//output in UTF-8
     UTF8=malloc(0x4000);
     //LT max 10240,UT max 2^32 !!!
@@ -118,7 +115,7 @@ void cinput( int argc, char *argv[])
 void ctrail(int argc, char *argv[]) {
 
     printf("eDA %*s\n",eDAlength,eDA);
-    printf("eUI %*s\n",eUIlength,eUI);
+    printf("eUI %.*s\n",eUIlength,eUI);
     printf("sUI %*s\n",sUIlength,sUI);
     printf("iUI %*s\n",iUIlength,iUI);
     printf("pUI %*s\n",pUIlength,pUI);//pyramid
@@ -514,8 +511,6 @@ void ctrail(int argc, char *argv[]) {
 
 
     //----------------------------------------------------------
-    fclose(KVserializedFILE);
-
     cursor=0;
 
 }

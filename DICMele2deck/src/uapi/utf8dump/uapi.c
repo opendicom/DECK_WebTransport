@@ -7,7 +7,7 @@
 #include "uapi.h"
 #include <locale.h>
 
-const u_int64_t tpaBlake3attr=0x424FFCFFCFF;
+const u_int64_t tpaBlake3attr=0x424FFFFCFFFC;
 const u_int32_t tpaBlake3size=32;
 
 extern FILE * inFile;
@@ -36,7 +36,7 @@ void uinput( int argc, char *argv[])
       exit(exitErrorFropenDICM);
    }
 
-   DICM = malloc(DICMsize+8);//8=preread tag vr sh of inexistent attribute after last one
+   DICM = malloc(DICMsize+12);//8=preread tag vr sh of inexistent attribute after last one + 4 blake size
    if (DICMsize!=fread(DICM,1,DICMsize,stdin)) {
       if (ferror(stdin)) {
          fprintf(stderr,"uCreate [%lu] %s (%d)\n", DICMidx, strerror(errno), errno);
@@ -56,7 +56,7 @@ void uinput( int argc, char *argv[])
    //16K covers any UTF8 size increase for LT, but eventually requires larger buffer  for LT
 
    memcpy(DICM+DICMsize,&tpaBlake3attr,8);
-   memcpy(DICM+DICMsize,&tpaBlake3size,4);
+   memcpy(DICM+DICMsize + 8,&tpaBlake3size,4);
 }
 
 void utrail(int argc, char *argv[]) {
@@ -254,14 +254,14 @@ void val(enum kvVRcategory vrcat,struct Ercle* attr)
          if (attr->l > 0)
          {
             printf("(");
-            for (u64 idx=DICMidx-attr->l; idx<(DICMidx+attr->l); idx+=4)
+            DICMidx+=attr->l;
+            for (u64 idx=DICMidx-attr->l; idx<DICMidx; idx+=4)
             {
                printf(" %02x%02x%02x%02x",DICM[idx+1],DICM[idx],DICM[idx+3],DICM[idx+2]);
             }
             printf(" )");
          }
          printf("\n");
-         DICMidx+=attr->l;
 
       }break;
 #pragma mark -ascii

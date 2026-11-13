@@ -1073,8 +1073,14 @@ void key(struct Ercle* attr)
 }
 
 void val(enum kvVRcategory vrcat,struct Ercle* attr) {
-
-   if ((attr->e & 0xFFFF)==0) { //remove group length
+   // We choose E not e because in SQ the item header is read into CKEY over the
+   // second half of the SQ attr: attr->e holds the item length and attr->l the item tag.
+   // An item of length 0 makes attr->e look like a group length (element 0000), and
+   // DICMidx would jump by the item tag, outside the buffer.
+   // E (the first 4 bytes, the SQ tag) is never overwritten, and an SQ element is never 0000.
+   // E keeps the tag in reading order (gggg eeee); read as a little endian u32,
+   // the element is in the high 16 bits, hence the mask 0xFFFF0000.
+   if ((attr->E & 0xFFFF0000)==0) { //remove group length
       DICMidx+=attr->l;
       return;
    }

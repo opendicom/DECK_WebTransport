@@ -109,3 +109,9 @@ target_link_libraries(ESIPFfiled
         libblake3
 )
 
+
+########
+# tests #
+########
+enable_testing()
+add_subdirectory(tests)

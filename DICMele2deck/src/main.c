@@ -57,7 +57,7 @@ int dicmDataset(
 )
 {
    u16 itemkeycs=keycs;
-   while ((DICMidx < beforebyte) && (attr->e < beforetag))
+   while ((DICMidx <= beforebyte) && (attr->e < beforetag))
    {
       switch (attr->r) {
          //num
@@ -244,7 +244,7 @@ int dicmDataset(
             u64 beforebyteIT;
             *itemnumber=0x01000000;
             //for each item
-            while ((DICMidx < beforebyteSQ) && (itemattr->e==0xfffee000)) {
+            while ((DICMidx <= beforebyteSQ) && (itemattr->e==0xfffee000)) {
 
                //define beforebyeIT
                if ((itemattr->r==0xffff)&&(itemattr->c==0xffff)) {
@@ -254,8 +254,8 @@ int dicmDataset(
                else {
                   beforebyteIT=DICMidx + itemattr->r + (itemattr->c << 16);
                   if (beforebyteIT > beforebyteSQ) {
-//                     E(exitErrorITtruncated,"IT truncated %lu",DICMidx);
-                     return exitErrorITtruncated;
+                     fprintf(stderr,"main IT [%lu] truncated (%d)\n", DICMidx, exitErrorITtruncated);
+                     exit(exitErrorITtruncated);
                   }
                   val(kvIa, attr);
                }
@@ -320,7 +320,7 @@ int main(int argc,  char *argv[]) {
    clock_gettime(CLOCK_MONOTONIC, &starttime);
    if (argc<2) exit(exitNoArg1FilePath);
    struct stat st;
-   stat(argv[1], &st);
+   if (stat(argv[1], &st) != 0) exit(exitErrorFropenDICM);
    DICMsize= st.st_size;
    if (DICMsize < 140) exit(exitNoDataset);
 
