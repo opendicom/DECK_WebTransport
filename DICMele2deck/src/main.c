@@ -254,8 +254,8 @@ int dicmDataset(
                else {
                   beforebyteIT=DICMidx + itemattr->r + (itemattr->c << 16);
                   if (beforebyteIT > beforebyteSQ) {
-//                     E(exitErrorITtruncated,"IT truncated %lu",DICMidx);
-                     return exitErrorITtruncated;
+                     fprintf(stderr,"main IT [%lu] truncated (%d)\n", DICMidx, exitErrorITtruncated);
+                     exit(exitErrorITtruncated);
                   }
                   val(kvIa, attr);
                }
