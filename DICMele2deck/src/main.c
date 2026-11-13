@@ -57,7 +57,7 @@ int dicmDataset(
 )
 {
    u16 itemkeycs=keycs;
-   while ((DICMidx < beforebyte) && (attr->e < beforetag))
+   while ((DICMidx <= beforebyte) && (attr->e < beforetag))
    {
       switch (attr->r) {
          //num
@@ -244,7 +244,7 @@ int dicmDataset(
             u64 beforebyteIT;
             *itemnumber=0x01000000;
             //for each item
-            while ((DICMidx < beforebyteSQ) && (itemattr->e==0xfffee000)) {
+            while ((DICMidx <= beforebyteSQ) && (itemattr->e==0xfffee000)) {
 
                //define beforebyeIT
                if ((itemattr->r==0xffff)&&(itemattr->c==0xffff)) {
