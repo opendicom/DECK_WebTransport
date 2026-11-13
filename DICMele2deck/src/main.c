@@ -320,7 +320,7 @@ int main(int argc,  char *argv[]) {
    clock_gettime(CLOCK_MONOTONIC, &starttime);
    if (argc<2) exit(exitNoArg1FilePath);
    struct stat st;
-   stat(argv[1], &st);
+   if (stat(argv[1], &st) != 0) exit(exitErrorFropenDICM);
    DICMsize= st.st_size;
    if (DICMsize < 140) exit(exitNoDataset);
 
